@@ -1,0 +1,152 @@
+
+/* UI V4 - perbaikan sinkronisasi layout halaman isi */
+.content-wrap{
+    padding:18px !important;
+}
+
+.content-wrap > .row,
+.content-wrap .row{
+    --bs-gutter-x:1rem;
+    --bs-gutter-y:1rem;
+}
+
+.content-wrap .card,
+.content-wrap .table-responsive,
+.content-wrap .coa-table-wrapper,
+.content-wrap .ledger-table-wrapper,
+.content-wrap .trial-balance-table-wrapper,
+.content-wrap .income-statement-table-wrapper,
+.content-wrap .balance-sheet-table-wrapper,
+.content-wrap .cash-flow-table-wrapper{
+    overflow:hidden;
+}
+
+.content-wrap .table{
+    table-layout:auto;
+    font-size:.95rem !important;
+}
+
+.content-wrap .table td,
+.content-wrap .table th{
+    line-height:1.35 !important;
+    word-break:normal !important;
+    overflow-wrap:anywhere;
+}
+
+/* daftar jurnal / tabel aksi */
+.content-wrap .table td:last-child,
+.content-wrap .table th:last-child{
+    width:1%;
+    white-space:nowrap;
+    text-align:center;
+}
+
+.content-wrap .table td:last-child .btn,
+.content-wrap .table td:last-child a.btn,
+.content-wrap .table td:last-child button.btn{
+    display:inline-flex !important;
+    align-items:center;
+    justify-content:center;
+    white-space:nowrap;
+    margin:0 .2rem .2rem 0;
+    min-width:86px;
+    padding:.48rem .78rem !important;
+    font-size:.86rem !important;
+    line-height:1.2 !important;
+    vertical-align:middle;
+}
+
+.content-wrap .table td:last-child .dropdown,
+.content-wrap .table td:last-child .btn-group{
+    display:inline-flex !important;
+    flex-wrap:wrap;
+    gap:.25rem;
+    justify-content:center;
+}
+
+.content-wrap .table td:nth-last-child(2),
+.content-wrap .table th:nth-last-child(2){
+    white-space:nowrap;
+}
+
+.content-wrap .badge,
+.content-wrap .status-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    white-space:nowrap;
+}
+
+.content-wrap .form-control,
+.content-wrap .form-select{
+    font-size:.95rem !important;
+}
+
+.content-wrap .input-group > .form-control,
+.content-wrap .input-group > .form-select{
+    min-width:0;
+}
+
+/* ringankan header tabel */
+.content-wrap .table thead th{
+    font-size:.82rem !important;
+}
+
+/* jaga sidebar dan topbar tidak saling menimpa */
+.app-main{
+    min-width:0;
+}
+
+.soft-topbar{
+    position:relative;
+    z-index:3;
+}
+
+.soft-sidebar{
+    z-index:4;
+}
+
+.soft-sidebar-panel{
+    overflow-y:auto;
+}
+
+/* perbaikan halaman filter / form atas */
+.content-wrap form .row > [class*="col-"]{
+    margin-bottom:.35rem;
+}
+
+/* mobile */
+@media (max-width: 1199.98px){
+    .content-wrap .table{
+        font-size:.9rem !important;
+    }
+    .content-wrap .table td:last-child .btn,
+    .content-wrap .table td:last-child a.btn,
+    .content-wrap .table td:last-child button.btn{
+        min-width:74px;
+        padding:.42rem .62rem !important;
+        font-size:.82rem !important;
+    }
+}
+
+@media (max-width: 991.98px){
+    .content-wrap{
+        padding:14px !important;
+    }
+    .content-wrap .table{
+        font-size:.88rem !important;
+    }
+}
+
+@media (max-width: 767.98px){
+    .content-wrap{
+        padding:12px !important;
+    }
+    .content-wrap .table-responsive{
+        border-radius:18px !important;
+    }
+    .content-wrap .table td,
+    .content-wrap .table th{
+        padding:.68rem .72rem !important;
+    }
+}

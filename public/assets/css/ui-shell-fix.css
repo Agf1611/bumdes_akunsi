@@ -1,0 +1,151 @@
+/* Shell fix: sidebar independent scroll + desktop hide/show + layout alignment */
+
+html,
+body {
+    height: 100%;
+}
+
+body.app-shell {
+    overflow: hidden;
+}
+
+body.app-shell .app-frame {
+    height: 100vh;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+body.app-shell .app-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    height: 100vh;
+    width: var(--sidebar-width, 276px);
+    transition: transform .24s ease, opacity .24s ease, box-shadow .24s ease;
+    will-change: transform;
+}
+
+body.app-shell .app-sidebar__inner {
+    height: 100vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+body.app-shell .app-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 100vh;
+    margin-left: var(--sidebar-width, 276px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    transition: margin-left .24s ease;
+    scrollbar-gutter: stable;
+}
+
+body.app-shell .app-content {
+    flex: 1 0 auto;
+}
+
+body.app-shell .app-footer {
+    margin-top: auto;
+}
+
+body.app-shell .sidebar-backdrop {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+body.app-shell .app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1025;
+}
+
+body.app-shell .app-topbar__menu {
+    display: inline-flex !important;
+}
+
+body.app-shell .app-topbar__menu.is-active {
+    border-color: rgba(107, 124, 255, 0.26);
+    background: var(--ui-panel-soft, rgba(107, 124, 255, 0.08));
+}
+
+body.app-shell.sidebar-collapsed .app-sidebar {
+    transform: translateX(calc(-100% - 18px));
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: none !important;
+}
+
+body.app-shell.sidebar-collapsed .app-main {
+    margin-left: 0;
+}
+
+body.app-shell .brand-mark__image {
+    object-fit: contain !important;
+    object-position: center !important;
+}
+
+@media (min-width: 992px) {
+    body.app-shell .sidebar-backdrop {
+        display: none !important;
+    }
+
+    body.app-shell .app-sidebar__close {
+        display: none !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    body.app-shell {
+        overflow: hidden;
+    }
+
+    body.app-shell .app-main {
+        margin-left: 0 !important;
+        height: 100vh;
+    }
+
+    body.app-shell .app-sidebar {
+        width: var(--sidebar-width, min(286px, calc(100vw - 16px)));
+        transform: translateX(-106%);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    body.app-shell.sidebar-collapsed .app-sidebar {
+        transform: translateX(-106%);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    body.app-shell.sidebar-open .app-sidebar {
+        transform: translateX(0);
+    }
+
+    body.app-shell .sidebar-backdrop {
+        display: block !important;
+    }
+
+    body.app-shell.sidebar-open .sidebar-backdrop {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+/* Hotfix: paksa sidebar tampil normal di desktop jika tidak sedang collapse */
+@media (min-width: 992px) {
+    body.app-shell:not(.sidebar-collapsed) .app-sidebar {
+        transform: translateX(0) !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    body.app-shell:not(.sidebar-collapsed) .app-main {
+        margin-left: var(--sidebar-width, 276px) !important;
+    }
+}

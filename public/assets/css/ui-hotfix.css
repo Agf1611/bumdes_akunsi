@@ -1,0 +1,129 @@
+/* Hotfix final: sidebar light mode harus terang, terbaca, dan tidak bentrok dengan layer lama */
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar {
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%) !important;
+    background-image: none !important;
+    border-right: 1px solid #d9e4f2 !important;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06) !important;
+    color: #1c2c45 !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-sidebar__inner {
+    background: transparent !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-sidebar__brand {
+    background: #f8fbff !important;
+    border: 1px solid #d9e4f2 !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .brand-mark {
+    width: 82px !important;
+    height: 82px !important;
+    border-radius: 24px !important;
+    background: #ffffff !important;
+    border: 1px solid #d9e4f2 !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08) !important;
+    overflow: hidden !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .brand-mark__image {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    background: #ffffff !important;
+    padding: 8px !important;
+    border-radius: 20px !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .brand-copy__label,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .brand-copy__meta,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__caption,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__note,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .sidebar-user-card__eyebrow,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .sidebar-user-card__meta {
+    color: #6b7d96 !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .brand-copy__title,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__title,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .sidebar-user-card__name,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-sidebar__close {
+    color: #1c2c45 !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__icon {
+    background: #edf4ff !important;
+    color: #3577f6 !important;
+    box-shadow: inset 0 0 0 1px rgba(53, 119, 246, 0.08) !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link:hover,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link:focus-visible {
+    background: #f3f8ff !important;
+    border-color: #d7e5fb !important;
+    color: #162b4d !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link:hover .app-nav__title,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link:hover .app-nav__note,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link:focus-visible .app-nav__title,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link:focus-visible .app-nav__note {
+    color: #162b4d !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link.is-active {
+    background: linear-gradient(135deg, #eaf2ff 0%, #dce9ff 100%) !important;
+    border-color: #bfd3ff !important;
+    box-shadow: 0 10px 24px rgba(59, 130, 246, 0.12) !important;
+    color: #1d4ed8 !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link.is-active .app-nav__title,
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link.is-active .app-nav__note {
+    color: #1d4ed8 !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link.is-active .app-nav__note {
+    color: #335fc7 !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__link.is-active .app-nav__icon {
+    background: rgba(255, 255, 255, 0.85) !important;
+    color: #1d4ed8 !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .sidebar-user-card {
+    background: #f7fbff !important;
+    border: 1px solid #d9e4f2 !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar .app-nav__caption {
+    letter-spacing: 0.13em !important;
+    font-weight: 800 !important;
+}
+
+html[data-theme="light"] body.app-shell .sidebar.app-sidebar * {
+    text-shadow: none !important;
+}
+
+@media (max-width: 991.98px) {
+    html[data-theme="light"] body.app-shell .sidebar.app-sidebar {
+        box-shadow: 0 24px 50px rgba(15, 23, 42, 0.14) !important;
+    }
+
+    html[data-theme="light"] body.app-shell .sidebar.app-sidebar .brand-mark {
+        width: 74px !important;
+        height: 74px !important;
+    }
+}

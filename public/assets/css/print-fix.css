@@ -1,0 +1,166 @@
+/* Khusus halaman cetak / export. Tidak memengaruhi tampilan utama. */
+
+body.print-layout,
+.print-layout,
+.print-layout .container,
+.print-layout .print-sheet,
+.print-layout .report-letterhead,
+.print-layout .report-signature-block,
+.print-layout table,
+.print-layout thead,
+.print-layout tbody,
+.print-layout tfoot,
+.print-layout tr,
+.print-layout th,
+.print-layout td,
+.print-layout div,
+.print-layout span,
+.print-layout p,
+.print-layout small,
+.print-layout strong,
+.print-layout em,
+.print-layout h1,
+.print-layout h2,
+.print-layout h3,
+.print-layout h4,
+.print-layout h5,
+.print-layout h6,
+.print-layout li,
+.print-layout a,
+.print-layout label {
+    color: #111111 !important;
+}
+
+body.print-layout {
+    background: #ffffff !important;
+}
+
+.print-layout .table,
+.print-layout .print-table,
+.print-layout .income-print-table,
+.print-layout .balance-print-table,
+.print-layout .cash-flow-print-table {
+    --bs-table-color: #111111;
+    --bs-table-bg: #ffffff;
+    --bs-table-border-color: #aeb7c2;
+    color: #111111 !important;
+    background: #ffffff !important;
+}
+
+.print-layout .table > :not(caption) > * > *,
+.print-layout .print-table > :not(caption) > * > *,
+.print-layout .income-print-table > :not(caption) > * > *,
+.print-layout .balance-print-table > :not(caption) > * > *,
+.print-layout .cash-flow-print-table > :not(caption) > * > * {
+    color: #111111 !important;
+    background: #ffffff !important;
+    border-color: #aeb7c2 !important;
+    box-shadow: none !important;
+}
+
+.print-layout .table-light,
+.print-layout .table-light > td,
+.print-layout .table-light > th,
+.print-layout .table-secondary,
+.print-layout .table-secondary > td,
+.print-layout .table-secondary > th,
+.print-layout .table-active,
+.print-layout .table-active > td,
+.print-layout .table-active > th,
+.print-layout .income-section-row td,
+.print-layout .income-total-row td,
+.print-layout .balance-section-row td,
+.print-layout .balance-total-row td,
+.print-layout .ledger-opening-row td {
+    color: #111111 !important;
+    background: #f3f4f6 !important;
+}
+
+.print-layout .text-muted,
+.print-layout .text-secondary,
+.print-layout .table .text-muted,
+.print-layout .table .text-secondary {
+    color: #4b5563 !important;
+}
+
+.print-layout .text-end,
+.print-layout .fw-semibold,
+.print-layout .fw-bold,
+.print-layout .fw-medium,
+.print-layout .fw-normal {
+    color: #111111 !important;
+}
+
+.print-layout .report-divider {
+    border-top-color: #111111 !important;
+    border-bottom-color: #111111 !important;
+}
+
+.print-layout .report-logo-fallback,
+.print-layout .signature-placeholder,
+.print-layout .signature-stamp-placeholder {
+    color: #555555 !important;
+    border-color: #8b8b8b !important;
+    background: #ffffff !important;
+}
+
+.print-layout .signature-image,
+.print-layout .report-logo-img {
+    filter: none !important;
+}
+
+.print-layout .btn,
+.print-layout .btn * {
+    color: inherit !important;
+}
+
+@media print {
+    html,
+    body,
+    body.print-layout {
+        background: #ffffff !important;
+        color: #111111 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .print-layout,
+    .print-layout * {
+        text-shadow: none !important;
+        box-shadow: none !important;
+    }
+
+    .print-layout .table,
+    .print-layout .print-table,
+    .print-layout .income-print-table,
+    .print-layout .balance-print-table,
+    .print-layout .cash-flow-print-table,
+    .print-layout .table > :not(caption) > * > * {
+        color: #111111 !important;
+        background: #ffffff !important;
+        border-color: #9ca3af !important;
+    }
+
+    .print-layout .table-light,
+    .print-layout .table-light > td,
+    .print-layout .table-light > th,
+    .print-layout .table-secondary,
+    .print-layout .table-secondary > td,
+    .print-layout .table-secondary > th,
+    .print-layout .table-active,
+    .print-layout .table-active > td,
+    .print-layout .table-active > th,
+    .print-layout .income-section-row td,
+    .print-layout .income-total-row td,
+    .print-layout .balance-section-row td,
+    .print-layout .balance-total-row td,
+    .print-layout .ledger-opening-row td {
+        color: #111111 !important;
+        background: #f3f4f6 !important;
+    }
+
+    .print-layout .text-muted,
+    .print-layout .text-secondary {
+        color: #4b5563 !important;
+    }
+}

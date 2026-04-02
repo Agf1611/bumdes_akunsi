@@ -1,0 +1,238 @@
+@page{
+    size:A4;
+    margin:10mm 10mm 12mm 10mm;
+}
+
+html, body{
+    padding:0;
+    margin:0;
+    background:#fff !important;
+    color:#111827 !important;
+    font-family:"Segoe UI", Arial, sans-serif;
+    font-size:12px;
+    line-height:1.35;
+}
+
+.print-layout{
+    background:#fff !important;
+    color:#111827 !important;
+}
+
+.print-page-wrap{
+    width:100%;
+    max-width:100%;
+    padding:10px 12px;
+    box-sizing:border-box;
+}
+
+.report-letterhead{
+    color:#111827 !important;
+    background:#fff !important;
+    margin-bottom:12px !important;
+}
+
+.report-logo-wrap{
+    width:86px;
+    min-width:86px;
+}
+
+.report-logo-img{
+    max-width:78px;
+    max-height:62px;
+    object-fit:contain;
+}
+
+.report-org-top{
+    font-size:11px;
+    font-weight:700;
+    line-height:1.2;
+}
+
+.report-org-name{
+    font-size:18px;
+    font-weight:800;
+    line-height:1.15;
+    margin:2px 0 4px;
+}
+
+.report-org-meta{
+    font-size:11px;
+    line-height:1.35;
+}
+
+.report-divider{
+    border-top:2px solid #111827;
+    border-bottom:1px solid #111827;
+    height:3px;
+}
+
+.report-title{
+    font-size:15px;
+    font-weight:800;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:#111827;
+}
+
+.report-subtitle{
+    font-size:11px;
+    color:#334155;
+    line-height:1.35;
+}
+
+.print-summary-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px 14px;
+    margin-bottom:12px;
+}
+
+.print-summary-item{
+    display:flex;
+    gap:8px;
+}
+
+.print-summary-label{
+    flex:0 0 120px;
+    width:120px;
+    font-weight:700;
+    color:#334155;
+}
+
+.print-summary-value{
+    flex:1 1 auto;
+    color:#111827;
+}
+
+.print-section-title{
+    margin:12px 0 6px;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    color:#111827;
+}
+
+.table,
+.print-table{
+    width:100%;
+    border-collapse:collapse;
+    color:#111827 !important;
+    font-size:11px;
+}
+
+.table th,
+.table td,
+.print-table th,
+.print-table td{
+    border:1px solid #cbd5e1 !important;
+    padding:.34rem .38rem;
+    vertical-align:top;
+    background:#fff !important;
+    color:#111827 !important;
+}
+
+.table thead th,
+.table tfoot th,
+.print-table thead th,
+.print-table tfoot th{
+    background:#eef2f7 !important;
+    font-weight:700;
+}
+
+.print-compact th,
+.print-compact td{
+    padding:.24rem .28rem;
+    font-size:10.5px;
+}
+
+.card,
+.card-body,
+.card-header,
+.card-footer,
+.table-responsive{
+    background:#fff !important;
+    color:#111827 !important;
+    box-shadow:none !important;
+    border-color:#cbd5e1 !important;
+}
+
+.text-muted,
+.text-secondary,
+.small,
+small{
+    color:#475569 !important;
+}
+
+.report-signature-block{
+    margin-top:26px;
+    min-height:110px;
+    page-break-inside:avoid;
+}
+
+.signature-image-wrap{
+    min-height:52px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:.3rem 0;
+}
+
+.signature-image{
+    max-width:150px;
+    max-height:56px;
+    object-fit:contain;
+}
+
+.signature-placeholder,
+.signature-stamp-placeholder{
+    width:140px;
+    height:42px;
+    border:1px dashed #94a3b8;
+    color:#64748b;
+    font-size:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 auto;
+}
+
+@media screen{
+    .print-page-wrap{
+        max-width:1024px;
+        margin:0 auto;
+        background:#fff;
+    }
+}
+
+@media print{
+    .btn,
+    .navbar,
+    .sidebar,
+    .topbar,
+    .d-print-none{
+        display:none !important;
+    }
+
+    .print-page-wrap{
+        padding:0;
+        margin:0;
+        width:100%;
+    }
+
+    a{
+        color:#111827 !important;
+        text-decoration:none !important;
+    }
+
+    table, tr, td, th,
+    .report-signature-block{
+        break-inside:avoid;
+        page-break-inside:avoid;
+    }
+
+    .page-break-before{
+        break-before:page;
+        page-break-before:always;
+    }
+}

@@ -1,0 +1,294 @@
+
+/* Stage 2 - content polish for soft layout */
+:root{
+    --stage2-bg:#f5f7fc;
+    --stage2-card:#ffffff;
+    --stage2-border:#e7ebf3;
+    --stage2-text:#192132;
+    --stage2-muted:#73809a;
+    --stage2-accent:#7c3aed;
+    --stage2-accent-soft:#f4edff;
+    --stage2-shadow:0 12px 30px rgba(45, 55, 90, .06);
+}
+
+.content-wrap{
+    background:linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.82)) !important;
+}
+
+.soft-brand-logo-full{
+    width:64px !important;
+    height:64px !important;
+    padding:6px;
+    border-radius:18px !important;
+    background:#fff !important;
+}
+
+.soft-brand-logo-img-full{
+    width:100% !important;
+    height:100% !important;
+    object-fit:contain !important;
+    border-radius:12px;
+}
+
+.soft-brand-title{
+    font-size:1.05rem !important;
+    line-height:1.15 !important;
+}
+
+.soft-page-title{
+    font-size:1.55rem !important;
+    color:var(--stage2-text) !important;
+}
+
+.soft-page-subtitle{
+    color:var(--stage2-muted) !important;
+}
+
+h1, h2, h3, h4, h5, h6{
+    color:var(--stage2-text) !important;
+    letter-spacing:-.02em;
+}
+
+p, span, div, label, td, th, li, a{
+    color:inherit;
+}
+
+.text-secondary,
+.text-muted,
+small,
+.form-text{
+    color:var(--stage2-muted) !important;
+}
+
+.card,
+.dashboard-card,
+.bg-dark-subtle,
+.eis-hero-card,
+.eis-metric-card,
+.eis-mini-card{
+    background:var(--stage2-card) !important;
+    border:1px solid var(--stage2-border) !important;
+    box-shadow:var(--stage2-shadow) !important;
+}
+
+.eis-hero-card{
+    background:
+        radial-gradient(circle at top right, rgba(124,58,237,.08), transparent 22%),
+        radial-gradient(circle at top left, rgba(251,191,36,.08), transparent 18%),
+        linear-gradient(180deg,#ffffff,#faf9ff) !important;
+}
+
+.card-header{
+    padding:1rem 1.15rem !important;
+}
+
+.card-body{
+    padding:1.15rem !important;
+}
+
+.card-title{
+    color:var(--stage2-text) !important;
+    font-weight:800 !important;
+}
+
+.metric-label{
+    color:var(--stage2-muted) !important;
+}
+
+.metric-value{
+    color:var(--stage2-text) !important;
+}
+
+.table-responsive,
+.coa-table-wrapper,
+.ledger-table-wrapper,
+.trial-balance-table-wrapper,
+.income-statement-table-wrapper,
+.balance-sheet-table-wrapper,
+.cash-flow-table-wrapper{
+    background:#fff !important;
+    border:1px solid var(--stage2-border) !important;
+    border-radius:22px !important;
+    box-shadow:var(--stage2-shadow) !important;
+    overflow:hidden !important;
+}
+
+.table{
+    color:var(--stage2-text) !important;
+    margin-bottom:0 !important;
+}
+
+.table > :not(caption) > * > *{
+    border-color:#edf0f6 !important;
+    padding:.78rem .9rem !important;
+    background:#fff !important;
+    color:var(--stage2-text) !important;
+}
+
+.table thead th,
+.coa-table thead th{
+    background:#f8f9fd !important;
+    color:#51607b !important;
+    font-size:.84rem;
+    font-weight:800 !important;
+    text-transform:none !important;
+}
+
+.table tbody tr:hover td{
+    background:#fbfbff !important;
+}
+
+.form-control,
+.form-select,
+.form-control[type=file]{
+    background:#fff !important;
+    color:var(--stage2-text) !important;
+    border:1px solid var(--stage2-border) !important;
+    box-shadow:none !important;
+    border-radius:16px !important;
+}
+
+.form-control::placeholder{
+    color:#9ba6bb !important;
+}
+
+.form-label{
+    color:#51607b !important;
+    font-weight:700 !important;
+    margin-bottom:.45rem !important;
+}
+
+.form-control:focus,
+.form-select:focus{
+    border-color:#d6c2ff !important;
+    box-shadow:0 0 0 .24rem rgba(124,58,237,.08) !important;
+}
+
+.btn{
+    border-radius:16px !important;
+    font-weight:700 !important;
+    padding:.72rem 1rem !important;
+}
+
+.btn-primary{
+    background:linear-gradient(135deg,#8b5cf6,#7c3aed) !important;
+    border-color:#7c3aed !important;
+    color:#fff !important;
+}
+
+.btn-primary:hover{
+    filter:brightness(.98);
+}
+
+.btn-outline-secondary,
+.btn-outline-light{
+    background:#fff !important;
+    border-color:var(--stage2-border) !important;
+    color:var(--stage2-text) !important;
+}
+
+.alert{
+    border-radius:20px !important;
+    border-width:1px !important;
+}
+
+.alert-success{
+    background:#f1fbf7 !important;
+    color:#16604a !important;
+    border-color:#c8efdf !important;
+}
+
+.alert-danger{
+    background:#fff5f5 !important;
+    color:#9f2d2d !important;
+    border-color:#ffd4d4 !important;
+}
+
+.alert-warning{
+    background:#fff9ef !important;
+    color:#8a5a12 !important;
+    border-color:#ffe3b5 !important;
+}
+
+.badge{
+    border-radius:999px !important;
+    padding:.5rem .72rem !important;
+    font-weight:700 !important;
+}
+
+.content-wrap > .row,
+.content-wrap .row.g-4,
+.content-wrap .row.g-3{
+    --bs-gutter-x:1.15rem;
+    --bs-gutter-y:1.15rem;
+}
+
+.content-wrap .col-lg-3 .card,
+.content-wrap .col-xl-3 .card,
+.content-wrap .col-md-6 .card{
+    min-height:100%;
+}
+
+.content-wrap .page-header-soft{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:1rem;
+    margin-bottom:1.1rem;
+}
+
+.content-wrap .page-header-soft h1,
+.content-wrap .page-header-soft h2{
+    margin:0;
+}
+
+.content-wrap .page-tools-soft{
+    display:flex;
+    gap:.75rem;
+    flex-wrap:wrap;
+}
+
+.soft-search-shell{
+    background:#fff !important;
+}
+
+.soft-period-pill,
+.soft-user-pill,
+.soft-logout-btn{
+    background:#fff !important;
+    color:var(--stage2-text) !important;
+}
+
+.input-group-text{
+    background:#fff !important;
+    border-color:var(--stage2-border) !important;
+    color:#94a3b8 !important;
+}
+
+.pagination .page-link{
+    border-radius:12px !important;
+    margin:0 2px;
+    border-color:var(--stage2-border) !important;
+    color:var(--stage2-text) !important;
+}
+
+.pagination .page-item.active .page-link{
+    background:#7c3aed !important;
+    border-color:#7c3aed !important;
+    color:#fff !important;
+}
+
+@media (max-width: 991.98px){
+    .soft-brand-logo-full{
+        width:58px !important;
+        height:58px !important;
+    }
+
+    .soft-page-title{
+        font-size:1.3rem !important;
+    }
+
+    .table > :not(caption) > * > *{
+        padding:.68rem .72rem !important;
+    }
+}

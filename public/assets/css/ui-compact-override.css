@@ -1,0 +1,396 @@
+/* Final compact override loaded LAST.
+   Tujuan: pastikan ukuran UI laptop/mobile lebih padat dan tidak kalah oleh file CSS sebelumnya. */
+
+:root {
+    --sidebar-width: 272px;
+}
+
+html {
+    font-size: 15px;
+}
+
+body.app-shell {
+    font-size: 0.95rem;
+}
+
+body.app-shell .app-content {
+    padding: 0.9rem 1rem 1.2rem !important;
+}
+
+body.app-shell .content-wrap {
+    padding: 0.1rem !important;
+}
+
+/* Sidebar */
+body.app-shell .sidebar.app-sidebar {
+    width: var(--sidebar-width) !important;
+    min-width: var(--sidebar-width) !important;
+    flex: 0 0 var(--sidebar-width) !important;
+}
+
+body.app-shell .app-main {
+    margin-left: var(--sidebar-width) !important;
+}
+
+body.app-shell .sidebar.app-sidebar .app-sidebar__inner {
+    padding: 0.85rem 0.75rem 0.75rem !important;
+}
+
+body.app-shell .sidebar.app-sidebar .app-sidebar__brand {
+    padding: 0.75rem 0.8rem !important;
+    margin-bottom: 0.9rem !important;
+    border-radius: 18px !important;
+}
+
+body.app-shell .sidebar.app-sidebar .brand-mark {
+    width: 48px !important;
+    height: 48px !important;
+    flex: 0 0 48px !important;
+    border-radius: 14px !important;
+}
+
+body.app-shell .sidebar.app-sidebar .brand-mark__image {
+    padding: 5px !important;
+}
+
+body.app-shell .sidebar.app-sidebar .brand-copy__label {
+    font-size: 0.68rem !important;
+    letter-spacing: 0.12em !important;
+}
+
+body.app-shell .sidebar.app-sidebar .brand-copy__title {
+    font-size: 0.85rem !important;
+    line-height: 1.22 !important;
+}
+
+body.app-shell .sidebar.app-sidebar .brand-copy__meta {
+    font-size: 0.78rem !important;
+}
+
+body.app-shell .sidebar.app-sidebar .app-nav {
+    gap: 0.7rem !important;
+}
+
+body.app-shell .sidebar.app-sidebar .app-nav__caption {
+    padding: 0 0.7rem !important;
+    font-size: 0.66rem !important;
+}
+
+body.app-shell .sidebar.app-sidebar .app-nav__link {
+    gap: 0.7rem !important;
+    padding: 0.7rem 0.72rem !important;
+    border-radius: 16px !important;
+}
+
+body.app-shell .sidebar.app-sidebar .app-nav__icon {
+    width: 34px !important;
+    height: 34px !important;
+    flex: 0 0 34px !important;
+    border-radius: 11px !important;
+}
+
+body.app-shell .sidebar.app-sidebar .app-nav__icon svg {
+    width: 18px !important;
+    height: 18px !important;
+}
+
+body.app-shell .sidebar.app-sidebar .app-nav__title {
+    font-size: 0.86rem !important;
+    line-height: 1.18 !important;
+}
+
+body.app-shell .sidebar.app-sidebar .app-nav__note {
+    margin-top: 0.12rem !important;
+    font-size: 0.72rem !important;
+    line-height: 1.28 !important;
+}
+
+body.app-shell .sidebar.app-sidebar .sidebar-user-card {
+    padding: 0.8rem 0.85rem !important;
+    border-radius: 16px !important;
+}
+
+body.app-shell .sidebar.app-sidebar .sidebar-user-card__name {
+    font-size: 0.88rem !important;
+}
+
+body.app-shell .sidebar.app-sidebar .sidebar-user-card__meta,
+body.app-shell .sidebar.app-sidebar .sidebar-user-card__eyebrow {
+    font-size: 0.74rem !important;
+}
+
+/* Topbar */
+body.app-shell .app-topbar {
+    padding: 0.8rem 1rem 0 !important;
+}
+
+body.app-shell .app-topbar__inner {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 0.8rem !important;
+    padding: 0.78rem 0.9rem !important;
+    border-radius: 18px !important;
+}
+
+body.app-shell .app-topbar__left,
+body.app-shell .app-topbar__right {
+    gap: 0.75rem !important;
+}
+
+body.app-shell .app-topbar__menu {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 12px !important;
+}
+
+body.app-shell .page-meta__eyebrow {
+    font-size: 0.68rem !important;
+}
+
+body.app-shell .page-meta__title {
+    font-size: 1.15rem !important;
+}
+
+body.app-shell .page-meta__subtitle {
+    font-size: 0.84rem !important;
+    max-width: 22rem !important;
+}
+
+body.app-shell .topbar-pill,
+body.app-shell .app-logout-btn {
+    min-height: 38px !important;
+    padding: 0.55rem 0.82rem !important;
+    font-size: 0.82rem !important;
+    border-radius: 999px !important;
+}
+
+body.app-shell .topbar-pill__label {
+    font-size: 0.62rem !important;
+}
+
+body.app-shell .topbar-user__avatar {
+    width: 38px !important;
+    height: 38px !important;
+}
+
+body.app-shell .topbar-user__name {
+    font-size: 0.84rem !important;
+}
+
+body.app-shell .topbar-user__role {
+    font-size: 0.74rem !important;
+}
+
+/* Cards / forms / buttons */
+body.app-shell .card,
+body.app-shell .dashboard-card,
+body.app-shell .modal-content,
+body.app-shell .dropdown-menu,
+body.app-shell .auth-card {
+    border-radius: 20px !important;
+}
+
+body.app-shell .card-body.p-4,
+body.app-shell .card-body {
+    padding: 1rem !important;
+}
+
+body.app-shell .form-label {
+    margin-bottom: 0.4rem !important;
+    font-size: 0.9rem !important;
+}
+
+body.app-shell .form-control,
+body.app-shell .form-select {
+    min-height: 42px !important;
+    padding-inline: 0.85rem !important;
+    border-radius: 12px !important;
+    font-size: 0.92rem !important;
+}
+
+body.app-shell textarea.form-control {
+    min-height: 96px !important;
+}
+
+body.app-shell .btn {
+    padding: 0.62rem 0.88rem !important;
+    font-size: 0.88rem !important;
+    border-radius: 12px !important;
+}
+
+body.app-shell .btn-sm {
+    padding: 0.44rem 0.68rem !important;
+    font-size: 0.8rem !important;
+}
+
+body.app-shell .h1,
+body.app-shell .h2,
+body.app-shell .h3,
+body.app-shell h1,
+body.app-shell h2,
+body.app-shell h3 {
+    margin-bottom: 0.25rem !important;
+}
+
+body.app-shell .h3,
+body.app-shell h1.h3 {
+    font-size: 1.35rem !important;
+}
+
+body.app-shell .h5,
+body.app-shell h2.h5 {
+    font-size: 1rem !important;
+}
+
+/* Tables: bikin jurnal tidak terlalu tinggi */
+body.app-shell .table-responsive,
+body.app-shell .coa-table-wrapper,
+body.app-shell .ledger-table-wrapper,
+body.app-shell .trial-balance-table-wrapper,
+body.app-shell .income-statement-table-wrapper,
+body.app-shell .balance-sheet-table-wrapper,
+body.app-shell .cash-flow-table-wrapper {
+    border-radius: 18px !important;
+}
+
+body.app-shell .table {
+    font-size: 0.9rem !important;
+}
+
+body.app-shell .table > :not(caption) > * > * {
+    padding: 0.72rem 0.78rem !important;
+}
+
+body.app-shell .table thead th,
+body.app-shell .coa-table thead th {
+    font-size: 0.76rem !important;
+    letter-spacing: 0.08em !important;
+}
+
+body.app-shell .coa-table {
+    min-width: 1450px !important;
+}
+
+body.app-shell .coa-table thead th,
+body.app-shell .coa-table tbody td {
+    white-space: nowrap !important;
+}
+
+body.app-shell .coa-table thead th:nth-child(1),
+body.app-shell .coa-table tbody td:nth-child(1) {
+    min-width: 110px !important;
+}
+
+body.app-shell .coa-table thead th:nth-child(3),
+body.app-shell .coa-table tbody td:nth-child(3) {
+    min-width: 92px !important;
+}
+
+body.app-shell .coa-table thead th:nth-child(4),
+body.app-shell .coa-table tbody td:nth-child(4) {
+    min-width: 170px !important;
+    white-space: normal !important;
+}
+
+body.app-shell .coa-table thead th:nth-child(5),
+body.app-shell .coa-table tbody td:nth-child(5) {
+    min-width: 220px !important;
+    white-space: normal !important;
+    line-height: 1.45 !important;
+}
+
+body.app-shell .coa-table thead th:nth-child(6),
+body.app-shell .coa-table tbody td:nth-child(6) {
+    min-width: 160px !important;
+}
+
+body.app-shell .coa-table thead th:nth-child(8),
+body.app-shell .coa-table tbody td:nth-child(8),
+body.app-shell .coa-table thead th:nth-child(9),
+body.app-shell .coa-table tbody td:nth-child(9) {
+    min-width: 115px !important;
+}
+
+body.app-shell .coa-table thead th:last-child,
+body.app-shell .coa-table tbody td:last-child {
+    min-width: 300px !important;
+}
+
+body.app-shell .badge {
+    font-size: 0.75rem !important;
+}
+
+/* Tablet */
+@media (max-width: 1199.98px) {
+    :root {
+        --sidebar-width: 254px;
+    }
+
+    body.app-shell .page-meta__subtitle {
+        max-width: 16rem !important;
+    }
+
+    body.app-shell .topbar-pill--period,
+    body.app-shell .topbar-pill--muted {
+        display: none !important;
+    }
+}
+
+/* Mobile */
+@media (max-width: 991.98px) {
+    :root {
+        --sidebar-width: 0px;
+    }
+
+    html {
+        font-size: 14px;
+    }
+
+    body.app-shell .app-main {
+        margin-left: 0 !important;
+    }
+
+    body.app-shell .app-sidebar {
+        width: min(282px, calc(100vw - 18px)) !important;
+        min-width: min(282px, calc(100vw - 18px)) !important;
+    }
+
+    body.app-shell .app-topbar {
+        padding: 0.7rem 0.75rem 0 !important;
+    }
+
+    body.app-shell .app-topbar__inner {
+        grid-template-columns: 1fr !important;
+        padding: 0.72rem 0.8rem !important;
+    }
+
+    body.app-shell .app-topbar__right {
+        justify-content: flex-start !important;
+        gap: 0.55rem !important;
+    }
+
+    body.app-shell .topbar-user__meta,
+    body.app-shell .page-meta__subtitle,
+    body.app-shell .topbar-pill--period,
+    body.app-shell .topbar-pill--muted,
+    body.app-shell a.app-logout-btn.text-decoration-none {
+        display: none !important;
+    }
+
+    body.app-shell .app-content {
+        padding: 0.7rem 0.75rem 1rem !important;
+    }
+
+    body.app-shell .card-body.p-4,
+    body.app-shell .card-body {
+        padding: 0.85rem !important;
+    }
+
+    body.app-shell .form-control,
+    body.app-shell .form-select {
+        min-height: 40px !important;
+    }
+
+    body.app-shell .coa-table {
+        min-width: 1180px !important;
+    }
+}

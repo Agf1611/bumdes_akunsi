@@ -1,0 +1,232 @@
+
+/* =========================================================
+   UI V5 - targeted fix after audit
+   Root cause fixed:
+   1) tabel jurnal dipaksa menyusut sehingga teks pecah vertikal
+   2) kolom aksi tidak punya layout stabil
+   3) wrapper table tidak scroll horizontal saat kolom banyak
+========================================================= */
+
+.content-wrap{
+    padding:18px !important;
+}
+
+/* semua wrapper tabel harus bisa scroll horizontal */
+.content-wrap .table-responsive,
+.content-wrap .coa-table-wrapper,
+.content-wrap .ledger-table-wrapper,
+.content-wrap .trial-balance-table-wrapper,
+.content-wrap .income-statement-table-wrapper,
+.content-wrap .balance-sheet-table-wrapper,
+.content-wrap .cash-flow-table-wrapper{
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    -webkit-overflow-scrolling:touch;
+}
+
+/* JANGAN pecah per huruf */
+.content-wrap .table,
+.content-wrap table{
+    table-layout:auto !important;
+    width:100% !important;
+}
+
+.content-wrap .table th,
+.content-wrap .table td,
+.content-wrap table th,
+.content-wrap table td{
+    word-break:normal !important;
+    overflow-wrap:normal !important;
+    white-space:normal;
+    line-height:1.35 !important;
+    vertical-align:middle !important;
+}
+
+/* tabel lebar seperti jurnal harus di-scroll, bukan dihancurkan */
+.content-wrap .table{
+    min-width:1100px;
+}
+
+/* header tabel tetap jelas */
+.content-wrap .table thead th{
+    font-size:.83rem !important;
+    font-weight:800 !important;
+    text-align:center;
+    white-space:nowrap;
+}
+
+/* identitas jurnal jangan pecah */
+.content-wrap .table td:nth-child(1),
+.content-wrap .table th:nth-child(1),
+.content-wrap .table td:nth-child(2),
+.content-wrap .table th:nth-child(2),
+.content-wrap .table td:nth-child(3),
+.content-wrap .table th:nth-child(3){
+    white-space:nowrap;
+}
+
+/* kolom unit usaha, keterangan, template tetap bisa multi-line dengan normal */
+.content-wrap .table td:nth-child(4),
+.content-wrap .table td:nth-child(5),
+.content-wrap .table td:nth-child(6),
+.content-wrap .table td:nth-child(7){
+    white-space:normal !important;
+}
+
+/* angka jangan pecah ke bawah */
+.content-wrap .table td:nth-child(8),
+.content-wrap .table th:nth-child(8),
+.content-wrap .table td:nth-child(9),
+.content-wrap .table th:nth-child(9),
+.content-wrap .table td:nth-child(10),
+.content-wrap .table th:nth-child(10){
+    white-space:nowrap !important;
+    text-align:right;
+}
+
+/* status jangan pecah */
+.content-wrap .table td:nth-child(11),
+.content-wrap .table th:nth-child(11){
+    white-space:nowrap !important;
+    text-align:center;
+}
+
+/* kolom aksi fix */
+.content-wrap .table td:last-child,
+.content-wrap .table th:last-child{
+    min-width:260px !important;
+    width:260px !important;
+    white-space:normal !important;
+    text-align:center;
+}
+
+.content-wrap .table td:last-child{
+    padding-top:.9rem !important;
+    padding-bottom:.9rem !important;
+}
+
+.content-wrap .table td:last-child .btn,
+.content-wrap .table td:last-child a.btn,
+.content-wrap .table td:last-child button.btn{
+    display:inline-flex !important;
+    align-items:center;
+    justify-content:center;
+    min-width:108px;
+    margin:.15rem .2rem;
+    padding:.48rem .8rem !important;
+    line-height:1.2 !important;
+    white-space:nowrap !important;
+    vertical-align:middle;
+}
+
+.content-wrap .table td:last-child .dropdown,
+.content-wrap .table td:last-child .btn-group,
+.content-wrap .table td:last-child .action-group,
+.content-wrap .table td:last-child .d-flex{
+    display:flex !important;
+    flex-wrap:wrap !important;
+    justify-content:center !important;
+    align-items:center !important;
+    gap:.35rem !important;
+}
+
+/* kalau tombol bukan .btn tetap rapikan */
+.content-wrap .table td:last-child a:not(.btn){
+    display:inline-block;
+    margin:.15rem .25rem;
+    white-space:nowrap;
+    font-weight:700;
+}
+
+/* badge dan status */
+.content-wrap .badge,
+.content-wrap .status-badge{
+    display:inline-flex !important;
+    align-items:center;
+    justify-content:center;
+    white-space:nowrap !important;
+}
+
+/* form filter atas */
+.content-wrap form .row > [class*="col-"]{
+    margin-bottom:.4rem;
+}
+
+.content-wrap .form-control,
+.content-wrap .form-select{
+    min-height:48px !important;
+}
+
+.app-main{
+    min-width:0;
+}
+
+.soft-topbar{
+    position:relative;
+    z-index:3;
+}
+
+.soft-sidebar{
+    z-index:4;
+}
+
+.soft-sidebar-panel{
+    overflow-y:auto;
+}
+
+@media (max-width: 1399.98px){
+    .content-wrap .table{
+        min-width:1040px;
+    }
+}
+
+@media (max-width: 1199.98px){
+    .content-wrap{
+        padding:16px !important;
+    }
+
+    .content-wrap .table{
+        min-width:980px;
+        font-size:.92rem !important;
+    }
+
+    .content-wrap .table td:last-child,
+    .content-wrap .table th:last-child{
+        min-width:220px !important;
+        width:220px !important;
+    }
+
+    .content-wrap .table td:last-child .btn,
+    .content-wrap .table td:last-child a.btn,
+    .content-wrap .table td:last-child button.btn{
+        min-width:96px;
+        font-size:.84rem !important;
+    }
+}
+
+@media (max-width: 991.98px){
+    .content-wrap{
+        padding:14px !important;
+    }
+
+    .content-wrap .table{
+        min-width:920px;
+        font-size:.88rem !important;
+    }
+}
+
+@media (max-width: 767.98px){
+    .content-wrap{
+        padding:12px !important;
+    }
+
+    .content-wrap .table{
+        min-width:860px;
+    }
+
+    .content-wrap .table td:last-child,
+    .content-wrap .table th:last-child{
+        min-width:200px !important;
+        width:200px !important;
+    }
+}

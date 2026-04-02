@@ -1,0 +1,553 @@
+:root {
+    --print-text: #111827;
+    --print-muted: #4b5563;
+    --print-border: #a7b3c3;
+    --print-border-strong: #7c8da3;
+    --print-head: #edf2f7;
+}
+
+html,
+body.print-layout {
+    background: #fff !important;
+    color: var(--print-text) !important;
+    font-family: "Inter", Arial, Helvetica, sans-serif !important;
+}
+
+.print-page-wrap {
+    width: 100%;
+    max-width: none !important;
+    padding: 10mm 8mm 14mm !important;
+}
+
+.print-sheet {
+    color: var(--print-text);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.print-sheet .alert {
+    border-radius: 10px;
+    border: 1px solid var(--print-border);
+    color: var(--print-text);
+}
+
+.report-letterhead {
+    color: var(--print-text) !important;
+    margin-bottom: 14px !important;
+}
+
+.report-logo-wrap {
+    width: 78px;
+    min-width: 78px;
+}
+
+.report-logo-img {
+    max-width: 72px;
+    max-height: 64px;
+    object-fit: contain;
+}
+
+.report-logo-fallback {
+    width: 72px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--print-border);
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 12px;
+}
+
+.report-org-top {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: 0.05em;
+}
+
+.report-org-name {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.12;
+    margin-top: 2px;
+}
+
+.report-org-meta,
+.report-subtitle {
+    font-size: 10px;
+    line-height: 1.45;
+    color: var(--print-muted) !important;
+}
+
+.report-title {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.report-divider {
+    height: 2px;
+    background: linear-gradient(90deg, var(--print-border-strong), transparent);
+}
+
+.print-table,
+.print-sheet table.table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    color: var(--print-text);
+    margin-bottom: 0;
+}
+
+.print-table th,
+.print-table td,
+.print-sheet table.table th,
+.print-sheet table.table td {
+    border: 1px solid var(--print-border) !important;
+    padding: 6px 8px !important;
+    vertical-align: top;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    background: #fff !important;
+}
+
+.print-table thead th,
+.print-sheet table.table thead th {
+    background: var(--print-head) !important;
+    color: var(--print-text) !important;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    white-space: normal;
+}
+
+.print-table tfoot th,
+.print-table tfoot td,
+.print-sheet table.table tfoot th,
+.print-sheet table.table tfoot td {
+    background: #f8fafc !important;
+    color: var(--print-text) !important;
+    font-weight: 800;
+}
+
+.print-sheet .table-light > * > *,
+.print-sheet .table-secondary > * > * {
+    background: var(--print-head) !important;
+    color: var(--print-text) !important;
+}
+
+.print-sheet .table-borderless th,
+.print-sheet .table-borderless td {
+    border-width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.print-sheet .text-muted,
+.print-sheet .text-secondary,
+.print-sheet .small.text-secondary {
+    color: var(--print-muted) !important;
+}
+
+.print-sheet .badge,
+.print-sheet .text-bg-primary,
+.print-sheet .text-bg-success,
+.print-sheet .text-bg-warning,
+.print-sheet .text-bg-danger,
+.print-sheet .text-bg-secondary {
+    border: 1px solid var(--print-border);
+    background: #fff !important;
+    color: var(--print-text) !important;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 10px;
+}
+
+.report-signature-block {
+    margin-top: 26px !important;
+    page-break-inside: avoid;
+}
+
+.signature-image-wrap {
+    min-height: 74px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+}
+
+.signature-image {
+    max-width: 180px;
+    max-height: 70px;
+    object-fit: contain;
+}
+
+.signature-spacer {
+    width: 180px;
+    height: 70px;
+}
+
+.print-layout .signature-placeholder,
+.print-layout .signature-stamp-placeholder,
+.print-layout .stamp,
+.print-layout .sign-placeholder {
+    display: none !important;
+}
+
+.print-layout .sign-pad {
+    min-height: 52px;
+}
+
+.print-layout .sign-pad img {
+    max-width: 110px;
+    max-height: 42px;
+    object-fit: contain;
+}
+
+.print-layout .container,
+.print-layout .container-fluid {
+    max-width: none !important;
+}
+
+@page {
+    size: A4 portrait;
+    margin: 10mm 8mm 12mm;
+}
+
+@media print {
+    html,
+    body {
+        background: #fff !important;
+        color: var(--print-text) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .d-print-none,
+    .btn,
+    button,
+    [role="button"] {
+        display: none !important;
+    }
+
+    .print-page-wrap {
+        padding: 0 !important;
+    }
+
+    .print-sheet {
+        font-size: 10.6px;
+        line-height: 1.35;
+    }
+
+    .report-letterhead,
+    .report-signature-block,
+    .journal-book-signature,
+    .sign-grid,
+    .receipt-frame,
+    .journal-table,
+    .receipt-table,
+    .print-table {
+        page-break-inside: avoid;
+    }
+
+    .table-responsive,
+    .coa-table-wrapper,
+    .cash-flow-table-wrapper {
+        overflow: visible !important;
+    }
+}
+
+.report-org-meta--legal {
+    font-weight: 600;
+}
+
+.print-generated-meta {
+    margin-top: 18px;
+    font-size: 9px;
+    color: var(--print-muted);
+}
+
+
+.page-break-after {
+    page-break-after: always;
+    break-after: page;
+}
+
+.lpj-sheet {
+    font-size: 11px;
+}
+
+.lpj-cover {
+    min-height: 252mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    padding: 18mm 10mm 10mm;
+}
+
+.lpj-cover__logo {
+    width: 92px;
+    height: 92px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12mm;
+}
+
+.lpj-cover__logo img {
+    max-width: 92px;
+    max-height: 92px;
+    object-fit: contain;
+}
+
+.lpj-cover__fallback {
+    width: 92px;
+    height: 92px;
+    border: 1px solid var(--print-border);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+.lpj-cover__eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.lpj-cover__name {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 8mm 0 4mm;
+}
+
+.lpj-cover__title {
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 6mm;
+}
+
+.lpj-cover__meta {
+    font-size: 12px;
+    color: var(--print-muted);
+    margin-bottom: 2mm;
+}
+
+
+.lpj-cover__badge {
+    margin: 2mm 0 4mm;
+    border: 1px solid var(--print-border-strong);
+    border-radius: 999px;
+    padding: 1.5mm 4mm;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.lpj-approval__statement {
+    border: 1px solid var(--print-border);
+    border-radius: 12px;
+    padding: 4mm 5mm;
+    background: #fafcff;
+}
+
+.lpj-sign-meta {
+    text-align: right;
+    font-size: 10px;
+    color: var(--print-muted);
+}
+
+.lpj-sign-note {
+    font-size: 9.5px;
+    color: var(--print-muted);
+}
+
+.lpj-outline-table {
+    margin-top: 2mm;
+}
+
+.lpj-cover__footer {
+    margin-top: auto;
+    font-size: 10px;
+    color: var(--print-muted);
+    line-height: 1.5;
+}
+
+.lpj-sign-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22mm 10mm;
+}
+
+.lpj-sign-card {
+    text-align: center;
+    page-break-inside: avoid;
+}
+
+.lpj-sign-role {
+    font-weight: 700;
+    margin-bottom: 1mm;
+}
+
+.lpj-sign-position {
+    min-height: 16px;
+    color: var(--print-muted);
+    margin-bottom: 3mm;
+}
+
+.lpj-sign-pad {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4mm;
+}
+
+.lpj-sign-pad img {
+    max-width: 120px;
+    max-height: 62px;
+    object-fit: contain;
+}
+
+.lpj-sign-name {
+    border-top: 1px solid var(--print-border-strong);
+    padding-top: 3mm;
+    font-weight: 700;
+}
+
+@media print {
+    .page-break-after {
+        page-break-after: always;
+        break-after: page;
+    }
+
+    .lpj-cover,
+    .lpj-approval,
+    .lpj-sign-grid,
+    .lpj-sign-card {
+        page-break-inside: avoid;
+    }
+}
+
+
+.lpj-cover-letter { border: 1px solid var(--print-border); border-radius: 12px; padding: 5mm; background: #fcfdff; }
+.lpj-page-footer { margin-top: 8mm; border-top: 1px solid var(--print-border-strong); padding-top: 2.5mm; display: flex; justify-content: space-between; align-items: center; font-size: 9px; color: var(--print-muted); }
+.lpj-page-number::before { counter-increment: lpjpage; content: 'Halaman ' counter(lpjpage); }
+.lpj-receipt-sign { margin-top: 12mm; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16mm; }
+.lpj-sign-line { border-top: 1px solid var(--print-border-strong); height: 1px; margin-bottom: 2mm; }
+.lpj-sheet { counter-reset: lpjpage; }
+
+
+.report-note {
+    font-size: 10px;
+    color: #374151;
+}
+
+.classic-report {
+    font-family: Arial, Helvetica, sans-serif !important;
+    color: #000 !important;
+}
+
+.classic-report .report-org-name {
+    font-size: 18px;
+    letter-spacing: 0;
+}
+
+.classic-report .report-org-top,
+.classic-report .report-org-meta,
+.classic-report .report-subtitle,
+.classic-report .report-note {
+    color: #111 !important;
+}
+
+.classic-report .report-divider {
+    height: 1.5px;
+    background: #111;
+}
+
+.classic-report .print-table,
+.classic-report table.table {
+    table-layout: fixed;
+}
+
+.classic-report .print-table th,
+.classic-report .print-table td,
+.classic-report table.table th,
+.classic-report table.table td {
+    border: 1px solid #7f7f7f !important;
+    padding: 4px 6px !important;
+    font-size: 10.4px;
+    color: #111 !important;
+    background: #fff !important;
+}
+
+.classic-report .print-table thead th,
+.classic-report table.table thead th {
+    background: #f3f4f6 !important;
+    font-size: 10px;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.classic-report .section-row > td,
+.classic-report .section-row > th {
+    background: #eef1f4 !important;
+    font-weight: 700;
+}
+
+.classic-report .subtotal-row > td,
+.classic-report .subtotal-row > th {
+    font-weight: 700;
+}
+
+.classic-report .nowrap {
+    white-space: nowrap;
+}
+
+.report-table-compact td,
+.report-table-compact th {
+    padding-top: 3px !important;
+    padding-bottom: 3px !important;
+}
+
+.landscape-report {
+    page: report-landscape;
+}
+
+@page report-landscape {
+    size: A4 landscape;
+    margin: 10mm 8mm 12mm;
+}
+
+.balance-sheet-report .print-table th,
+.balance-sheet-report .print-table td {
+    font-size: 9.8px;
+}
+
+.cash-flow-report .print-table th,
+.cash-flow-report .print-table td,
+.trial-balance-report .print-table th,
+.trial-balance-report .print-table td {
+    font-size: 9.8px;
+}
+
+.cash-flow-report .summary-table {
+    width: 48%;
+    margin-left: auto;
+}
+
+.section-heading {
+    font-size: 13px;
+    font-weight: 700;
+}

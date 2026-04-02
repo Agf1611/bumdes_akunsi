@@ -18,7 +18,7 @@ Aplikasi akuntansi BUMDes berbasis web untuk pengelolaan **master data**, **jurn
 
 <img src="docs/images/preview-jurnal-umum.png" alt="Preview Jurnal Umum" width="100%">
 
-Preview di atas menampilkan halaman **Jurnal Umum**. Anda bisa mengganti screenshot ini dengan tampilan dashboard, aset, laporan, atau halaman lain sesuai kebutuhan repository.
+Preview di atas menampilkan halaman **Dashboard**. Anda bisa mengganti screenshot ini dengan tampilan dashboard, aset, laporan, atau halaman lain sesuai kebutuhan repository.
 
 ---
 

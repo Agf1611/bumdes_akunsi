@@ -179,7 +179,7 @@ final class Installer
 
             return [true, 'Koneksi database berhasil.'];
         } catch (Throwable $e) {
-            log_error($e);
+            $this->logThrowable($e);
             return [false, 'Koneksi database gagal. Periksa host, port, nama database, username, dan password yang Anda masukkan.'];
         }
     }
@@ -205,7 +205,7 @@ final class Installer
 
             return [true, ['Instalasi berhasil. Silakan masuk menggunakan akun admin yang baru dibuat.']];
         } catch (Throwable $e) {
-            log_error($e);
+            $this->logThrowable($e);
             return [false, ['Instalasi gagal. Periksa pengaturan database, permission folder writable, lalu coba lagi. Detail teknis tersimpan di log aplikasi.']];
         }
     }
@@ -224,6 +224,32 @@ final class Installer
         }
 
         return $scheme . '://' . $host . $basePath;
+    }
+
+
+    private function logThrowable(Throwable $e): void
+    {
+        if (function_exists('log_error')) {
+            log_error($e);
+            return;
+        }
+
+        $dir = $this->storagePath . '/logs';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        $file = $dir . '/install-' . date('Y-m-d') . '.log';
+        $line = sprintf(
+            "[%s] %s in %s:%d\n%s\n\n",
+            date('Y-m-d H:i:s'),
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine(),
+            $e->getTraceAsString()
+        );
+
+        @file_put_contents($file, $line, FILE_APPEND);
     }
 
     private function createPdo(array $input): PDO

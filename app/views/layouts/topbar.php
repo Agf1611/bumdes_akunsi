@@ -26,7 +26,7 @@ if (str_contains($currentPath, '/assets')) {
     $sectionLabel = 'Utilitas';
 } elseif (str_contains($currentPath, '/backups')) {
     $sectionLabel = 'Utilitas';
-} elseif (str_contains($currentPath, '/settings') || str_contains($currentPath, '/user-accounts')) {
+} elseif (str_contains($currentPath, '/settings') || str_contains($currentPath, '/user-accounts') || str_contains($currentPath, '/updates')) {
     $sectionLabel = 'Pengaturan';
 }
 

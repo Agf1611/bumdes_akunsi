@@ -31,6 +31,11 @@ $router->get('/backups/download', [BackupController::class, 'download'], [[RoleM
 $router->post('/backups/restore', [BackupController::class, 'restore'], [[RoleMiddleware::class, ['admin']]]);
 $router->post('/backups/delete', [BackupController::class, 'delete'], [[RoleMiddleware::class, ['admin']]]);
 
+$router->get('/updates', [UpdateController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
+$router->post('/updates/check', [UpdateController::class, 'check'], [[RoleMiddleware::class, ['admin']]]);
+$router->post('/updates/apply', [UpdateController::class, 'apply'], [[RoleMiddleware::class, ['admin']]]);
+$router->get('/updates/report', [UpdateController::class, 'report'], [[RoleMiddleware::class, ['admin']]]);
+
 $router->get('/coa', [CoaController::class, 'index'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/coa/create', [CoaController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);
 $router->post('/coa/store', [CoaController::class, 'store'], [[RoleMiddleware::class, ['admin']]]);

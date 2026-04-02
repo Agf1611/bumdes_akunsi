@@ -1,0 +1,20 @@
+HAPUS FILE / ISI LAMA BERIKUT SEBELUM MENJALANKAN INSTALLER BARU:
+
+1. Hapus file jika ada:
+- app/config/generated.php
+- storage/installed.lock
+
+2. Kosongkan isi folder runtime berikut, sisakan folder dan .htaccess/.gitkeep bila ada:
+- storage/logs
+- storage/imports
+- storage/backups
+- storage/bank_reconciliations
+- storage/journal_attachments
+- public/uploads/profiles
+- public/uploads/signatures
+
+3. Jika di root project masih ada folder duplikat lama, hapus:
+- modules/
+- views/
+- helpers/
+- config/

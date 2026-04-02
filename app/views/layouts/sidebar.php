@@ -37,6 +37,7 @@ $icon = static function (string $name): string {
         'audit' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>',
         'backup' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>',
         'settings' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>',
+        'update' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v10"></path><path d="M8 9l4 4 4-4"></path><path d="M5 21h14"></path><path d="M5 16a7 7 0 0 0 14 0"></path></svg>',
     ];
 
     return $icons[$name] ?? $icons['dashboard'];
@@ -218,6 +219,10 @@ $icon = static function (string $name): string {
                     <a class="app-nav__link<?= $active(['/backups']) ?>" href="<?= e(base_url('/backups')) ?>">
                         <span class="app-nav__icon"><?= $icon('backup') ?></span>
                         <span class="app-nav__text"><span class="app-nav__title">Backup Database</span><span class="app-nav__note">Cadangan data sebelum update</span></span>
+                    </a>
+                    <a class="app-nav__link<?= $active(['/updates']) ?>" href="<?= e(base_url('/updates')) ?>">
+                        <span class="app-nav__icon"><?= $icon('update') ?></span>
+                        <span class="app-nav__text"><span class="app-nav__title">Update Aplikasi</span><span class="app-nav__note">Tarik patch file dari GitHub</span></span>
                     </a>
                     <a class="app-nav__link<?= $active(['/settings/profile']) ?>" href="<?= e(base_url('/settings/profile')) ?>">
                         <span class="app-nav__icon"><?= $icon('settings') ?></span>

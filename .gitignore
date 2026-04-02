@@ -1,5 +1,8 @@
+# Generated install state
 /app/config/generated.php
 /storage/installed.lock
+
+# Runtime storage
 /storage/logs/*
 !/storage/logs/.gitkeep
 /storage/imports/*
@@ -10,13 +13,16 @@
 !/storage/journal_attachments/.gitkeep
 /storage/bank_reconciliations/*
 !/storage/bank_reconciliations/.gitkeep
+
+# Uploads
 /public/uploads/profiles/*
 !/public/uploads/profiles/.htaccess
 !/public/uploads/profiles/.gitkeep
 /public/uploads/signatures/*
 !/public/uploads/signatures/.htaccess
 !/public/uploads/signatures/.gitkeep
-/helpers/
-/modules/
-/views/
-/config/
+
+# OS / logs
+.DS_Store
+Thumbs.db
+*.log

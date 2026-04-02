@@ -18,8 +18,6 @@ Aplikasi akuntansi BUMDes berbasis web untuk pengelolaan **master data**, **jurn
 
 <img src="docs/images/preview-jurnal-umum.png" alt="Preview Jurnal Umum" width="100%">
 
-Preview di atas menampilkan halaman **Dashboard**. Anda bisa mengganti screenshot ini dengan tampilan dashboard, aset, laporan, atau halaman lain sesuai kebutuhan repository.
-
 ---
 
 ## Fitur utama
@@ -226,35 +224,6 @@ Kalau aplikasi sebelumnya sudah pernah terpasang dan ingin install ulang:
 | Import jurnal gagal | Template lama, format salah, atau PHP zip belum aktif | Unduh template terbaru, cek format data, aktifkan ekstensi `zip` |
 | Halaman error setelah deploy | Document root salah atau config belum lengkap | Arahkan domain ke `public/` dan cek hasil wizard installer |
 
----
-
-## Cara menambahkan gambar ke README GitHub
-
-Simpan gambar di dalam repository, misalnya:
-
-```text
-docs/images/dashboard.png
-```
-
-### Cara panggil dengan Markdown
-
-```md
-![Dashboard Aplikasi](docs/images/dashboard.png)
-```
-
-### Cara panggil dengan ukuran khusus
-
-```html
-<img src="docs/images/dashboard.png" alt="Dashboard Aplikasi" width="900">
-```
-
-### Tips gambar README
-- gunakan nama file tanpa spasi, misalnya `dashboard-jurnal.png`
-- format aman: `.png`, `.jpg`, `.webp`
-- pastikan path di README sama persis dengan nama file di repo
-- untuk preview utama, simpan gambar di `docs/images/`
-
----
 
 ## Dokumentasi tambahan
 

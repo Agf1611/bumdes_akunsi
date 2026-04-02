@@ -1,52 +1,127 @@
+<div align="center">
+
 # Sistem Akuntansi BUMDes
 
-Repository ini berisi aplikasi akuntansi BUMDes berbasis web yang siap dipasang di **shared hosting / aaPanel / cPanel** maupun di **localhost XAMPP**.
+Aplikasi akuntansi BUMDes berbasis web untuk pengelolaan **master data**, **jurnal umum**, **aset**, **import Excel**, dan **laporan keuangan** yang siap dipasang di **shared hosting / aaPanel / cPanel** maupun **localhost XAMPP**.
 
-## Ringkasan aplikasi
-Fitur utama yang sudah tersedia:
-- master data unit usaha, COA, aset, periode akuntansi, referensi jurnal
-- jurnal umum dan cetak bukti
-- import jurnal dari template Excel
-- aksi massal jurnal
-- laporan pembantu dan laporan keuangan dasar
+![Version](https://img.shields.io/badge/version-1.0.0-2563eb)
+![PHP](https://img.shields.io/badge/PHP-8.1%2B-777bb4)
+![Database](https://img.shields.io/badge/Database-MySQL%20%2F%20MariaDB-0f766e)
+![Install](https://img.shields.io/badge/Installer-Web%20Installer-16a34a)
+![Status](https://img.shields.io/badge/status-GitHub%20Ready-f59e0b)
+
+</div>
+
+---
+
+## Preview aplikasi
+
+<img src="docs/images/preview-jurnal-umum.png" alt="Preview Jurnal Umum" width="100%">
+
+Preview di atas menampilkan halaman **Jurnal Umum**. Anda bisa mengganti screenshot ini dengan tampilan dashboard, aset, laporan, atau halaman lain sesuai kebutuhan repository.
+
+---
+
+## Fitur utama
+
+| Modul | Fitur | Keterangan |
+|---|---|---|
+| Master Data | Unit Usaha | Kelola cabang atau lini usaha BUMDes |
+| Master Data | Chart of Accounts (COA) | Kelola struktur akun dan kategori akun |
+| Master Data | Aset | Kelola aset, kategori aset, nilai buku, dan penyusutan dasar |
+| Master Data | Periode Akuntansi | Buka tutup periode dan atur periode aktif |
+| Master Data | Referensi Jurnal | Kelola referensi mitra, persediaan, dan komponen arus kas |
+| Transaksi | Jurnal Umum | Input double-entry, detail transaksi, dan cetak bukti |
+| Transaksi | Import Jurnal Excel | Import jurnal dari template Excel resmi aplikasi |
+| Transaksi | Aksi Massal Jurnal | Tandai, ubah unit usaha, dan hapus jurnal terpilih |
+| Laporan | Buku Pembantu | BP Piutang, BP Utang, Buku Besar, Neraca Saldo |
+| Laporan | Laporan Keuangan Dasar | Siap dikembangkan untuk kebutuhan pelaporan BUMDes |
+| Sistem | Installer Web | Instalasi awal langsung dari browser |
+| Sistem | Dokumentasi Repo | Sudah dilengkapi changelog, panduan deploy, dan catatan audit |
+
+---
 
 ## Struktur folder penting
-- `app/` source utama aplikasi
-- `public/` document root web dan aset publik
-- `storage/` file runtime seperti log, import, attachment, backup
-- `docs/` dokumentasi instalasi, update, dan catatan rilis
-- `database/` struktur SQL bila tersedia
-- `install.php` installer awal aplikasi
+
+| Folder / File | Fungsi |
+|---|---|
+| `app/` | Source utama aplikasi |
+| `public/` | Document root web dan aset publik |
+| `storage/` | Log, import, attachment, backup, dan file runtime lain |
+| `database/` | Struktur SQL, patch, dan seed |
+| `docs/` | Panduan install, deploy, release, dan audit |
+| `install.php` | Installer awal aplikasi |
+| `CHANGELOG.md` | Riwayat perubahan versi |
+| `VERSION` | Penanda versi aplikasi |
+| `RELEASE_TAG.txt` | Tag rilis yang direkomendasikan |
+
+---
 
 ## Kebutuhan minimum server
-- PHP 8.1 atau lebih baru
+
+- PHP **8.1** atau lebih baru
 - MySQL / MariaDB
-- ekstensi PHP: `pdo_mysql`, `mbstring`, `zip`, `fileinfo`, `simplexml`
+- Web server Apache / LiteSpeed / Nginx
+- Ekstensi PHP:
+  - `pdo_mysql`
+  - `mbstring`
+  - `zip`
+  - `fileinfo`
+  - `simplexml`
 
-## Instalasi di hosting (shared hosting / aaPanel / cPanel)
+---
 
-### 1. Upload source code
-Upload semua isi project ke hosting. Bisa lewat File Manager, FTP, atau panel server.
+## Quick start
 
-### 2. Atur document root
-Yang paling disarankan adalah mengarahkan domain atau subdomain ke folder:
+### Opsi 1 — Install di hosting
+Cocok untuk **shared hosting**, **cPanel**, atau **aaPanel**.
+
+1. Upload semua isi project ke hosting.
+2. Arahkan domain / subdomain ke folder `public/`.
+3. Buat database MySQL / MariaDB.
+4. Pastikan folder writable sudah benar.
+5. Buka `https://domain-anda/install.php`.
+6. Isi wizard installer sampai selesai.
+
+Panduan lengkap: [`docs/deploy/INSTALL_SHARED_HOSTING.md`](docs/deploy/INSTALL_SHARED_HOSTING.md)
+
+### Opsi 2 — Install di localhost XAMPP
+Cocok untuk pengujian atau pengembangan lokal.
+
+1. Simpan project ke `C:\xampp\htdocs\nama-folder-project`.
+2. Jalankan **Apache** dan **MySQL** di XAMPP.
+3. Buat database baru di phpMyAdmin.
+4. Buka `http://localhost/nama-folder-project/install.php`.
+5. Isi data koneksi database lalu selesaikan instalasi.
+
+Panduan lengkap: [`docs/deploy/INSTALL_LOCAL_XAMPP.md`](docs/deploy/INSTALL_LOCAL_XAMPP.md)
+
+---
+
+## Urutan instalasi yang rapi
+
+### A. Instalasi di hosting
+
+#### 1) Upload source code
+Upload seluruh isi repository ke hosting melalui File Manager, FTP, atau panel server.
+
+#### 2) Atur document root
+Direkomendasikan agar domain atau subdomain mengarah ke:
 
 ```text
 /public
 ```
 
-Kalau panel hosting tidak bisa mengubah document root, upload source ke folder aplikasi lalu sesuaikan entry point sesuai struktur hosting Anda.
-
-### 3. Buat database
-Buat database MySQL/MariaDB baru dari panel hosting, lalu siapkan:
-- nama database
-- username database
-- password database
+#### 3) Buat database
+Siapkan data berikut:
 - host database
-- port database bila berbeda dari default
+- port database
+- nama database
+- username
+- password
 
-### 4. Pastikan folder writable
-Folder berikut harus bisa ditulis server:
+#### 4) Atur permission folder
+Folder berikut harus bisa ditulis oleh server:
 - `app/config`
 - `storage`
 - `storage/logs`
@@ -57,149 +132,142 @@ Folder berikut harus bisa ditulis server:
 - `public/uploads/profiles`
 - `public/uploads/signatures`
 
-Permission yang umum dipakai:
+Permission umum:
 - folder: `755` atau `775`
 - file: `644`
 
-### 5. Jalankan installer
-Buka browser ke alamat:
+#### 5) Jalankan installer
+Buka alamat berikut di browser:
 
 ```text
 https://domain-anda/install.php
 ```
 
-Lalu isi data berikut:
-- host database
-- port database
-- nama database
-- username database
-- password database
-- URL aplikasi
-- akun admin pertama
+#### 6) Lengkapi data awal
+Setelah instalasi selesai, lanjutkan dengan urutan ini:
+1. isi profil BUMDes
+2. isi unit usaha
+3. isi atau import COA
+4. buat periode akuntansi
+5. input jurnal atau import template jurnal
 
-### 6. Selesaikan instalasi
-Setelah instalasi berhasil:
-- login ke aplikasi
-- isi profil BUMDes
-- isi unit usaha
-- isi atau import COA
-- buat periode akuntansi
-- mulai input jurnal
+---
 
-## Instalasi di localhost dengan XAMPP
+### B. Instalasi di localhost XAMPP
 
-### 1. Simpan project ke folder htdocs
+#### 1) Pindahkan project ke `htdocs`
 Contoh:
 
 ```text
-C:\xampp\htdocs\bumdes-akuntansi
+C:\xampp\htdocs\akuntansi-bumdes
 ```
 
-### 2. Jalankan Apache dan MySQL
-Buka XAMPP Control Panel lalu nyalakan:
+#### 2) Jalankan layanan XAMPP
+Aktifkan:
 - Apache
 - MySQL
 
-### 3. Buat database kosong
+#### 3) Buat database kosong
 Buka phpMyAdmin:
 
 ```text
 http://localhost/phpmyadmin
 ```
 
-Buat database baru, misalnya:
+Contoh database:
 
 ```text
 bumdes_akuntansi
 ```
 
-### 4. Jalankan installer
-Buka browser:
+#### 4) Jalankan wizard install
+Buka:
 
 ```text
-http://localhost/bumdes-akuntansi/install.php
+http://localhost/akuntansi-bumdes/install.php
 ```
 
-Lalu isi data database lokal Anda.
-
-Contoh umum di XAMPP:
+Contoh isian umum XAMPP:
 - Host: `127.0.0.1` atau `localhost`
 - Port: `3306`
 - Database: `bumdes_akuntansi`
 - Username: `root`
-- Password: kosongkan bila default XAMPP belum diubah
-- App URL: `http://localhost/bumdes-akuntansi`
+- Password: kosongkan jika default XAMPP belum diubah
+- App URL: `http://localhost/akuntansi-bumdes`
 
-### 5. Login ke aplikasi
-Setelah install selesai, buka aplikasi dan login memakai akun admin yang dibuat saat instalasi.
+#### 5) Login dan mulai setup data
+Setelah installer selesai:
+1. login dengan akun admin
+2. isi master data awal
+3. buat periode
+4. uji input jurnal
+5. uji import template jurnal
+
+---
 
 ## Instalasi ulang
+
 Kalau aplikasi sebelumnya sudah pernah terpasang dan ingin install ulang:
+
 1. hapus file berikut:
    - `app/config/generated.php`
    - `storage/installed.lock`
 2. kosongkan database lama atau buat database baru
 3. jalankan lagi `install.php`
 
+---
+
 ## Troubleshooting singkat
 
-### Installer bilang aplikasi sudah terpasang
-Hapus:
-- `app/config/generated.php`
-- `storage/installed.lock`
+| Masalah | Penyebab umum | Solusi |
+|---|---|---|
+| Installer bilang aplikasi sudah terpasang | File hasil install lama masih ada | Hapus `app/config/generated.php` dan `storage/installed.lock` |
+| Upload logo / tanda tangan gagal | Folder upload belum writable | Periksa permission `public/uploads/profiles` dan `public/uploads/signatures` |
+| Import jurnal gagal | Template lama, format salah, atau PHP zip belum aktif | Unduh template terbaru, cek format data, aktifkan ekstensi `zip` |
+| Halaman error setelah deploy | Document root salah atau config belum lengkap | Arahkan domain ke `public/` dan cek hasil wizard installer |
 
-### Upload logo / tanda tangan gagal
-Periksa permission folder:
-- `public/uploads/profiles`
-- `public/uploads/signatures`
+---
 
-### Import jurnal gagal
-Pastikan:
-- file memakai template terbaru dari aplikasi
-- ekstensi PHP `zip` aktif
-- format tanggal dan nominal mengikuti template
+## Cara menambahkan gambar ke README GitHub
 
-## Cara menambahkan gambar ke README
-Agar gambar tampil di GitHub, simpan gambar di dalam repository. Folder yang disarankan:
-
-```text
-docs/images/
-```
-
-Contoh file gambar:
+Simpan gambar di dalam repository, misalnya:
 
 ```text
 docs/images/dashboard.png
 ```
 
-### Cara pakai dengan Markdown
+### Cara panggil dengan Markdown
+
 ```md
 ![Dashboard Aplikasi](docs/images/dashboard.png)
 ```
 
-### Cara pakai dengan ukuran khusus
-GitHub mendukung HTML sederhana di README:
+### Cara panggil dengan ukuran khusus
 
 ```html
 <img src="docs/images/dashboard.png" alt="Dashboard Aplikasi" width="900">
 ```
 
-### Langkah menambahkan gambar
-1. simpan file gambar ke folder `docs/images/`
-2. commit atau upload file gambar itu ke repository
-3. panggil gambarnya dari README dengan path relatif
-4. refresh halaman repo GitHub
+### Tips gambar README
+- gunakan nama file tanpa spasi, misalnya `dashboard-jurnal.png`
+- format aman: `.png`, `.jpg`, `.webp`
+- pastikan path di README sama persis dengan nama file di repo
+- untuk preview utama, simpan gambar di `docs/images/`
 
-### Tips
-- pakai nama file tanpa spasi, misalnya `dashboard-jurnal.png`
-- format yang aman: `.png`, `.jpg`, `.webp`
-- kalau gambar belum muncul, cek apakah path di README sudah sama persis
+---
 
 ## Dokumentasi tambahan
-- `docs/deploy/INSTALL_SHARED_HOSTING.md`
-- `docs/deploy/INSTALL_LOCAL_XAMPP.md`
-- `docs/deploy/PRODUCTION_UPDATE_GUIDE.md`
-- `CHANGELOG.md`
 
-## Catatan
-File hasil instalasi seperti `app/config/generated.php` dan `storage/installed.lock` akan dibuat otomatis setelah wizard install dijalankan, jadi file itu memang tidak perlu disimpan di repository.
+- [`docs/deploy/INSTALL_SHARED_HOSTING.md`](docs/deploy/INSTALL_SHARED_HOSTING.md)
+- [`docs/deploy/INSTALL_LOCAL_XAMPP.md`](docs/deploy/INSTALL_LOCAL_XAMPP.md)
+- [`docs/deploy/PRODUCTION_UPDATE_GUIDE.md`](docs/deploy/PRODUCTION_UPDATE_GUIDE.md)
+- [`docs/releases/RELEASE_TAGGING.md`](docs/releases/RELEASE_TAGGING.md)
+- [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+## Catatan repository
+
+- File hasil install seperti `app/config/generated.php` dan `storage/installed.lock` **tidak perlu disimpan di repository**.
+- Folder upload, logs, imports, dan backup sudah diatur melalui `.gitignore` agar repository tetap bersih.
+- Jika ingin mengganti screenshot preview, cukup timpa file di folder `docs/images/` lalu commit ulang.

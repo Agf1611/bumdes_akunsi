@@ -36,10 +36,11 @@ final class Installer
             $this->rootPath . '/database/period_module.sql',
             $this->rootPath . '/database/journal_module.sql',
             $this->rootPath . '/database/journal_attachment_module.sql',
+            $this->rootPath . '/database/patch_multi_unit_profile_signature_safe.sql',
             $this->rootPath . '/database/patch_journal_print_receipt.sql',
-            $this->rootPath . '/database/patch_multi_unit_profile_signature.sql',
             $this->rootPath . '/database/patch_profile_treasurer_receipt_settings.sql',
             $this->rootPath . '/database/asset_module.sql',
+            $this->rootPath . '/database/patch_stage18_asset_qty_columns_safe.sql',
             $this->rootPath . '/database/bank_reconciliation_module.sql',
             $this->rootPath . '/database/patch_stage4_bank_reconciliation.sql',
             $this->rootPath . '/database/audit_module.sql',
@@ -261,11 +262,17 @@ final class Installer
             trim((string) $input['db_name'])
         );
 
-        return new PDO($dsn, (string) $input['db_user'], (string) ($input['db_pass'] ?? ''), [
+        $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
-        ]);
+        ];
+
+        if (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
+            $options[PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
+        }
+
+        return new PDO($dsn, (string) $input['db_user'], (string) ($input['db_pass'] ?? ''), $options);
     }
 
     private function importSqlFiles(PDO $pdo): void
@@ -281,15 +288,48 @@ final class Installer
                     continue;
                 }
                 try {
-                    $pdo->exec($statement);
+                    $this->runSqlStatement($pdo, $statement);
                 } catch (PDOException $e) {
                     $message = $e->getMessage();
                     if (str_contains($message, 'already exists') || str_contains($message, 'Duplicate key name')) {
                         continue;
                     }
-                    throw $e;
+
+                    throw new RuntimeException(
+                        sprintf('Gagal mengimpor %s: %s', basename($file), $message),
+                        previous: $e,
+                    );
                 }
             }
+        }
+    }
+
+    private function runSqlStatement(PDO $pdo, string $statement): void
+    {
+        $trimmed = ltrim($statement);
+        $keyword = strtoupper((string) strtok($trimmed, " 	
+"));
+        $shouldUseQuery = in_array($keyword, ['SELECT', 'SHOW', 'DESCRIBE', 'EXPLAIN', 'CALL', 'EXECUTE'], true);
+
+        if ($shouldUseQuery) {
+            $stmt = $pdo->query($statement);
+            if ($stmt instanceof PDOStatement) {
+                $this->consumeStatementResults($stmt);
+            }
+            return;
+        }
+
+        $pdo->exec($statement);
+    }
+
+    private function consumeStatementResults(PDOStatement $stmt): void
+    {
+        try {
+            do {
+                $stmt->fetchAll();
+            } while ($stmt->nextRowset());
+        } finally {
+            $stmt->closeCursor();
         }
     }
 

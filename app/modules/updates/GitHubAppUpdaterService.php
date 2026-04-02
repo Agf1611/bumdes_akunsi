@@ -514,12 +514,23 @@ final class GitHubAppUpdaterService
         $excludedExact = [
             'app/config/generated.php',
             'storage/installed.lock',
+            'user.ini',
+            '.user.ini',
+            'php.ini',
+            '.env',
+            '.env.local',
         ];
         if (in_array($relativePath, $excludedExact, true)) {
             return false;
         }
 
         $baseName = basename($relativePath);
+        if (preg_match('/\A\.?(?:user|php)\.ini\z/i', $baseName)) {
+            return false;
+        }
+        if (preg_match('/\A\.env(?:\..*)?\z/i', $baseName)) {
+            return false;
+        }
         if (preg_match('/\AREADME/i', $baseName)) {
             return false;
         }

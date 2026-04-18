@@ -111,7 +111,7 @@
 
         if (isDesktop()) {
             body.classList.remove('sidebar-open');
-            body.style.overflow = 'hidden';
+            body.style.overflow = '';
             body.classList.toggle('sidebar-collapsed', getSidebarCollapsed());
             sidebar.setAttribute('aria-hidden', body.classList.contains('sidebar-collapsed') ? 'true' : 'false');
         } else {
@@ -134,7 +134,7 @@
             body.classList.toggle('sidebar-collapsed', next);
             setSidebarCollapsed(next);
             body.classList.remove('sidebar-open');
-            body.style.overflow = 'hidden';
+            body.style.overflow = '';
         } else {
             body.classList.toggle('sidebar-open');
             body.style.overflow = body.classList.contains('sidebar-open') ? 'hidden' : '';

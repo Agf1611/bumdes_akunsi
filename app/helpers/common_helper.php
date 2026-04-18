@@ -73,12 +73,28 @@ function base_url(string $path = ''): string
     return $normalized === '/' ? $base : $base . $normalized;
 }
 
+function is_serving_from_public_document_root(): bool
+{
+    $publicDir = realpath(ROOT_PATH . '/public');
+    $publicIndex = realpath(ROOT_PATH . '/public/index.php');
+    $publicInstall = realpath(ROOT_PATH . '/public/install.php');
+    $scriptFilename = realpath((string) ($_SERVER['SCRIPT_FILENAME'] ?? ''));
+    $documentRoot = realpath((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''));
+
+    if ($scriptFilename !== false && ($scriptFilename === $publicIndex || $scriptFilename === $publicInstall)) {
+        return true;
+    }
+
+    return $publicDir !== false && $documentRoot !== false && $documentRoot === $publicDir;
+}
+
 function public_url(string $path = ''): string
 {
     $rootPublic = is_file(ROOT_PATH . '/public/index.php');
     $uri = '/' . ltrim($path, '/');
+    $basePath = parse_url(base_url(), PHP_URL_PATH) ?? '';
 
-    if ($rootPublic && !str_contains(parse_url(base_url(), PHP_URL_PATH) ?? '', '/public')) {
+    if ($rootPublic && !is_serving_from_public_document_root() && !str_contains($basePath, '/public')) {
         return base_url('/public' . ($uri === '/' ? '' : $uri));
     }
 

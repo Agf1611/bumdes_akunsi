@@ -241,11 +241,37 @@ final class CoaController extends Controller
     private function showForm(string $title, ?array $account): void
     {
         try {
+            $formData = [
+                'account_code' => old('account_code', (string) ($account['account_code'] ?? '')),
+                'account_name' => old('account_name', (string) ($account['account_name'] ?? '')),
+                'account_type' => old('account_type', (string) ($account['account_type'] ?? 'ASSET')),
+                'account_category' => old('account_category', (string) ($account['account_category'] ?? 'CURRENT_ASSET')),
+                'parent_id' => old('parent_id', isset($account['parent_id']) && $account['parent_id'] !== null ? (string) $account['parent_id'] : ''),
+                'is_header' => old('is_header', isset($account['is_header']) ? ((int) $account['is_header'] === 1 ? '1' : '0') : '0'),
+                'is_active' => old('is_active', isset($account['is_active']) ? ((int) $account['is_active'] === 1 ? '1' : '0') : '1'),
+            ];
+
+            $categoriesMap = coa_categories_by_type();
+            if (!isset($categoriesMap[$formData['account_type']])) {
+                $formData['account_type'] = 'ASSET';
+            }
+
+            $fallbackCategories = $categoriesMap[$formData['account_type']] ?? [];
+            if ($fallbackCategories === []) {
+                $fallbackCategories = coa_categories_for_type('ASSET');
+                $formData['account_type'] = 'ASSET';
+            }
+
+            if (!isset($fallbackCategories[$formData['account_category']])) {
+                $formData['account_category'] = (string) array_key_first($fallbackCategories);
+            }
+
             $this->view('coa/views/form', [
                 'title' => $title,
                 'account' => $account,
+                'formData' => $formData,
                 'types' => coa_account_types(),
-                'categoriesByType' => coa_categories_grouped(),
+                'categoriesMap' => $categoriesMap,
                 'parentOptions' => $this->model()->getParentOptions($account['id'] ?? null),
                 'errorMessage' => get_flash('error'),
             ]);

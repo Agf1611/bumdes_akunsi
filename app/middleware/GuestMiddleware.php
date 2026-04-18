@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Middleware;
-
-use App\Core\Auth;
-
-class GuestMiddleware
+final class GuestMiddleware
 {
     public function handle(): void
     {
@@ -14,6 +10,6 @@ class GuestMiddleware
             return;
         }
 
-        redirect((string) config('auth.home_route', '/dashboard'));
+        redirect((string) auth_config('redirect_after_login'));
     }
 }

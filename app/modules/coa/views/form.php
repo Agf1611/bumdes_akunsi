@@ -13,6 +13,10 @@
 
         <div class="card shadow-sm">
             <div class="card-body p-4 p-lg-5">
+                <?php if (!empty($errorMessage)): ?>
+                    <div class="alert alert-danger" role="alert"><?= e((string) $errorMessage) ?></div>
+                <?php endif; ?>
+
                 <form method="post" action="<?= e($account ? base_url('/coa/update?id=' . (int) $account['id']) : base_url('/coa/store')) ?>" novalidate>
                     <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
 

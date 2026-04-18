@@ -205,10 +205,7 @@ final class JournalController extends Controller
             }
 
             $totalAmount = (float) ($header['total_debit'] ?? 0);
-            $amountInWords = trim((string) ($header['amount_in_words'] ?? ''));
-            if ($amountInWords === '') {
-                $amountInWords = journal_amount_in_words($totalAmount);
-            }
+            $amountInWords = journal_normalize_amount_in_words((string) ($header['amount_in_words'] ?? ''), $totalAmount);
 
             $this->view('journals/views/print_receipt', [
                 'title' => 'Cetak Bukti Transaksi',

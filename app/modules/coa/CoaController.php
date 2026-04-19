@@ -25,6 +25,7 @@ final class CoaController extends Controller
                 'totalAccounts' => $this->model()->countAll(),
                 'errorMessage' => get_flash('error'),
                 'successMessage' => get_flash('success'),
+                'globalCoaCount' => coa_default_global_account_count(),
             ]);
         } catch (Throwable $e) {
             http_response_code(500);
@@ -145,6 +146,33 @@ final class CoaController extends Controller
             flash('error', 'Status akun gagal diperbarui.');
             $this->redirect('/coa');
         }
+    }
+
+    public function seedGlobalDefaults(): void
+    {
+        $token = (string) post('_token');
+        if (!verify_csrf($token)) {
+            http_response_code(419);
+            render_error_page(419, 'Sesi keamanan formulir telah berakhir. Silakan muat ulang halaman lalu coba lagi.');
+            return;
+        }
+
+        try {
+            $result = $this->model()->seedDefaultGlobalAccounts();
+            $inserted = (int) ($result['inserted'] ?? 0);
+            $skipped = (int) ($result['skipped'] ?? 0);
+
+            if ($inserted > 0) {
+                flash('success', 'COA global BUMDes berhasil ditambahkan. Akun baru: ' . $inserted . '. Akun yang sudah ada dilewati: ' . $skipped . '.');
+            } else {
+                flash('success', 'COA global BUMDes sudah lengkap. Tidak ada akun baru yang perlu ditambahkan.');
+            }
+        } catch (Throwable $e) {
+            log_error($e);
+            flash('error', 'COA global BUMDes gagal ditambahkan. Silakan periksa log aplikasi.');
+        }
+
+        $this->redirect('/coa');
     }
 
     public function delete(): void

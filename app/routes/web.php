@@ -44,6 +44,7 @@ $router->post('/coa/update', [CoaController::class, 'update'], [[RoleMiddleware:
 $router->post('/coa/toggle-active', [CoaController::class, 'toggleActive'], [[RoleMiddleware::class, ['admin']]]);
 $router->post('/coa/delete', [CoaController::class, 'delete'], [[RoleMiddleware::class, ['admin']]]);
 $router->get('/coa/export', [CoaController::class, 'export'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
+$router->post('/coa/seed-global', [CoaController::class, 'seedGlobalDefaults'], [[RoleMiddleware::class, ['admin']]]);
 
 
 $router->get('/assets', [AssetController::class, 'index'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);

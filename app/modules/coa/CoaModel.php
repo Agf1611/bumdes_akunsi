@@ -177,6 +177,58 @@ final class CoaModel
         return [true, 'Akun dapat dihapus.'];
     }
 
+    public function seedDefaultGlobalAccounts(): array
+    {
+        $defaults = coa_default_global_accounts();
+        $inserted = 0;
+        $skipped = 0;
+
+        $this->db->beginTransaction();
+        try {
+            foreach ($defaults as $account) {
+                $existing = $this->findByCode((string) $account['account_code']);
+                if ($existing !== null) {
+                    $skipped++;
+                    continue;
+                }
+
+                $parentId = null;
+                $parentCode = $account['parent_code'] ?? null;
+                if (is_string($parentCode) && $parentCode !== '') {
+                    $parent = $this->findByCode($parentCode);
+                    if ($parent === null) {
+                        throw new RuntimeException('Parent akun default tidak ditemukan: ' . $parentCode);
+                    }
+                    $parentId = (int) $parent['id'];
+                }
+
+                $this->create([
+                    'account_code' => (string) $account['account_code'],
+                    'account_name' => (string) $account['account_name'],
+                    'account_type' => (string) $account['account_type'],
+                    'account_category' => (string) $account['account_category'],
+                    'parent_id' => $parentId,
+                    'is_header' => (bool) ($account['is_header'] ?? false),
+                    'is_active' => (bool) ($account['is_active'] ?? true),
+                ]);
+                $inserted++;
+            }
+
+            $this->db->commit();
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+
+        return [
+            'total' => count($defaults),
+            'inserted' => $inserted,
+            'skipped' => $skipped,
+        ];
+    }
+
     public function canSetAsParent(int $parentId, ?int $currentId = null): bool
     {
         if ($currentId === null) {

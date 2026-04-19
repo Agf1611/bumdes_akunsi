@@ -18,6 +18,7 @@
                 <div class="text-secondary small mb-2">Filter Tipe</div>
                 <div class="fs-5 fw-semibold"><?= e($filters['type'] !== '' ? coa_type_label($filters['type']) : 'Semua Tipe') ?></div>
                 <div class="text-secondary small mt-2">Gunakan filter untuk memeriksa struktur akun per tipe.</div>
+                <div class="text-secondary small mt-1">Paket COA global siap dimuat: <strong><?= e((string) ($globalCoaCount ?? 0)) ?></strong> akun umum BUMDes.</div>
             </div>
         </div>
     </div>
@@ -51,6 +52,12 @@
             <div class="d-flex gap-2 flex-wrap">
                 <a href="<?= e(base_url('/imports/template?type=coa')) ?>" class="btn btn-outline-light">Unduh Template COA</a>
                 <a href="<?= e(base_url('/coa/export?' . http_build_query($filters))) ?>" class="btn btn-outline-info">Export COA</a>
+                <?php if (Auth::hasRole('admin')): ?>
+                    <form method="post" action="<?= e(base_url('/coa/seed-global')) ?>" class="d-inline" onsubmit="return confirm('Tambahkan paket COA global BUMDes yang umum dipakai? Akun yang sudah ada tidak akan ditimpa.');">
+                        <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
+                        <button type="submit" class="btn btn-outline-success">Tambahkan COA Global BUMDes</button>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -70,6 +77,11 @@
         <?php if (($importResult['type'] ?? '') === 'COA' && (int) ($importResult['imported'] ?? 0) > 0): ?>
             <div class="text-secondary small mb-3">Total akun yang ditambahkan melalui import terakhir: <strong><?= e((string) (int) $importResult['imported']) ?></strong>.</div>
         <?php endif; ?>
+
+        <div class="alert alert-info border-0 mb-3">
+            <div class="fw-semibold mb-1">COA Global BUMDes</div>
+            <div class="small">Tombol <strong>Tambahkan COA Global BUMDes</strong> akan mengisi akun umum yang sering dipakai lintas unit usaha, seperti kas, bank, piutang, persediaan, utang, modal, pendapatan, dan beban operasional. Akun yang sudah ada berdasarkan kode akun yang sama tidak akan ditimpa.</div>
+        </div>
 
         <?php if (Auth::hasRole('admin')): ?>
             <form method="post" action="<?= e(base_url('/imports/coa')) ?>" enctype="multipart/form-data" class="row g-3 align-items-end">

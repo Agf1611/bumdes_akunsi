@@ -25,7 +25,43 @@ $header = array_replace([
     'notes' => '',
 ], $header);
 $receiptCompletion = journal_receipt_completion_summary($header);
+$attachmentPreviewKind = static function (array $attachment): string {
+    $extension = strtolower((string) ($attachment['file_ext'] ?? pathinfo((string) ($attachment['original_name'] ?? ''), PATHINFO_EXTENSION)));
+    return match ($extension) {
+        'pdf' => 'pdf',
+        'jpg', 'jpeg', 'png', 'webp' => 'image',
+        default => '',
+    };
+};
 ?>
+
+<style>
+.journal-attachment-actions { display:flex; gap:.5rem; justify-content:flex-end; flex-wrap:wrap; }
+.journal-attachment-preview-trigger { min-width:90px; }
+.journal-attachment-modal[hidden] { display:none !important; }
+.journal-attachment-modal { position:fixed; inset:0; z-index:1080; background:rgba(15,23,42,.68); backdrop-filter:blur(5px); display:flex; align-items:center; justify-content:center; padding:1.2rem; }
+.journal-attachment-modal__dialog { width:min(1120px,100%); max-height:calc(100vh - 2.4rem); background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%); border:1px solid rgba(148,163,184,.28); border-radius:24px; box-shadow:0 30px 80px rgba(15,23,42,.28); overflow:hidden; }
+.journal-attachment-modal__header { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; padding:1.1rem 1.25rem 1rem; border-bottom:1px solid rgba(148,163,184,.2); background:rgba(255,255,255,.92); }
+.journal-attachment-modal__title { margin:0; font-size:1.05rem; color:#0f172a; }
+.journal-attachment-modal__meta { color:#64748b; font-size:.86rem; margin-top:.3rem; }
+.journal-attachment-modal__close { border:1px solid rgba(148,163,184,.3); background:#fff; color:#334155; width:42px; height:42px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; font-size:1.25rem; line-height:1; box-shadow:0 10px 25px rgba(15,23,42,.08); }
+.journal-attachment-modal__close:hover { background:#eff6ff; color:#1d4ed8; }
+.journal-attachment-modal__body { padding:1rem 1.25rem 1.25rem; background:linear-gradient(180deg,rgba(248,250,252,.9),rgba(255,255,255,.96)); }
+.journal-attachment-modal__frame { border:1px solid rgba(148,163,184,.24); border-radius:18px; background:#ffffff; overflow:hidden; min-height:68vh; display:flex; align-items:center; justify-content:center; }
+.journal-attachment-modal__iframe, .journal-attachment-modal__image { width:100%; height:68vh; border:0; background:#fff; }
+.journal-attachment-modal__image { object-fit:contain; padding:.85rem; }
+.journal-attachment-modal__empty { width:100%; padding:2.25rem; text-align:center; color:#64748b; }
+.journal-attachment-modal__toolbar { display:flex; justify-content:space-between; align-items:center; gap:.75rem; padding:0 0 1rem; flex-wrap:wrap; }
+.journal-attachment-modal__toolbar .btn { min-width:150px; }
+@media (max-width:767.98px) {
+  .journal-attachment-modal { padding:.75rem; }
+  .journal-attachment-modal__dialog { max-height:calc(100vh - 1.5rem); border-radius:18px; }
+  .journal-attachment-modal__header, .journal-attachment-modal__body { padding-left:1rem; padding-right:1rem; }
+  .journal-attachment-modal__frame, .journal-attachment-modal__iframe, .journal-attachment-modal__image { min-height:56vh; height:56vh; }
+  .journal-attachment-actions { justify-content:stretch; }
+  .journal-attachment-actions .btn { flex:1 1 100%; }
+}
+</style>
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h1 class="h3 mb-1">Detail Jurnal</h1>
@@ -190,10 +226,27 @@ $receiptCompletion = journal_receipt_completion_summary($header);
                             <td><?= e(format_id_date((string) substr((string) ($attachment['created_at'] ?? ''), 0, 10))) ?><div class="small text-secondary"><?= e(substr((string) ($attachment['created_at'] ?? ''), 11, 5)) ?></div></td>
                             <td><?= e((string) (($attachment['uploaded_by_name'] ?? '') !== '' ? $attachment['uploaded_by_name'] : '-')) ?></td>
                             <td class="text-end">
-                                <div class="d-flex gap-2 justify-content-end flex-wrap">
-                                    <a href="<?= e(base_url('/journals/attachments/download?id=' . (int) $attachment['id'])) ?>" class="btn btn-sm btn-outline-info">Unduh</a>
+                                <?php
+                                $previewKind = $attachmentPreviewKind($attachment);
+                                $downloadUrl = base_url('/journals/attachments/download?id=' . (int) $attachment['id']);
+                                $previewUrl = $downloadUrl . '&mode=preview';
+                                ?>
+                                <div class="journal-attachment-actions">
+                                    <?php if ($previewKind !== ''): ?>
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-outline-primary journal-attachment-preview-trigger"
+                                            data-journal-preview
+                                            data-preview-kind="<?= e($previewKind) ?>"
+                                            data-preview-title="<?= e($displayName) ?>"
+                                            data-preview-original="<?= e((string) ($attachment['original_name'] ?? '-')) ?>"
+                                            data-preview-url="<?= e($previewUrl) ?>"
+                                            data-download-url="<?= e($downloadUrl) ?>"
+                                        >Pratinjau</button>
+                                    <?php endif; ?>
+                                    <a href="<?= e($downloadUrl) ?>" class="btn btn-sm btn-outline-info">Unduh</a>
                                     <?php if ($periodIsOpen && ($attachmentFeatureStatus['enabled'] ?? false)): ?>
-                                        <form method="post" action="<?= e(base_url('/journals/attachments/delete?id=' . (int) $attachment['id'])) ?>" onsubmit="return confirm('Hapus lampiran ini?');" class="d-inline m-0">
+                                        <form method="post" action="<?= e(base_url('/journals/attachments/delete?id=' . (int) $attachment['id'])) ?>" onsubmit="return confirm('Hapus lampiran ini?');" class="m-0">
                                             <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
                                         </form>
@@ -205,6 +258,122 @@ $receiptCompletion = journal_receipt_completion_summary($header);
                     </tbody>
                 </table>
             </div>
-        <?php endif; ?>
+        <div class="journal-attachment-modal" id="journalAttachmentModal" hidden aria-hidden="true">
+    <div class="journal-attachment-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="journalAttachmentModalTitle">
+        <div class="journal-attachment-modal__header">
+            <div>
+                <h3 class="journal-attachment-modal__title" id="journalAttachmentModalTitle">Pratinjau bukti transaksi</h3>
+                <div class="journal-attachment-modal__meta" id="journalAttachmentModalMeta">File lampiran jurnal akan ditampilkan di sini.</div>
+            </div>
+            <button type="button" class="journal-attachment-modal__close" id="journalAttachmentModalClose" aria-label="Tutup pratinjau">&times;</button>
+        </div>
+        <div class="journal-attachment-modal__body">
+            <div class="journal-attachment-modal__toolbar">
+                <div class="small text-secondary">Pratinjau mendukung PDF, JPG, JPEG, PNG, dan WEBP.</div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="#" class="btn btn-outline-light" id="journalAttachmentModalOpenTab" target="_blank" rel="noopener">Buka Tab Baru</a>
+                    <a href="#" class="btn btn-primary" id="journalAttachmentModalDownload">Unduh File</a>
+                </div>
+            </div>
+            <div class="journal-attachment-modal__frame">
+                <iframe class="journal-attachment-modal__iframe" id="journalAttachmentModalPdf" title="Pratinjau PDF lampiran jurnal" hidden></iframe>
+                <img class="journal-attachment-modal__image" id="journalAttachmentModalImage" alt="Pratinjau gambar lampiran jurnal" hidden>
+                <div class="journal-attachment-modal__empty" id="journalAttachmentModalFallback" hidden>Browser ini belum dapat menampilkan pratinjau file. Gunakan tombol <strong>Buka Tab Baru</strong> atau <strong>Unduh File</strong>.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var modal = document.getElementById('journalAttachmentModal');
+    if (!modal) {
+        return;
+    }
+
+    var closeButton = document.getElementById('journalAttachmentModalClose');
+    var titleNode = document.getElementById('journalAttachmentModalTitle');
+    var metaNode = document.getElementById('journalAttachmentModalMeta');
+    var pdfFrame = document.getElementById('journalAttachmentModalPdf');
+    var imageNode = document.getElementById('journalAttachmentModalImage');
+    var fallbackNode = document.getElementById('journalAttachmentModalFallback');
+    var openTabNode = document.getElementById('journalAttachmentModalOpenTab');
+    var downloadNode = document.getElementById('journalAttachmentModalDownload');
+    var lastFocusedElement = null;
+    var previousOverflow = '';
+
+    function resetPreview() {
+        pdfFrame.hidden = true;
+        imageNode.hidden = true;
+        fallbackNode.hidden = true;
+        pdfFrame.removeAttribute('src');
+        imageNode.removeAttribute('src');
+    }
+
+    function closeModal() {
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+        resetPreview();
+        document.body.style.overflow = previousOverflow;
+        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+            lastFocusedElement.focus();
+        }
+    }
+
+    function openModal(trigger) {
+        lastFocusedElement = trigger;
+        previousOverflow = document.body.style.overflow || '';
+        document.body.style.overflow = 'hidden';
+
+        var previewKind = trigger.getAttribute('data-preview-kind') || '';
+        var previewTitle = trigger.getAttribute('data-preview-title') || 'Pratinjau bukti transaksi';
+        var previewOriginal = trigger.getAttribute('data-preview-original') || '';
+        var previewUrl = trigger.getAttribute('data-preview-url') || '#';
+        var downloadUrl = trigger.getAttribute('data-download-url') || previewUrl;
+
+        titleNode.textContent = previewTitle;
+        metaNode.textContent = previewOriginal !== '' ? previewOriginal : 'Lampiran jurnal';
+        openTabNode.href = previewUrl;
+        downloadNode.href = downloadUrl;
+
+        resetPreview();
+
+        if (previewKind === 'pdf') {
+            pdfFrame.src = previewUrl;
+            pdfFrame.hidden = false;
+        } else if (previewKind === 'image') {
+            imageNode.src = previewUrl;
+            imageNode.hidden = false;
+        } else {
+            fallbackNode.hidden = false;
+        }
+
+        modal.hidden = false;
+        modal.setAttribute('aria-hidden', 'false');
+        closeButton.focus();
+    }
+
+    document.querySelectorAll('[data-journal-preview]').forEach(function (trigger) {
+        trigger.addEventListener('click', function () {
+            openModal(trigger);
+        });
+    });
+
+    closeButton.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !modal.hidden) {
+            closeModal();
+        }
+    });
+})();
+</script>
+
+<?php endif; ?>
     </div>
 </div>

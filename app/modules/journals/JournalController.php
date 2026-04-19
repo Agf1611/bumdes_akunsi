@@ -372,6 +372,9 @@ final class JournalController extends Controller
             return;
         }
 
+        $requestedMode = strtolower(trim((string) get_query('mode', 'download')));
+        $inlineMode = in_array($requestedMode, ['preview', 'inline', 'view'], true);
+
         try {
             $attachment = $this->model()->findAttachmentById($attachmentId);
             if (!$attachment) {
@@ -388,8 +391,9 @@ final class JournalController extends Controller
             $downloadName = JournalAttachmentService::downloadFileName($attachment);
             $fallbackName = preg_replace('/[^A-Za-z0-9._-]+/', '_', $downloadName) ?: ('lampiran-jurnal-' . $attachmentId);
             $contentType = JournalAttachmentService::contentType($attachment);
+            $disposition = $inlineMode ? 'inline' : 'attachment';
 
-            audit_log('Lampiran Jurnal', 'download', 'Lampiran bukti transaksi diunduh.', [
+            audit_log('Lampiran Jurnal', $inlineMode ? 'preview' : 'download', $inlineMode ? 'Lampiran bukti transaksi dipratinjau.' : 'Lampiran bukti transaksi diunduh.', [
                 'entity_type' => 'journal_attachment',
                 'entity_id' => (string) $attachmentId,
                 'context' => [
@@ -397,19 +401,21 @@ final class JournalController extends Controller
                     'journal_no' => (string) ($attachment['journal_no'] ?? ''),
                     'original_name' => (string) ($attachment['original_name'] ?? ''),
                     'file_size' => (int) ($attachment['file_size'] ?? 0),
+                    'mode' => $inlineMode ? 'preview' : 'download',
                 ],
             ]);
 
             header('Content-Type: ' . $contentType);
             header('X-Content-Type-Options: nosniff');
+            header('Cache-Control: private, max-age=300');
             header('Content-Length: ' . (string) ((int) (@filesize($path) ?: 0)));
-            header("Content-Disposition: attachment; filename=\"{$fallbackName}\"; filename*=UTF-8''" . rawurlencode($downloadName));
+            header("Content-Disposition: {$disposition}; filename=\"{$fallbackName}\"; filename*=UTF-8''" . rawurlencode($downloadName));
             readfile($path);
             exit;
         } catch (Throwable $e) {
             log_error($e);
             http_response_code(500);
-            render_error_page(500, 'Lampiran jurnal belum dapat diunduh.', $e);
+            render_error_page(500, $inlineMode ? 'Lampiran jurnal belum dapat dipratinjau.' : 'Lampiran jurnal belum dapat diunduh.', $e);
         }
     }
 

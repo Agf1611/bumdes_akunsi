@@ -1,5 +1,12 @@
 <?php declare(strict_types=1); ?>
-<?php $listing = listing_paginate($files ?? []); $files = $listing['items']; $listingPath = '/backups'; ?>
+<?php
+$allFiles = $files ?? [];
+$listing = is_array($listing ?? null) ? $listing : listing_paginate($files ?? []);
+$files = $listing['items'] ?? ($files ?? []);
+$listingPath = '/backups';
+$restoreAnalysis = is_array($restoreAnalysis ?? null) ? $restoreAnalysis : [];
+$restorePayload = is_array($restorePayload ?? null) ? $restorePayload : [];
+?>
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
     <div>
         <h1 class="h3 mb-1">Backup Database</h1>
@@ -18,39 +25,89 @@
     <div class="col-md-3"><div class="card dashboard-card h-100"><div class="card-body p-4"><div class="text-secondary small mb-1">Status Sistem</div><div class="fw-semibold mb-1 <?= !empty($summary['db_connected']) && !empty($summary['directory_writable']) ? 'text-success' : 'text-warning' ?>"><?= !empty($summary['db_connected']) && !empty($summary['directory_writable']) ? 'Siap Backup' : 'Perlu Cek' ?></div><div class="small text-secondary">DB <?= !empty($summary['db_connected']) ? 'terhubung' : 'belum terhubung' ?> &middot; folder <?= !empty($summary['directory_writable']) ? 'writable' : 'belum writable' ?></div></div></div></div>
 </div>
 
-<div class="alert alert-warning"><strong>Perhatian:</strong> Restore akan mengganti isi database saat ini dengan isi file backup yang dipilih. Lakukan hanya saat Anda yakin dan sebaiknya buat backup baru terlebih dahulu.</div>
+<div class="alert alert-warning"><strong>Perhatian:</strong> Restore akan mengganti isi database saat ini dengan isi file backup yang dipilih. Sistem sekarang akan menganalisis file dulu, membuat backup pengaman otomatis, lalu mengaktifkan mode maintenance selama restore berjalan.</div>
+
+<?php if ($restoreAnalysis !== []): ?>
+    <div class="card shadow-sm mb-4 border-warning">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Ringkasan Analisa Restore</h2>
+                    <p class="text-secondary mb-0">Periksa file ini dengan teliti. Jika dilanjutkan, sistem akan membuat backup pengaman dulu sebelum restore dijalankan.</p>
+                </div>
+                <div class="small text-secondary">
+                    File: <strong><?= e((string) ($restoreAnalysis['display_name'] ?? $restoreAnalysis['file_name'] ?? '-')) ?></strong>
+                </div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-2"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Statement</div><div class="fs-4 fw-bold"><?= e((string) ($restoreAnalysis['statement_count'] ?? 0)) ?></div></div></div>
+                <div class="col-md-2"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Insert</div><div class="fs-4 fw-bold"><?= e((string) ($restoreAnalysis['insert_count'] ?? 0)) ?></div></div></div>
+                <div class="col-md-2"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">DDL</div><div class="fs-4 fw-bold"><?= e((string) (((int) ($restoreAnalysis['drop_count'] ?? 0)) + ((int) ($restoreAnalysis['create_count'] ?? 0)) + ((int) ($restoreAnalysis['alter_count'] ?? 0)))) ?></div></div></div>
+                <div class="col-md-2"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Tabel</div><div class="fs-4 fw-bold"><?= e((string) ($restoreAnalysis['table_count'] ?? 0)) ?></div></div></div>
+                <div class="col-md-2"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Ukuran</div><div class="fw-bold"><?= e(format_bytes((int) ($restoreAnalysis['size'] ?? 0))) ?></div></div></div>
+                <div class="col-md-2"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Mode</div><div class="fw-bold"><?= e((string) ($restorePayload['restore_mode'] ?? '-')) ?></div></div></div>
+            </div>
+            <?php if (($restoreAnalysis['table_names'] ?? []) !== []): ?>
+                <div class="small text-secondary mb-3">
+                    Tabel terdeteksi:
+                    <strong><?= e(implode(', ', array_slice((array) $restoreAnalysis['table_names'], 0, 12))) ?></strong><?= count((array) $restoreAnalysis['table_names']) > 12 ? e(' dan lainnya') : '' ?>
+                </div>
+            <?php endif; ?>
+            <div class="alert alert-danger mb-3">
+                <strong>Konfirmasi final:</strong> dump ini mengandung <?= !empty($restoreAnalysis['contains_ddl']) ? 'perubahan struktur tabel (DDL)' : 'statement data' ?>. Jika salah file, database aktif bisa berubah total.
+            </div>
+            <form method="post" action="<?= e(base_url('/backups/restore')) ?>" class="d-flex flex-column flex-lg-row gap-3 align-items-lg-center">
+                <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
+                <input type="hidden" name="restore_action" value="restore">
+                <input type="hidden" name="restore_mode" value="<?= e((string) ($restorePayload['restore_mode'] ?? 'server')) ?>">
+                <?php if (($restorePayload['restore_mode'] ?? '') === 'upload'): ?>
+                    <input type="hidden" name="staged_name" value="<?= e((string) ($restorePayload['staged_name'] ?? '')) ?>">
+                <?php else: ?>
+                    <input type="hidden" name="file" value="<?= e((string) ($restorePayload['file_name'] ?? '')) ?>">
+                <?php endif; ?>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="1" id="confirm_restore" name="confirm_restore" required>
+                    <label class="form-check-label" for="confirm_restore">Saya paham restore akan mengganti database aktif dan sistem akan membuat backup pengaman otomatis terlebih dahulu.</label>
+                </div>
+                <button type="submit" class="btn btn-warning" onclick="return confirm('Jalankan restore database sekarang?');">Jalankan Restore Final</button>
+            </form>
+        </div>
+    </div>
+<?php endif; ?>
 
 <div class="card shadow-sm mb-4"><div class="card-body p-4">
     <div class="row g-4">
         <div class="col-lg-6">
             <h2 class="h5 mb-3">Restore dari File Backup Server</h2>
             <p class="text-secondary small mb-3">Gunakan file SQL yang sudah ada di folder backup server. Cocok untuk pemulihan cepat setelah salah input atau sebelum rollback patch.</p>
-            <form method="post" action="<?= e(base_url('/backups/restore')) ?>" onsubmit="return confirm('Restore database akan mengganti data saat ini. Lanjutkan?');">
+            <form method="post" action="<?= e(base_url('/backups/restore')) ?>">
                 <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
                 <input type="hidden" name="restore_mode" value="server">
+                <input type="hidden" name="restore_action" value="analyze">
                 <div class="mb-3">
                     <label class="form-label">Pilih file backup server</label>
                     <select name="file" class="form-select" required>
                         <option value="">-- pilih file backup --</option>
-                        <?php foreach ($files as $file): ?>
+                        <?php foreach ($allFiles as $file): ?>
                             <option value="<?= e((string) $file['name']) ?>"><?= e((string) $file['name']) ?> (<?= e(format_bytes((int) $file['size'])) ?>)</option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-outline-warning" <?= $files === [] ? 'disabled' : '' ?>>Restore dari Server</button>
+                <button type="submit" class="btn btn-outline-warning" <?= $allFiles === [] ? 'disabled' : '' ?>>Analisa File Server</button>
             </form>
         </div>
         <div class="col-lg-6">
             <h2 class="h5 mb-3">Restore dari Upload File SQL</h2>
             <p class="text-secondary small mb-3">Upload file backup .sql yang pernah Anda unduh sebelumnya. Maksimal 30 MB per file restore.</p>
-            <form method="post" action="<?= e(base_url('/backups/restore')) ?>" enctype="multipart/form-data" onsubmit="return confirm('Restore database akan mengganti data saat ini. Lanjutkan?');">
+            <form method="post" action="<?= e(base_url('/backups/restore')) ?>" enctype="multipart/form-data">
                 <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
                 <input type="hidden" name="restore_mode" value="upload">
+                <input type="hidden" name="restore_action" value="analyze">
                 <div class="mb-3">
                     <label class="form-label">Upload file .sql</label>
                     <input type="file" name="restore_file" class="form-control" accept=".sql" required>
                 </div>
-                <button type="submit" class="btn btn-warning">Restore dari File</button>
+                <button type="submit" class="btn btn-warning">Upload & Analisa File</button>
             </form>
         </div>
     </div>

@@ -25,6 +25,8 @@ final class BackupController extends Controller
                     'directory' => BackupService::directory(),
                     'directory_writable' => is_dir(BackupService::directory()) && is_writable(BackupService::directory()),
                 ],
+                'restoreAnalysis' => Session::get('backup_restore_analysis'),
+                'restorePayload' => Session::get('backup_restore_payload'),
             ]);
         } catch (Throwable $e) {
             log_error($e);
@@ -108,24 +110,72 @@ final class BackupController extends Controller
                 throw new RuntimeException('Koneksi database belum tersedia. Restore tidak dapat dijalankan.');
             }
 
-            $mode = trim((string) post('restore_mode', 'server'));
-            if ($mode === 'upload') {
-                $file = $_FILES['restore_file'] ?? null;
-                if (!is_array($file)) {
-                    throw new RuntimeException('File restore belum dipilih.');
-                }
-                BackupService::validateUpload($file);
-                $result = $this->service()->restoreFromFile((string) $file['tmp_name']);
-                $result['restore_mode'] = 'upload';
-            } else {
-                $fileName = (string) post('file', '');
-                $path = BackupService::filePath($fileName);
-                if ($path === null) {
-                    throw new RuntimeException('File backup server tidak ditemukan atau nama file tidak valid.');
-                }
-                $result = $this->service()->restoreFromFile($path);
-                $result['restore_mode'] = 'server';
+            $action = trim((string) post('restore_action', 'analyze'));
+            if ($action === 'analyze') {
+                [$path, $payload] = $this->resolveRestoreSourceForAnalysis();
+                $analysis = $this->service()->inspectSqlFile($path);
+                $analysis['display_name'] = (string) ($payload['file_name'] ?? ($analysis['file_name'] ?? ''));
+                Session::put('backup_restore_analysis', $analysis);
+                Session::put('backup_restore_payload', $payload);
+                flash('success', 'Analisa restore selesai. Periksa ringkasan file lalu konfirmasi restore jika sudah yakin.');
+                $this->redirect('/backups');
             }
+
+            if ((string) post('confirm_restore', '') !== '1') {
+                throw new RuntimeException('Konfirmasi restore wajib dicentang sebelum proses dijalankan.');
+            }
+
+            [$path, $payload] = $this->resolveRestoreSourceForExecution();
+            $analysis = $this->service()->inspectSqlFile($path);
+
+            $profile = app_profile();
+            $preRestoreBackup = $this->service()->createBackup([
+                'app_name' => (string) app_config('name'),
+                'bumdes_name' => (string) ($profile['bumdes_name'] ?? ''),
+                'reason' => 'pre_restore_safety_backup',
+            ]);
+
+            MaintenanceMode::enable([
+                'reason' => 'restore_database',
+                'started_at' => date('c'),
+                'source_file' => (string) ($analysis['file_name'] ?? ''),
+            ]);
+
+            try {
+                $result = $this->service()->restoreFromFile($path);
+            } catch (Throwable $restoreError) {
+                try {
+                    $rollback = $this->service()->restoreFromFile((string) ($preRestoreBackup['file_path'] ?? ''));
+                } catch (Throwable $rollbackError) {
+                    throw new RuntimeException(
+                        'Restore utama gagal dan rollback otomatis dari backup pengaman juga gagal. Restore error: '
+                        . $restoreError->getMessage()
+                        . ' | Rollback error: '
+                        . $rollbackError->getMessage(),
+                        0,
+                        $rollbackError
+                    );
+                }
+
+                throw new RuntimeException(
+                    'Restore utama gagal, tetapi database telah dicoba dipulihkan ulang dari backup pengaman otomatis '
+                    . (string) ($preRestoreBackup['file_name'] ?? '-')
+                    . ' (' . (string) ($rollback['executed_statements'] ?? 0) . ' statement). Detail awal: '
+                    . $restoreError->getMessage(),
+                    0,
+                    $restoreError
+                );
+            } finally {
+                MaintenanceMode::disable();
+                if (($payload['restore_mode'] ?? '') === 'upload') {
+                    BackupService::deleteStagedFile((string) ($payload['staged_name'] ?? ''));
+                }
+            }
+
+            $result['restore_mode'] = (string) ($payload['restore_mode'] ?? 'server');
+            $result['pre_restore_backup'] = $preRestoreBackup;
+            Session::forget('backup_restore_analysis');
+            Session::forget('backup_restore_payload');
 
             audit_log('backup_database', 'restore', 'Melakukan restore database dari file backup.', [
                 'severity' => 'warning',
@@ -134,13 +184,84 @@ final class BackupController extends Controller
                 'after' => $result,
             ]);
 
-            flash('success', 'Restore database berhasil dijalankan dari file: ' . (string) ($result['file_name'] ?? '-') . '. Statement dieksekusi: ' . (string) ($result['executed_statements'] ?? 0));
+            flash('success', 'Restore database berhasil dijalankan dari file: ' . (string) ($result['file_name'] ?? '-') . '. Statement dieksekusi: ' . (string) ($result['executed_statements'] ?? 0) . '. Backup pengaman dibuat: ' . (string) (($preRestoreBackup['file_name'] ?? '-')));
         } catch (Throwable $e) {
+            MaintenanceMode::disable();
             log_error($e);
             flash('error', 'Restore database gagal. ' . $e->getMessage());
         }
 
         $this->redirect('/backups');
+    }
+
+    private function resolveRestoreSourceForAnalysis(): array
+    {
+        $mode = trim((string) post('restore_mode', 'server'));
+        if ($mode === 'upload') {
+            $file = $_FILES['restore_file'] ?? null;
+            if (!is_array($file)) {
+                throw new RuntimeException('File restore belum dipilih.');
+            }
+
+            $staged = BackupService::stageUploadedRestoreFile($file);
+            return [
+                (string) $staged['path'],
+                [
+                    'restore_mode' => 'upload',
+                    'staged_name' => (string) $staged['staged_name'],
+                    'file_name' => (string) $staged['original_name'],
+                ],
+            ];
+        }
+
+        $fileName = (string) post('file', '');
+        $path = BackupService::filePath($fileName);
+        if ($path === null) {
+            throw new RuntimeException('File backup server tidak ditemukan atau nama file tidak valid.');
+        }
+
+        return [
+            $path,
+            [
+                'restore_mode' => 'server',
+                'file_name' => basename($path),
+            ],
+        ];
+    }
+
+    private function resolveRestoreSourceForExecution(): array
+    {
+        $mode = trim((string) post('restore_mode', 'server'));
+        if ($mode === 'upload') {
+            $stagedName = trim((string) post('staged_name', ''));
+            $path = BackupService::stagedFilePath($stagedName);
+            if ($path === null) {
+                throw new RuntimeException('File staging restore tidak ditemukan. Ulangi analisa file upload terlebih dahulu.');
+            }
+
+            return [
+                $path,
+                [
+                    'restore_mode' => 'upload',
+                    'staged_name' => $stagedName,
+                    'file_name' => basename($path),
+                ],
+            ];
+        }
+
+        $fileName = (string) post('file', '');
+        $path = BackupService::filePath($fileName);
+        if ($path === null) {
+            throw new RuntimeException('File backup server tidak ditemukan atau nama file tidak valid.');
+        }
+
+        return [
+            $path,
+            [
+                'restore_mode' => 'server',
+                'file_name' => basename($path),
+            ],
+        ];
     }
 
     public function delete(): void

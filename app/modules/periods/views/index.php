@@ -1,16 +1,24 @@
 <?php declare(strict_types=1); ?>
 <?php $listing = listing_paginate($periods ?? []); $periods = $listing['items']; $listingPath = '/periods'; ?>
 <?php require APP_PATH . '/views/partials/table_action_menu.php'; ?>
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-    <div>
-        <h1 class="h3 mb-1">Periode Akuntansi</h1>
-        <p class="text-secondary mb-0">Kelola periode yang boleh dipakai transaksi. Hanya satu periode aktif yang diizinkan pada satu waktu.</p>
-    </div>
-    <?php if (Auth::hasRole('admin')): ?>
-        <div>
-            <a href="<?= e(base_url('/periods/create')) ?>" class="btn btn-primary">Tambah Periode</a>
+<div class="period-page">
+    <section class="module-hero mb-4">
+        <div class="module-hero__content">
+            <div>
+                <div class="module-hero__eyebrow">Master Data Keuangan</div>
+                <h1 class="module-hero__title">Periode Akuntansi</h1>
+                <p class="module-hero__text">Kelola periode yang boleh dipakai transaksi, cek kesiapan closing, dan pastikan hanya satu periode aktif berjalan pada satu waktu.</p>
+            </div>
+            <?php if (Auth::hasRole('admin')): ?>
+                <div class="module-hero__actions">
+                    <a href="<?= e(base_url('/periods/create')) ?>" class="btn btn-primary">Tambah Periode</a>
+                </div>
+            <?php endif; ?>
         </div>
-    <?php endif; ?>
+    </section>
+
+<div class="alert alert-info mb-4">
+    <strong>Checklist closing:</strong> kolom kesiapan membantu Anda melihat sejak awal apakah periode sudah siap ditutup atau masih ada blocker seperti jurnal tidak seimbang, rekonsiliasi belum bersih, atau backup belum dibuat.
 </div>
 
 <div class="card shadow-sm">
@@ -24,6 +32,7 @@
                     <th style="min-width: 220px;">Rentang Tanggal</th>
                     <th style="min-width: 120px;">Status</th>
                     <th style="min-width: 120px;">Aktif</th>
+                    <th style="min-width: 170px;">Kesiapan Closing</th>
                     <th style="min-width: 160px;">Diperbarui</th>
                     <th class="text-end table-action-col" style="min-width: 92px;">Aksi</th>
                 </tr>
@@ -31,10 +40,16 @@
                 <tbody>
                 <?php if ($periods === []): ?>
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-secondary">Belum ada periode akuntansi. Tambahkan periode pertama untuk mulai mengatur transaksi.</td>
+                        <td colspan="8" class="text-center py-5 text-secondary">Belum ada periode akuntansi. Tambahkan periode pertama untuk mulai mengatur transaksi.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($periods as $period): ?>
+                        <?php
+                        $readiness = is_array($period['closing_readiness'] ?? null) ? $period['closing_readiness'] : [];
+                        $isReady = (bool) ($readiness['is_ready_to_close'] ?? false);
+                        $critical = (int) ($readiness['critical_failures'] ?? 0);
+                        $warningCount = (int) ($readiness['warnings'] ?? 0);
+                        ?>
                         <tr>
                             <td class="fw-semibold"><?= e($period['period_code']) ?></td>
                             <td><?= e($period['period_name']) ?></td>
@@ -50,6 +65,14 @@
                                 <?php else: ?>
                                     <span class="badge text-bg-secondary">Tidak</span>
                                 <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="badge <?= $isReady ? 'text-bg-success' : ($critical > 0 ? 'text-bg-danger' : 'text-bg-warning') ?>">
+                                        <?= $isReady ? 'Siap Tutup' : ($critical > 0 ? 'Ada Blocker' : 'Perlu Review') ?>
+                                    </span>
+                                    <span class="small text-secondary">Kritis <?= e(number_format($critical, 0, ',', '.')) ?> · Warning <?= e(number_format($warningCount, 0, ',', '.')) ?></span>
+                                </div>
                             </td>
                             <td class="text-secondary small"><?= e((string) ($period['updated_by_name'] ?: '-')) ?></td>
                             <td class="text-end table-action-col">
@@ -90,3 +113,4 @@
 </div>
 
 <?php require APP_PATH . '/views/partials/listing_controls.php'; ?>
+</div>

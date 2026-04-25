@@ -74,6 +74,7 @@ require APP_PATH . '/helpers/equity_changes_helper.php';
 require APP_PATH . '/helpers/coa_helper.php';
 require APP_PATH . '/helpers/journal_helper.php';
 require APP_PATH . '/helpers/listing_helper.php';
+require APP_PATH . '/helpers/workspace_helper.php';
 require APP_PATH . '/helpers/asset_helper.php';
 require APP_PATH . '/helpers/bank_reconciliation_helper.php';
 

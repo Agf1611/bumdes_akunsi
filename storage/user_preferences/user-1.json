@@ -1,0 +1,52 @@
+{
+    "recent_items": [
+        {
+            "title": "Dashboard Eksekutif / EIS",
+            "path": "/bumdes/dashboard",
+            "kind": "page",
+            "visited_at": "2026-04-24 12:44:29"
+        },
+        {
+            "title": "Periode Akuntansi",
+            "path": "/bumdes/periods",
+            "kind": "page",
+            "visited_at": "2026-04-24 12:44:26"
+        },
+        {
+            "title": "Buku Besar",
+            "path": "/bumdes/ledger?account_id=2&period_id=&fiscal_year=2026&unit_id=&date_from=2026-01-01&date_to=2026-12-31",
+            "kind": "page",
+            "visited_at": "2026-04-24 12:44:01"
+        },
+        {
+            "title": "Buku Besar",
+            "path": "/bumdes/ledger",
+            "kind": "page",
+            "visited_at": "2026-04-24 12:41:59"
+        },
+        {
+            "title": "Buku Pembantu Piutang",
+            "path": "/bumdes/receivable-ledgers",
+            "kind": "page",
+            "visited_at": "2026-04-24 12:41:39"
+        },
+        {
+            "title": "Jurnal Umum",
+            "path": "/bumdes/journals",
+            "kind": "page",
+            "visited_at": "2026-04-24 12:41:33"
+        },
+        {
+            "title": "Master Mitra / Debitur / Kreditur",
+            "path": "/bumdes/reference-masters",
+            "kind": "page",
+            "visited_at": "2026-04-24 12:41:29"
+        },
+        {
+            "title": "Chart of Accounts",
+            "path": "/bumdes/coa",
+            "kind": "page",
+            "visited_at": "2026-04-24 12:41:23"
+        }
+    ]
+}

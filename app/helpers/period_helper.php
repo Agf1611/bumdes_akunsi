@@ -202,6 +202,26 @@ function current_accounting_period(): ?array
 
         $pdo = Database::getInstance(db_config());
         if ($workingYear > 0) {
+            $activeStmt = $pdo->prepare(
+                'SELECT * FROM accounting_periods
+                 WHERE YEAR(start_date) = :year AND is_active = 1
+                 ORDER BY id DESC
+                 LIMIT 1'
+            );
+            $activeStmt->bindValue(':year', $workingYear, PDO::PARAM_INT);
+            $activeStmt->execute();
+            $activePeriod = $activeStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (is_array($activePeriod)) {
+                $activeYear = (int) substr((string) ($activePeriod['start_date'] ?? ''), 0, 4);
+                if ($sessionPeriodId !== (int) ($activePeriod['id'] ?? 0) || $workingYear !== $activeYear) {
+                    Session::put('working_fiscal_year', $activeYear);
+                    Session::put('working_period_id', (int) ($activePeriod['id'] ?? 0));
+                }
+                $cached[$cacheKey] = $activePeriod;
+                return $activePeriod;
+            }
+
             if ($sessionPeriodId > 0) {
                 $stmt = $pdo->prepare('SELECT * FROM accounting_periods WHERE id = :id AND YEAR(start_date) = :year LIMIT 1');
                 $stmt->bindValue(':id', $sessionPeriodId, PDO::PARAM_INT);
@@ -216,6 +236,7 @@ function current_accounting_period(): ?array
 
             $period = working_year_default_period($workingYear);
             if (is_array($period)) {
+                Session::put('working_fiscal_year', (int) substr((string) ($period['start_date'] ?? ''), 0, 4));
                 Session::put('working_period_id', (int) ($period['id'] ?? 0));
                 $cached[$cacheKey] = $period;
                 return $period;
@@ -227,6 +248,10 @@ function current_accounting_period(): ?array
 
         $stmt = $pdo->query('SELECT * FROM accounting_periods WHERE is_active = 1 ORDER BY id DESC LIMIT 1');
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (is_array($row)) {
+            Session::put('working_fiscal_year', (int) substr((string) ($row['start_date'] ?? ''), 0, 4));
+            Session::put('working_period_id', (int) ($row['id'] ?? 0));
+        }
         $cached[$cacheKey] = is_array($row) ? $row : null;
         return $cached[$cacheKey];
     } catch (Throwable) {

@@ -22,6 +22,7 @@ final class DashboardController extends Controller
             $trend = $model->getMonthlyTrend($filters['date_to'], 6, (int) $filters['unit_id']);
             $recentJournals = $model->getRecentJournals($filters['date_from'], $filters['date_to'], 5, (int) $filters['unit_id']);
             $unitSummaries = $supportsUnits ? $model->getUnitSummaries($filters['date_from'], $filters['date_to']) : [];
+            $operationalStatus = $model->getOperationalStatus($filters['date_from'], $filters['date_to'], (int) $filters['unit_id']);
 
             $this->view('dashboard/views/index', [
                 'title' => 'Dashboard Eksekutif / EIS',
@@ -35,6 +36,10 @@ final class DashboardController extends Controller
                 'trend' => $trend,
                 'recentJournals' => $recentJournals,
                 'unitSummaries' => $unitSummaries,
+                'taskCenter' => $this->buildTaskCenter($operationalStatus, (string) (Auth::user()['role_code'] ?? '')),
+                'workspaceRecentItems' => workspace_recent_items(),
+                'workspaceFavoritePages' => workspace_favorite_pages(),
+                'workspaceSavedFilters' => workspace_saved_filters(),
                 'filterErrors' => $filters['errors'],
                 'dbConnected' => Database::isConnected(db_config()),
             ]);
@@ -61,6 +66,7 @@ final class DashboardController extends Controller
             $topRevenueAccounts = $model->getTopAccounts($filters['date_from'], $filters['date_to'], 'REVENUE', 5, (int) $filters['unit_id']);
             $topExpenseAccounts = $model->getTopAccounts($filters['date_from'], $filters['date_to'], 'EXPENSE', 5, (int) $filters['unit_id']);
             $unitSummaries = $supportsUnits ? $model->getUnitSummaries($filters['date_from'], $filters['date_to']) : [];
+            $operationalStatus = $model->getOperationalStatus($filters['date_from'], $filters['date_to'], (int) $filters['unit_id']);
 
             $closingChecklist = null;
             if (is_array($selectedPeriod) && isset($selectedPeriod['id'])) {
@@ -87,6 +93,9 @@ final class DashboardController extends Controller
                 'topExpenseAccounts' => $topExpenseAccounts,
                 'unitSummaries' => $unitSummaries,
                 'closingChecklist' => $closingChecklist,
+                'taskCenter' => $this->buildTaskCenter($operationalStatus, (string) (Auth::user()['role_code'] ?? 'pimpinan')),
+                'workspaceRecentItems' => workspace_recent_items(),
+                'workspaceFavoritePages' => workspace_favorite_pages(),
                 'filterErrors' => $filters['errors'],
                 'dbConnected' => Database::isConnected(db_config()),
             ]);
@@ -193,5 +202,67 @@ final class DashboardController extends Controller
 
         $parsed = DateTimeImmutable::createFromFormat('Y-m-d', $date);
         return $parsed instanceof DateTimeImmutable && $parsed->format('Y-m-d') === $date;
+    }
+
+    private function buildTaskCenter(array $status, string $roleCode): array
+    {
+        $closing = is_array($status['closing_checklist'] ?? null) ? $status['closing_checklist'] : [];
+        $latestBackup = is_array($status['latest_backup'] ?? null) ? $status['latest_backup'] : [];
+        $updateSignal = is_array($status['update_signal'] ?? null) ? $status['update_signal'] : [];
+        $summary = (array) ($updateSignal['summary'] ?? []);
+
+        $tasks = [
+            [
+                'title' => 'Checklist tutup buku',
+                'status' => (bool) ($closing['is_ready_to_close'] ?? false) ? 'success' : (((int) ($closing['critical_failures'] ?? 0)) > 0 ? 'danger' : 'warning'),
+                'value' => (bool) ($closing['is_ready_to_close'] ?? false) ? 'Siap tutup' : (((int) ($closing['critical_failures'] ?? 0)) > 0 ? 'Ada blocker' : 'Perlu review'),
+                'note' => 'Kritis ' . number_format((int) ($closing['critical_failures'] ?? 0), 0, ',', '.') . ' · Warning ' . number_format((int) ($closing['warnings'] ?? 0), 0, ',', '.'),
+                'url' => '/periods/checklist?id=' . (int) (($closing['period']['id'] ?? current_accounting_period()['id'] ?? 0)),
+            ],
+            [
+                'title' => 'Rekonsiliasi bank',
+                'status' => ((int) ($status['reconciliation_issues'] ?? 0)) > 0 ? 'warning' : 'success',
+                'value' => ((int) ($status['reconciliation_issues'] ?? 0)) > 0 ? 'Belum bersih' : 'Bersih',
+                'note' => number_format((int) ($status['reconciliation_issues'] ?? 0), 0, ',', '.') . ' sesi perlu ditinjau',
+                'url' => '/bank-reconciliations',
+            ],
+            [
+                'title' => 'Jurnal tanpa lampiran',
+                'status' => ((int) ($status['journals_without_attachments'] ?? 0)) > 0 ? 'warning' : 'success',
+                'value' => number_format((int) ($status['journals_without_attachments'] ?? 0), 0, ',', '.'),
+                'note' => 'Kwitansi/receipt pada rentang aktif yang belum punya bukti',
+                'url' => '/journals',
+            ],
+            [
+                'title' => 'Kas / bank negatif',
+                'status' => ((int) ($status['negative_cash_accounts'] ?? 0)) > 0 ? 'danger' : 'success',
+                'value' => number_format((int) ($status['negative_cash_accounts'] ?? 0), 0, ',', '.'),
+                'note' => 'Akun kas/bank dengan saldo minus sampai tanggal dashboard',
+                'url' => '/cash-flow',
+            ],
+        ];
+
+        if ($roleCode === 'admin') {
+            $tasks[] = [
+                'title' => 'Backup terakhir',
+                'status' => !empty($latestBackup['exists']) ? 'success' : 'warning',
+                'value' => !empty($latestBackup['exists']) ? 'Tersedia' : 'Belum ada',
+                'note' => !empty($latestBackup['exists']) ? (string) ($latestBackup['name'] ?? '-') : 'Segera buat backup database',
+                'url' => '/backups',
+            ];
+            $tasks[] = [
+                'title' => 'Update aplikasi',
+                'status' => (bool) ($summary['update_available'] ?? false) ? 'warning' : 'success',
+                'value' => (bool) ($summary['update_available'] ?? false) ? 'Ada update' : 'Terbaru',
+                'note' => 'Perubahan file: ' . number_format((int) (($summary['changed_count'] ?? 0) + ($summary['new_count'] ?? 0)), 0, ',', '.'),
+                'url' => '/updates',
+            ];
+        }
+
+        if ($roleCode === 'pimpinan') {
+            $tasks = array_slice($tasks, 0, 3);
+        }
+
+        return $tasks;
     }
 }

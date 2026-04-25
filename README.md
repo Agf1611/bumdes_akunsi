@@ -39,7 +39,7 @@ Repository ini adalah versi **GitHub-ready** dan **install-ready** dari aplikasi
 
 ![Preview Update Aplikasi](docs/images/preview-update-aplikasi.png)
 
-
+> Simpan screenshot tambahan ke folder `docs/images/`, lalu panggil dari README dengan format `![Nama Gambar](docs/images/nama-file.png)`.
 
 ---
 
@@ -323,6 +323,36 @@ Semua catatan investigasi dan perbaikan ada di folder:
 - `docs/audits/`
 
 ---
+
+## Cara Menambahkan Gambar ke README
+
+### 1. Simpan file gambar
+
+Masukkan screenshot ke folder:
+
+```text
+docs/images/
+```
+
+Contoh nama file:
+
+```text
+docs/images/dashboard.png
+```
+
+### 2. Tampilkan di README
+
+Pakai Markdown biasa:
+
+```md
+![Dashboard](docs/images/dashboard.png)
+```
+
+Atau kalau ingin mengatur lebar gambar:
+
+```html
+<img src="docs/images/dashboard.png" alt="Dashboard" width="900">
+```
 
 ---
 

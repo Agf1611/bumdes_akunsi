@@ -8,6 +8,11 @@ final class App {
     public function dispatch(): void {
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $path = $this->currentPath();
+        if (MaintenanceMode::isActive() && !MaintenanceMode::canBypass($path)) {
+            http_response_code(503);
+            render_error_page(503, 'Aplikasi sedang dalam mode maintenance. Silakan coba lagi beberapa saat lagi.');
+            return;
+        }
         $route = $this->routes[$method][$path] ?? null;
         if (!$route) { http_response_code(404); render_error_page(404, 'Halaman yang Anda cari tidak ditemukan.'); return; }
         foreach ($route['middlewares'] as $mw) {

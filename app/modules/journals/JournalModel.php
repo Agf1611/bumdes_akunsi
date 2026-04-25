@@ -8,6 +8,7 @@ final class JournalModel
     private ?bool $hasJournalReceiptsTable = null;
     private ?bool $hasJournalAttachmentsTable = null;
     private ?bool $hasJournalReferenceColumns = null;
+    private ?bool $hasWorkflowStatusColumn = null;
 
     public function __construct(private PDO $db)
     {
@@ -35,7 +36,29 @@ final class JournalModel
         ];
     }
 
-    public function getList(array $filters = []): array
+    public function getList(array $filters = [], ?array $pagination = null): array
+    {
+        [$sql, $params] = $this->buildListSql($filters, false, $pagination);
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function countList(array $filters = []): int
+    {
+        [$sql, $params] = $this->buildListSql($filters, true, null);
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+        return (int) ($stmt->fetchColumn() ?: 0);
+    }
+
+    private function buildListSql(array $filters, bool $countOnly, ?array $pagination): array
     {
         $select = [
             'j.id',
@@ -47,6 +70,7 @@ final class JournalModel
             'j.total_debit',
             'j.total_credit',
             'j.created_at',
+            $this->hasWorkflowStatusColumn() ? 'j.workflow_status' : "'POSTED' AS workflow_status",
             $this->hasPrintTemplateColumn() ? 'j.print_template' : "'standard' AS print_template",
             'p.period_code',
             'p.period_name',
@@ -80,10 +104,9 @@ final class JournalModel
             $select[] = 'NULL AS notes';
         }
 
-        $sql = "SELECT " . implode(",\n                       ", $select) . "\n"
-            . "FROM journal_headers j\n"
-            . implode("\n", $joins)
-            . "\nWHERE 1=1";
+        $sql = $countOnly
+            ? "SELECT COUNT(*)\nFROM journal_headers j\n" . implode("\n", $joins) . "\nWHERE 1=1"
+            : "SELECT " . implode(",\n                       ", $select) . "\nFROM journal_headers j\n" . implode("\n", $joins) . "\nWHERE 1=1";
 
         $params = [];
 
@@ -104,13 +127,18 @@ final class JournalModel
             $params[':date_to'] = (string) $filters['date_to'];
         }
 
-        $sql .= ' ORDER BY j.journal_date DESC, j.id DESC';
-        $stmt = $this->db->prepare($sql);
-        foreach ($params as $key => $value) {
-            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        if (!$countOnly) {
+            $sql .= ' ORDER BY j.journal_date DESC, j.id DESC';
+            if (is_array($pagination)) {
+                $limit = max(1, (int) ($pagination['limit'] ?? 10));
+                $offset = max(0, (int) ($pagination['offset'] ?? 0));
+                $sql .= ' LIMIT :_limit OFFSET :_offset';
+                $params[':_limit'] = $limit;
+                $params[':_offset'] = $offset;
+            }
         }
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return [$sql, $params];
     }
 
     public function getPrintList(array $filters = []): array
@@ -150,6 +178,7 @@ final class JournalModel
             'p.end_date',
             'bu.unit_code',
             'bu.unit_name',
+            $this->hasWorkflowStatusColumn() ? 'j.workflow_status' : "'POSTED' AS workflow_status",
             $this->hasJournalAttachmentsTable() ? '(SELECT COUNT(*) FROM journal_attachments ja WHERE ja.journal_id = j.id) AS attachment_count' : '0 AS attachment_count',
         ];
 
@@ -725,21 +754,21 @@ final class JournalModel
         if ($this->hasPrintTemplateColumn()) {
             $sql = 'INSERT INTO journal_headers (
                         journal_no, journal_date, description, period_id, business_unit_id, print_template,
-                        total_debit, total_credit, created_by, updated_by,
+                        total_debit, total_credit, created_by, updated_by,' . ($this->hasWorkflowStatusColumn() ? ' workflow_status, posted_at, posted_by,' : '') . '
                         created_at, updated_at
                     ) VALUES (
                         :journal_no, :journal_date, :description, :period_id, :business_unit_id, :print_template,
-                        :total_debit, :total_credit, :created_by, :updated_by,
+                        :total_debit, :total_credit, :created_by, :updated_by,' . ($this->hasWorkflowStatusColumn() ? ' :workflow_status, NOW(), :posted_by,' : '') . '
                         NOW(), NOW()
                     )';
         } else {
             $sql = 'INSERT INTO journal_headers (
                         journal_no, journal_date, description, period_id, business_unit_id,
-                        total_debit, total_credit, created_by, updated_by,
+                        total_debit, total_credit, created_by, updated_by,' . ($this->hasWorkflowStatusColumn() ? ' workflow_status, posted_at, posted_by,' : '') . '
                         created_at, updated_at
                     ) VALUES (
                         :journal_no, :journal_date, :description, :period_id, :business_unit_id,
-                        :total_debit, :total_credit, :created_by, :updated_by,
+                        :total_debit, :total_credit, :created_by, :updated_by,' . ($this->hasWorkflowStatusColumn() ? ' :workflow_status, NOW(), :posted_by,' : '') . '
                         NOW(), NOW()
                     )';
         }
@@ -761,6 +790,10 @@ final class JournalModel
         $stmt->bindValue(':total_credit', $header['total_credit']);
         $stmt->bindValue(':created_by', (int) $header['created_by'], PDO::PARAM_INT);
         $stmt->bindValue(':updated_by', (int) $header['updated_by'], PDO::PARAM_INT);
+        if ($this->hasWorkflowStatusColumn()) {
+            $stmt->bindValue(':workflow_status', 'POSTED', PDO::PARAM_STR);
+            $stmt->bindValue(':posted_by', (int) $header['created_by'], PDO::PARAM_INT);
+        }
         $stmt->execute();
         return (int) $this->db->lastInsertId();
     }
@@ -886,6 +919,16 @@ final class JournalModel
 
         $this->hasJournalAttachmentsTable = $this->tableExists('journal_attachments');
         return $this->hasJournalAttachmentsTable;
+    }
+
+    private function hasWorkflowStatusColumn(): bool
+    {
+        if ($this->hasWorkflowStatusColumn !== null) {
+            return $this->hasWorkflowStatusColumn;
+        }
+
+        $this->hasWorkflowStatusColumn = $this->columnExists('journal_headers', 'workflow_status');
+        return $this->hasWorkflowStatusColumn;
     }
 
 

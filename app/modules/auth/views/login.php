@@ -19,7 +19,7 @@
             <div class="card-body p-4 p-lg-5">
                 <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
                     <div>
-                        <div class="auth-mini-badge">Login Aman</div>
+                        <div class="auth-mini-badge">Login</div>
                         <h2 class="auth-form-title mt-3 mb-2">Masuk ke Dashboard</h2>
                         <p class="text-secondary mb-0">Gunakan akun resmi Anda untuk mengakses aplikasi akuntansi BUMDes.</p>
                     </div>
@@ -55,6 +55,14 @@
                         <label for="password" class="form-label">Password</label>
                         <input type="password" name="password" id="password" class="form-control form-control-lg" autocomplete="current-password" placeholder="Masukkan password" required>
                     </div>
+
+                    <?php if (!empty($mfaEnabled)): ?>
+                        <div class="mb-4">
+                            <label for="otp_code" class="form-label">Kode OTP MFA</label>
+                            <input type="text" name="otp_code" id="otp_code" class="form-control form-control-lg" value="<?= e(old('otp_code')) ?>" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Isi jika akun Anda memakai MFA">
+                            <div class="form-text text-secondary">Kolom ini wajib jika akun Anda sudah mengaktifkan MFA TOTP.</div>
+                        </div>
+                    <?php endif; ?>
 
                     <button type="submit" class="btn btn-primary btn-lg w-100 ui-btn-primary">Masuk ke Aplikasi</button>
                 </form>

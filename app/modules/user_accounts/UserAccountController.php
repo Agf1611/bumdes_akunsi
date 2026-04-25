@@ -107,6 +107,40 @@ final class UserAccountController extends Controller
         $this->redirect('/user-accounts');
     }
 
+    public function resetPassword(): void
+    {
+        $id = (int) get_query('id', 0);
+        if (!verify_csrf((string) post('_token'))) {
+            http_response_code(419);
+            render_error_page(419, 'Sesi keamanan telah berakhir. Silakan muat ulang halaman.');
+            return;
+        }
+
+        $row = $this->model()->findById($id);
+        if (!$row) {
+            flash('error', 'Akun bendahara / pimpinan tidak ditemukan.');
+            $this->redirect('/user-accounts');
+        }
+
+        try {
+            $temporaryPassword = $this->generateTemporaryPassword();
+            $this->model()->resetPassword($id, password_hash($temporaryPassword, PASSWORD_DEFAULT));
+            audit_log('Akun Pengguna', 'reset_password', 'Password akun pengguna direset oleh admin.', [
+                'severity' => 'warning',
+                'entity_type' => 'user',
+                'entity_id' => (string) $id,
+                'before' => ['username' => (string) ($row['username'] ?? '')],
+                'after' => ['username' => (string) ($row['username'] ?? ''), 'password_reset' => true],
+            ]);
+            flash('success', 'Password sementara untuk akun ' . (string) ($row['username'] ?? '') . ': ' . $temporaryPassword . '. Simpan dan kirimkan secara aman ke pengguna.');
+        } catch (Throwable $e) {
+            log_error($e);
+            flash('error', 'Password akun gagal direset.');
+        }
+
+        $this->redirect('/user-accounts');
+    }
+
     private function save(?int $id): void
     {
         if (!verify_csrf((string) post('_token'))) {
@@ -122,6 +156,8 @@ final class UserAccountController extends Controller
             'password' => (string) post('password'),
             'password_confirmation' => (string) post('password_confirmation'),
             'is_active' => (string) post('is_active', '1') === '1',
+            'mfa_enabled' => (string) post('mfa_enabled', '0') === '1',
+            'mfa_secret' => strtoupper(trim((string) post('mfa_secret', ''))),
         ];
 
         with_old_input([
@@ -129,6 +165,8 @@ final class UserAccountController extends Controller
             'username' => $input['username'],
             'role_code' => $input['role_code'],
             'is_active' => $input['is_active'] ? '1' : '0',
+            'mfa_enabled' => $input['mfa_enabled'] ? '1' : '0',
+            'mfa_secret' => $input['mfa_secret'],
         ]);
 
         $errors = [];
@@ -168,6 +206,14 @@ final class UserAccountController extends Controller
             }
         }
 
+        if ($input['mfa_enabled']) {
+            if ($input['mfa_secret'] === '') {
+                $errors[] = 'Secret MFA wajib diisi jika MFA diaktifkan.';
+            } elseif (preg_match('/^[A-Z2-7]{16,64}$/', $input['mfa_secret']) !== 1) {
+                $errors[] = 'Secret MFA harus base32 16 sampai 64 karakter.';
+            }
+        }
+
         if ($errors !== []) {
             flash('error', implode(' ', $errors));
             $this->redirect($id === null ? '/user-accounts/create' : '/user-accounts/edit?id=' . $id);
@@ -181,6 +227,8 @@ final class UserAccountController extends Controller
                 'username' => $input['username'],
                 'password_hash' => $input['password'] !== '' ? password_hash($input['password'], PASSWORD_DEFAULT) : null,
                 'is_active' => $input['is_active'],
+                'mfa_enabled' => $input['mfa_enabled'],
+                'mfa_secret' => $input['mfa_enabled'] ? $input['mfa_secret'] : '',
             ];
 
             if ($id === null) {
@@ -218,6 +266,8 @@ final class UserAccountController extends Controller
             'username' => old('username', (string) ($row['username'] ?? '')),
             'role_code' => old('role_code', (string) ($row['role_code'] ?? 'bendahara')),
             'is_active' => old('is_active', isset($row['is_active']) && (int) $row['is_active'] === 1 ? '1' : '1'),
+            'mfa_enabled' => old('mfa_enabled', isset($row['mfa_enabled']) && (int) $row['mfa_enabled'] === 1 ? '1' : '0'),
+            'mfa_secret' => old('mfa_secret', (string) ($row['mfa_secret'] ?? ($row ? '' : AuthMfa::generateSecret()))),
         ];
 
         $this->view('user_accounts/views/form', [
@@ -226,5 +276,16 @@ final class UserAccountController extends Controller
             'formData' => $formData,
             'roleOptions' => $this->model()->getRoleOptions(),
         ]);
+    }
+
+    private function generateTemporaryPassword(): string
+    {
+        $length = max(10, (int) (auth_config('password_reset')['temporary_length'] ?? 12));
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+        $password = '';
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+        return $password;
     }
 }

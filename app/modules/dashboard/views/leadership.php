@@ -16,6 +16,9 @@ $criticalFailures = (int) ($closingChecklist['critical_failures'] ?? 0);
 $warnings = (int) ($closingChecklist['warnings'] ?? 0);
 $checks = $closingChecklist['checks'] ?? [];
 $topChecks = array_slice($checks, 0, 4);
+$taskCenter = is_array($taskCenter ?? null) ? $taskCenter : [];
+$workspaceRecentItems = is_array($workspaceRecentItems ?? null) ? $workspaceRecentItems : [];
+$workspaceFavoritePages = is_array($workspaceFavoritePages ?? null) ? $workspaceFavoritePages : [];
 ?>
 <div class="dashboard-shell">
     <section class="dashboard-hero mb-4">
@@ -31,6 +34,54 @@ $topChecks = array_slice($checks, 0, 4);
                     <span class="dashboard-badge <?= $readiness ? 'text-bg-success' : ($criticalFailures > 0 ? 'text-bg-danger' : 'text-bg-warning') ?>">Closing <?= $readiness ? 'Siap' : 'Perlu Review' ?></span>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section class="card dashboard-card mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Task Center Pimpinan</h2>
+                    <div class="text-secondary small">Ringkasan tindakan yang paling relevan untuk pengambilan keputusan dan closing.</div>
+                </div>
+                <a href="<?= e(base_url('/periods')) ?>" class="btn btn-outline-light btn-sm">Buka Periode</a>
+            </div>
+            <div class="row g-3">
+                <?php foreach ($taskCenter as $task): ?>
+                    <?php $statusClass = (string) ($task['status'] ?? 'warning') === 'success' ? 'text-bg-success' : ((string) ($task['status'] ?? 'warning') === 'danger' ? 'text-bg-danger' : 'text-bg-warning'); ?>
+                    <div class="col-md-4">
+                        <a href="<?= e(base_url((string) ($task['url'] ?? '/dashboard/pimpinan'))) ?>" class="text-decoration-none">
+                            <div class="border rounded-4 p-3 h-100 bg-body-tertiary">
+                                <div class="d-flex justify-content-between gap-3 mb-2">
+                                    <div class="fw-semibold text-dark"><?= e((string) ($task['title'] ?? '-')) ?></div>
+                                    <span class="badge <?= e($statusClass) ?>"><?= e((string) ($task['value'] ?? '-')) ?></span>
+                                </div>
+                                <div class="small text-secondary"><?= e((string) ($task['note'] ?? '')) ?></div>
+                            </div>
+                        </a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <?php if ($workspaceFavoritePages !== [] || $workspaceRecentItems !== []): ?>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        <div class="border rounded-4 p-3 h-100">
+                            <div class="fw-semibold mb-2">Favorit</div>
+                            <?php foreach (array_slice($workspaceFavoritePages, 0, 3) as $item): ?>
+                                <div><a href="<?= e(base_url((string) ($item['path'] ?? '/dashboard/pimpinan'))) ?>" class="small text-decoration-none"><?= e((string) ($item['title'] ?? 'Favorit')) ?></a></div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border rounded-4 p-3 h-100">
+                            <div class="fw-semibold mb-2">Terakhir Dibuka</div>
+                            <?php foreach (array_slice($workspaceRecentItems, 0, 3) as $item): ?>
+                                <div><a href="<?= e(base_url((string) ($item['path'] ?? '/dashboard/pimpinan'))) ?>" class="small text-decoration-none"><?= e((string) ($item['title'] ?? 'Halaman')) ?></a></div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     </section>
 

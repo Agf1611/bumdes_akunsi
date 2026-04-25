@@ -8,6 +8,12 @@ function dashboard_currency(float $amount): string
     return $prefix . number_format(abs($amount), 2, ',', '.');
 }
 
+function dashboard_currency_whole(float $amount): string
+{
+    $prefix = $amount < 0 ? '-Rp ' : 'Rp ';
+    return $prefix . number_format(abs($amount), 0, ',', '.');
+}
+
 function dashboard_compact_currency(float $amount): string
 {
     $negative = $amount < 0;

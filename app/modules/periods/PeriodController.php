@@ -65,9 +65,18 @@ final class PeriodController extends Controller
     public function index(): void
     {
         try {
+            $periods = $this->model()->getList();
+            foreach ($periods as &$period) {
+                try {
+                    $period['closing_readiness'] = $this->model()->buildClosingChecklist((int) ($period['id'] ?? 0));
+                } catch (Throwable) {
+                    $period['closing_readiness'] = null;
+                }
+            }
+            unset($period);
             $this->view('periods/views/index', [
                 'title' => 'Periode Akuntansi',
-                'periods' => $this->model()->getList(),
+                'periods' => $periods,
                 'statuses' => accounting_period_statuses(),
             ]);
         } catch (Throwable $e) {
@@ -171,6 +180,11 @@ final class PeriodController extends Controller
             $userId = (int) (Auth::user()['id'] ?? 0);
             $previousActive = current_accounting_period();
             $this->model()->setActive($id, $userId);
+            $activeYear = (int) substr((string) ($period['start_date'] ?? ''), 0, 4);
+            if ($activeYear > 0) {
+                Session::put('working_fiscal_year', $activeYear);
+            }
+            Session::put('working_period_id', $id);
             audit_log('Periode Akuntansi', 'set_active', 'Periode aktif akuntansi diperbarui.', [
                 'entity_type' => 'accounting_period',
                 'entity_id' => (string) $id,
@@ -212,6 +226,17 @@ final class PeriodController extends Controller
             if ($newStatus === 'CLOSED' && (int) $period['is_active'] !== 1) {
                 flash('error', 'Periode nonaktif tidak perlu ditutup. Aktifkan lebih dulu jika memang akan ditutup.');
                 $this->redirect('/periods');
+            }
+            if ($newStatus === 'CLOSED') {
+                $checklist = $this->model()->buildClosingChecklist($id);
+                $criticalFailures = (int) ($checklist['critical_failures'] ?? 0);
+                if ($criticalFailures > 0) {
+                    flash(
+                        'error',
+                        'Periode belum bisa ditutup karena masih ada ' . number_format($criticalFailures, 0, ',', '.') . ' blocker kritis pada checklist tutup buku.'
+                    );
+                    $this->redirect('/periods/checklist?id=' . $id);
+                }
             }
 
             $userId = (int) (Auth::user()['id'] ?? 0);

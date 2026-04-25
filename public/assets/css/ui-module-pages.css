@@ -1,0 +1,513 @@
+body.app-shell .module-hero,
+body.auth-page .module-hero {
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top right, rgba(63, 109, 246, 0.1), transparent 30%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.96));
+    border: 1px solid rgba(63, 109, 246, 0.1);
+    box-shadow: var(--ui-shadow-sm);
+}
+
+:root[data-theme="dark"] body.app-shell .module-hero,
+:root[data-theme="dark"] body.auth-page .module-hero {
+    background:
+        radial-gradient(circle at top right, rgba(126, 162, 255, 0.16), transparent 30%),
+        linear-gradient(135deg, rgba(17, 27, 44, 0.96), rgba(13, 22, 36, 0.98));
+}
+
+body.app-shell .module-hero__content,
+body.auth-page .module-hero__content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 1.65rem 1.75rem;
+}
+
+body.app-shell .module-hero__eyebrow,
+body.auth-page .module-hero__eyebrow {
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ui-primary-strong);
+    margin-bottom: 0.65rem;
+}
+
+body.app-shell .module-hero__title,
+body.auth-page .module-hero__title {
+    margin: 0;
+    font-size: clamp(1.45rem, 2vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--ui-text);
+}
+
+body.app-shell .module-hero__text,
+body.auth-page .module-hero__text {
+    margin: 0.6rem 0 0;
+    max-width: 48rem;
+    color: var(--ui-text-soft);
+    line-height: 1.75;
+}
+
+body.app-shell .module-hero__actions,
+body.auth-page .module-hero__actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+body.app-shell .listing-controls-shell {
+    border-top-color: var(--ui-border) !important;
+    background: linear-gradient(180deg, rgba(248, 251, 255, 0.88), rgba(255, 255, 255, 0.9));
+}
+
+:root[data-theme="dark"] body.app-shell .listing-controls-shell {
+    background: linear-gradient(180deg, rgba(17, 27, 44, 0.82), rgba(13, 22, 36, 0.9));
+}
+
+body.app-shell .listing-controls-shell .form-select,
+body.app-shell .listing-controls-shell .form-control {
+    min-height: 38px;
+    border-radius: 12px;
+}
+
+body.app-shell .table-action-col {
+    background: var(--ui-panel-strong) !important;
+    box-shadow: -10px 0 20px rgba(15, 23, 42, 0.06) !important;
+}
+
+body.app-shell .coa-table thead .table-action-col,
+body.app-shell .journal-page .journal-table thead .col-actions,
+body.app-shell .journal-page .journal-table thead .journal-bulk-check-col {
+    background: var(--ui-panel-muted) !important;
+}
+
+body.app-shell .table-action-trigger,
+body.app-shell .journal-page .journal-action-trigger {
+    min-height: 38px;
+    border-radius: 12px !important;
+    background: var(--ui-panel-strong) !important;
+    border-color: var(--ui-border) !important;
+    color: var(--ui-text) !important;
+    box-shadow: none !important;
+}
+
+body.app-shell .table-action-trigger:hover,
+body.app-shell .table-action-menu.is-open .table-action-trigger,
+body.app-shell .journal-page .journal-action-trigger:hover,
+body.app-shell .journal-page .journal-action-menu[open] .journal-action-trigger {
+    background: var(--ui-panel-muted) !important;
+    border-color: var(--ui-border-strong) !important;
+    color: var(--ui-primary-strong) !important;
+}
+
+body.app-shell .table-action-panel,
+body.app-shell .journal-page .journal-action-panel {
+    background: var(--ui-panel-strong) !important;
+    border: 1px solid var(--ui-border) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--ui-shadow-md) !important;
+}
+
+body.app-shell .table-action-panel a,
+body.app-shell .table-action-panel button,
+body.app-shell .journal-page .journal-action-panel a,
+body.app-shell .journal-page .journal-action-panel button {
+    color: var(--ui-text) !important;
+    border-radius: 12px !important;
+}
+
+body.app-shell .table-action-panel a:hover,
+body.app-shell .table-action-panel button:hover,
+body.app-shell .journal-page .journal-action-panel a:hover,
+body.app-shell .journal-page .journal-action-panel button:hover {
+    background: var(--ui-panel-muted) !important;
+    color: var(--ui-primary-strong) !important;
+}
+
+body.app-shell .journal-page > .d-flex:first-child {
+    padding: 1.55rem 1.65rem;
+    border: 1px solid rgba(63, 109, 246, 0.08);
+    border-radius: 26px;
+    background:
+        radial-gradient(circle at top right, rgba(63, 109, 246, 0.08), transparent 28%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.94));
+    box-shadow: var(--ui-shadow-sm);
+}
+
+:root[data-theme="dark"] body.app-shell .journal-page > .d-flex:first-child {
+    background:
+        radial-gradient(circle at top right, rgba(126, 162, 255, 0.14), transparent 28%),
+        linear-gradient(135deg, rgba(17, 27, 44, 0.94), rgba(13, 22, 36, 0.98));
+}
+
+body.app-shell .journal-page .card,
+body.app-shell .period-page .card {
+    overflow: hidden;
+}
+
+body.app-shell .journal-page .journal-bulk-card,
+body.app-shell .journal-page .journal-card {
+    background: var(--ui-panel-strong) !important;
+    border: 1px solid var(--ui-border) !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+}
+
+body.app-shell .journal-page .journal-scroll-note,
+body.app-shell .journal-page .journal-bulk-hint,
+body.app-shell .journal-page .journal-card__label,
+body.app-shell .journal-page .journal-card__value,
+body.app-shell .journal-page .journal-card__desc,
+body.app-shell .journal-page .journal-bulk-toolbar .form-label {
+    color: var(--ui-text-soft) !important;
+}
+
+body.app-shell .journal-page .journal-bulk-counter {
+    background: rgba(63, 109, 246, 0.1) !important;
+    color: var(--ui-primary-strong) !important;
+}
+
+body.app-shell .journal-page .journal-bulk-check-col,
+body.app-shell .journal-page .journal-table .col-actions {
+    background: var(--ui-panel-strong) !important;
+}
+
+body.app-shell .period-page .alert-info {
+    margin-bottom: 1.2rem !important;
+}
+
+body.auth-page {
+    font-family: var(--ui-font-sans);
+    color: var(--ui-text);
+    background:
+        radial-gradient(circle at top left, rgba(63, 109, 246, 0.1), transparent 22%),
+        linear-gradient(180deg, var(--ui-bg) 0%, var(--ui-bg-soft) 100%);
+}
+
+body.auth-page .auth-shell-inner {
+    max-width: 1320px;
+}
+
+body.auth-page .auth-layout-grid {
+    min-height: calc(100vh - 3rem);
+}
+
+body.auth-page .auth-visual-card,
+body.auth-page .auth-card {
+    background: var(--ui-panel) !important;
+    border: 1px solid var(--ui-border) !important;
+    border-radius: 30px !important;
+    box-shadow: var(--ui-shadow-md) !important;
+}
+
+body.auth-page .auth-visual-card {
+    padding: 2.1rem 2rem;
+}
+
+body.auth-page .auth-visual-card__eyebrow,
+body.auth-page .auth-mini-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(63, 109, 246, 0.1);
+    color: var(--ui-primary-strong);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+body.auth-page .auth-visual-card__title,
+body.auth-page .auth-form-title {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    line-height: 1.05;
+    letter-spacing: -0.05em;
+    color: var(--ui-text);
+}
+
+body.auth-page .auth-form-title {
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+}
+
+body.auth-page .auth-visual-card__lead {
+    margin-top: 1.4rem;
+    color: var(--ui-text-soft);
+    line-height: 1.85;
+    font-size: 1.02rem;
+}
+
+body.auth-page .auth-feature-list {
+    display: grid;
+    gap: 0.9rem;
+}
+
+body.auth-page .auth-feature-item {
+    padding: 1rem 1.1rem;
+    border-radius: 18px;
+    border: 1px solid var(--ui-border);
+    background: var(--ui-panel-strong);
+    color: var(--ui-text-soft);
+    box-shadow: none;
+}
+
+body.auth-page .auth-form-card .card-body {
+    padding: 2rem !important;
+}
+
+body.auth-page #themeToggle {
+    min-height: 44px;
+    padding: 0.55rem 0.9rem;
+    border-radius: 16px;
+    border: 1px solid var(--ui-border);
+    background: var(--ui-panel-strong);
+    box-shadow: none;
+    color: var(--ui-text);
+}
+
+body.auth-page .ui-alert {
+    margin-bottom: 1.1rem;
+}
+
+body.auth-page .form-control,
+body.auth-page .form-select {
+    min-height: 48px;
+}
+
+@media (max-width: 991.98px) {
+    body.app-shell .module-hero__content,
+    body.auth-page .module-hero__content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    body.app-shell .journal-page > .d-flex:first-child {
+        padding: 1.3rem 1.35rem;
+    }
+
+    body.auth-page .auth-layout-grid {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.app-shell .module-hero__content,
+    body.auth-page .module-hero__content {
+        padding: 1.3rem;
+    }
+
+    body.auth-page .auth-form-card .card-body,
+    body.auth-page .auth-visual-card {
+        padding: 1.4rem !important;
+    }
+
+    body.auth-page .auth-form-title {
+        font-size: 1.85rem;
+    }
+}
+
+body.app-shell .module-page {
+    display: grid;
+    gap: 1rem;
+}
+
+body.app-shell .module-page > .row,
+body.app-shell .module-page > .card,
+body.app-shell .module-page > .alert,
+body.app-shell .module-page > .listing-controls-shell,
+body.app-shell .module-page > form,
+body.app-shell .module-page > section {
+    margin-bottom: 0 !important;
+}
+
+body.app-shell .module-page .card,
+body.app-shell .route-ledger .card,
+body.app-shell .route-trial-balance .card,
+body.app-shell .route-profit-loss .card,
+body.app-shell .route-balance-sheet .card,
+body.app-shell .route-cash-flow .card,
+body.app-shell .route-equity-changes .card,
+body.app-shell .route-financial-notes .card,
+body.app-shell .route-lpj .card {
+    border: 1px solid var(--ui-border) !important;
+    border-radius: 24px !important;
+    background: var(--ui-panel) !important;
+    box-shadow: var(--ui-shadow-sm) !important;
+}
+
+body.app-shell .coa-page .dashboard-card,
+body.app-shell .user-account-page .dashboard-card,
+body.app-shell .bank-reconciliation-page .dashboard-card,
+body.app-shell .route-ledger .dashboard-card,
+body.app-shell .route-trial-balance .dashboard-card,
+body.app-shell .route-profit-loss .dashboard-card,
+body.app-shell .route-balance-sheet .dashboard-card,
+body.app-shell .route-cash-flow .dashboard-card,
+body.app-shell .route-equity-changes .dashboard-card,
+body.app-shell .route-financial-notes .dashboard-card,
+body.app-shell .route-lpj .dashboard-card {
+    border: 1px solid var(--ui-border) !important;
+    border-radius: 22px !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 253, 0.98)) !important;
+    box-shadow: var(--ui-shadow-sm) !important;
+}
+
+:root[data-theme="dark"] body.app-shell .coa-page .dashboard-card,
+:root[data-theme="dark"] body.app-shell .user-account-page .dashboard-card,
+:root[data-theme="dark"] body.app-shell .bank-reconciliation-page .dashboard-card,
+:root[data-theme="dark"] body.app-shell .route-ledger .dashboard-card,
+:root[data-theme="dark"] body.app-shell .route-trial-balance .dashboard-card,
+:root[data-theme="dark"] body.app-shell .route-profit-loss .dashboard-card,
+:root[data-theme="dark"] body.app-shell .route-balance-sheet .dashboard-card,
+:root[data-theme="dark"] body.app-shell .route-cash-flow .dashboard-card,
+:root[data-theme="dark"] body.app-shell .route-equity-changes .dashboard-card,
+:root[data-theme="dark"] body.app-shell .route-financial-notes .dashboard-card,
+:root[data-theme="dark"] body.app-shell .route-lpj .dashboard-card {
+    background: linear-gradient(180deg, rgba(17, 27, 44, 0.96), rgba(13, 22, 36, 0.98)) !important;
+}
+
+body.app-shell .coa-page .table.table-dark,
+body.app-shell .user-account-page .table.table-dark,
+body.app-shell .bank-reconciliation-page .table.table-dark,
+body.app-shell .route-ledger .table.table-dark,
+body.app-shell .route-trial-balance .table.table-dark,
+body.app-shell .route-profit-loss .table,
+body.app-shell .route-balance-sheet .table.table-dark,
+body.app-shell .route-cash-flow .table,
+body.app-shell .route-equity-changes .table.table-dark,
+body.app-shell .route-financial-notes .table.table-dark,
+body.app-shell .route-lpj .table.table-dark,
+body.app-shell .journal-detail-page .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--ui-text);
+    --bs-table-border-color: var(--ui-border);
+    --bs-table-hover-color: var(--ui-text);
+    --bs-table-hover-bg: rgba(63, 109, 246, 0.04);
+    color: var(--ui-text) !important;
+}
+
+body.app-shell .coa-page .table.table-dark thead th,
+body.app-shell .user-account-page .table.table-dark thead th,
+body.app-shell .bank-reconciliation-page .table.table-dark thead th,
+body.app-shell .route-ledger .table.table-dark thead th,
+body.app-shell .route-trial-balance .table.table-dark thead th,
+body.app-shell .route-profit-loss .table thead th,
+body.app-shell .route-balance-sheet .table.table-dark thead th,
+body.app-shell .route-cash-flow .table thead th,
+body.app-shell .route-equity-changes .table.table-dark thead th,
+body.app-shell .route-financial-notes .table.table-dark thead th,
+body.app-shell .route-lpj .table.table-dark thead th,
+body.app-shell .journal-detail-page .table thead th {
+    background: var(--ui-panel-muted) !important;
+    color: var(--ui-text) !important;
+    border-bottom-color: var(--ui-border-strong) !important;
+    white-space: nowrap;
+}
+
+body.app-shell .coa-page .table.table-dark td,
+body.app-shell .user-account-page .table.table-dark td,
+body.app-shell .bank-reconciliation-page .table.table-dark td,
+body.app-shell .route-ledger .table.table-dark td,
+body.app-shell .route-trial-balance .table.table-dark td,
+body.app-shell .route-profit-loss .table td,
+body.app-shell .route-balance-sheet .table.table-dark td,
+body.app-shell .route-cash-flow .table td,
+body.app-shell .route-equity-changes .table.table-dark td,
+body.app-shell .route-financial-notes .table.table-dark td,
+body.app-shell .route-lpj .table.table-dark td,
+body.app-shell .journal-detail-page .table td {
+    background: transparent !important;
+    color: var(--ui-text) !important;
+}
+
+body.app-shell .route-ledger .content-wrap > .d-flex:first-of-type,
+body.app-shell .route-trial-balance .content-wrap > .d-flex:first-of-type,
+body.app-shell .route-profit-loss .content-wrap > .d-flex:first-of-type,
+body.app-shell .route-balance-sheet .content-wrap > .d-flex:first-of-type,
+body.app-shell .route-equity-changes .content-wrap > .d-flex:first-of-type,
+body.app-shell .route-financial-notes .content-wrap > .d-flex:first-of-type,
+body.app-shell .route-lpj .content-wrap > .d-flex:first-of-type {
+    padding: 1.55rem 1.65rem;
+    border: 1px solid rgba(63, 109, 246, 0.08);
+    border-radius: 26px;
+    background:
+        radial-gradient(circle at top right, rgba(63, 109, 246, 0.08), transparent 28%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.94));
+    box-shadow: var(--ui-shadow-sm);
+}
+
+:root[data-theme="dark"] body.app-shell .route-ledger .content-wrap > .d-flex:first-of-type,
+:root[data-theme="dark"] body.app-shell .route-trial-balance .content-wrap > .d-flex:first-of-type,
+:root[data-theme="dark"] body.app-shell .route-profit-loss .content-wrap > .d-flex:first-of-type,
+:root[data-theme="dark"] body.app-shell .route-balance-sheet .content-wrap > .d-flex:first-of-type,
+:root[data-theme="dark"] body.app-shell .route-equity-changes .content-wrap > .d-flex:first-of-type,
+:root[data-theme="dark"] body.app-shell .route-financial-notes .content-wrap > .d-flex:first-of-type,
+:root[data-theme="dark"] body.app-shell .route-lpj .content-wrap > .d-flex:first-of-type {
+    background:
+        radial-gradient(circle at top right, rgba(126, 162, 255, 0.14), transparent 28%),
+        linear-gradient(135deg, rgba(17, 27, 44, 0.94), rgba(13, 22, 36, 0.98));
+}
+
+body.app-shell .route-ledger .card.shadow-sm > .card-body.p-5.text-center.text-secondary,
+body.app-shell .route-trial-balance .card.shadow-sm > .card-body.p-5.text-center.text-secondary,
+body.app-shell .route-profit-loss .card.shadow-sm > .card-body.p-5.text-center.text-secondary,
+body.app-shell .route-balance-sheet .card.shadow-sm > .card-body.p-5.text-center.text-secondary,
+body.app-shell .route-equity-changes .card.shadow-sm > .card-body.p-5.text-center.text-secondary,
+body.app-shell .route-financial-notes .card.shadow-sm > .card-body.p-5.text-center.text-secondary,
+body.app-shell .route-lpj .card.shadow-sm > .card-body.p-5.text-center.text-secondary,
+body.app-shell .empty-state-panel {
+    padding: 2rem 1.6rem !important;
+    border: 1px dashed var(--ui-border-strong);
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(248, 251, 255, 0.88), rgba(255, 255, 255, 0.95));
+    color: var(--ui-text-soft) !important;
+}
+
+body.app-shell .empty-state-panel--compact {
+    padding: 1.4rem 1.35rem !important;
+}
+
+body.app-shell .empty-state-panel__title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ui-text);
+    margin-bottom: 0.35rem;
+}
+
+body.app-shell .empty-state-panel__text,
+body.app-shell .card-body.text-center strong.text-light,
+body.app-shell .card-body.text-center strong.text-dark {
+    color: var(--ui-text-soft) !important;
+}
+
+body.app-shell .user-account-form-page .bg-dark-subtle {
+    background: linear-gradient(180deg, rgba(248, 251, 255, 0.9), rgba(241, 245, 249, 0.96)) !important;
+}
+
+:root[data-theme="dark"] body.app-shell .user-account-form-page .bg-dark-subtle {
+    background: linear-gradient(180deg, rgba(17, 27, 44, 0.92), rgba(13, 22, 36, 0.98)) !important;
+}
+
+body.app-shell .route-profit-loss .statement-section td,
+body.app-shell .route-balance-sheet .balance-section-row td,
+body.app-shell .route-balance-sheet .balance-total-row td,
+body.app-shell .route-equity-changes .table tfoot tr td,
+body.app-shell .route-equity-changes .table tfoot tr th {
+    background: rgba(63, 109, 246, 0.05) !important;
+}
+
+@media (max-width: 991.98px) {
+    body.app-shell .route-ledger .content-wrap > .d-flex:first-of-type,
+    body.app-shell .route-trial-balance .content-wrap > .d-flex:first-of-type,
+    body.app-shell .route-profit-loss .content-wrap > .d-flex:first-of-type,
+    body.app-shell .route-balance-sheet .content-wrap > .d-flex:first-of-type,
+    body.app-shell .route-equity-changes .content-wrap > .d-flex:first-of-type,
+    body.app-shell .route-financial-notes .content-wrap > .d-flex:first-of-type,
+    body.app-shell .route-lpj .content-wrap > .d-flex:first-of-type {
+        padding: 1.25rem 1.35rem;
+    }
+}

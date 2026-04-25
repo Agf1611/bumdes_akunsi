@@ -6,6 +6,7 @@ final class GitHubAppUpdaterService
 {
     private const REPORT_LIMIT = 12;
     private const HTTP_TIMEOUT = 45;
+    private const UPDATER_CAPABILITY = 1;
 
     public static function directory(): string
     {
@@ -184,6 +185,9 @@ final class GitHubAppUpdaterService
             usort($obsolete, static fn (array $a, array $b): int => strcmp((string) $a['path'], (string) $b['path']));
 
             $remoteVersion = $this->readRemoteVersion($remoteRoot);
+            $remoteManifest = $this->readReleaseManifest($remoteRoot);
+            $localManifest = $this->currentManifest();
+            $preflight = $this->buildPreflight($remoteManifest, $localManifest);
             $state = $this->state();
             $updateAvailable = $changed !== [] || $new !== [] || ((string) ($remoteMeta['commit_sha'] ?? '')) !== '' && ((string) ($state['current_commit'] ?? '')) !== (string) ($remoteMeta['commit_sha'] ?? '');
 
@@ -204,6 +208,11 @@ final class GitHubAppUpdaterService
                     'unchanged_count' => $unchangedCount,
                     'obsolete_count' => count($obsolete),
                 ],
+                'manifest' => [
+                    'local' => $localManifest,
+                    'remote' => $remoteManifest,
+                ],
+                'preflight' => $preflight,
                 'files' => [
                     'changed' => $changed,
                     'new' => $new,
@@ -232,7 +241,18 @@ final class GitHubAppUpdaterService
 
         $check = $this->checkForUpdates();
         $summary = (array) ($check['summary'] ?? []);
+        $preflight = (array) ($check['preflight'] ?? []);
         $updateAvailable = (bool) ($summary['update_available'] ?? false);
+
+        if (!(bool) ($preflight['compatible'] ?? true)) {
+            throw new RuntimeException(
+                'Paket update membutuhkan capability updater '
+                . (string) ($preflight['required_capability'] ?? '?')
+                . ', sedangkan updater lokal ini hanya mendukung capability '
+                . self::UPDATER_CAPABILITY
+                . '. Update diblok untuk mencegah instalasi yang tidak kompatibel.'
+            );
+        }
 
         if (!$updateAvailable && (int) ($summary['changed_count'] ?? 0) === 0 && (int) ($summary['new_count'] ?? 0) === 0) {
             $result = $check;
@@ -258,9 +278,16 @@ final class GitHubAppUpdaterService
 
         $applied = [];
         $created = [];
+        $migrationResult = ['applied' => []];
 
         try {
             $remoteRoot = $workspace['root'];
+            $remoteManifest = $this->readReleaseManifest($remoteRoot);
+            MaintenanceMode::enable([
+                'reason' => 'app_update',
+                'started_at' => date('c'),
+                'target_version' => (string) ($remoteManifest['release_version'] ?? ($check['remote']['version'] ?? '')),
+            ]);
             $allToApply = array_merge((array) ($check['files']['changed'] ?? []), (array) ($check['files']['new'] ?? []));
             usort($allToApply, static fn (array $a, array $b): int => strcmp((string) $a['path'], (string) $b['path']));
 
@@ -298,13 +325,15 @@ final class GitHubAppUpdaterService
                 $applied[] = $relativePath;
             }
 
+            $migrationResult = (new MigrationRunner(Database::getInstance(db_config())))->migrate();
+
             $state = $this->state();
             $newState = [
                 'repo_url' => $this->repoUrl(),
                 'branch' => $this->branch(),
                 'current_commit' => (string) (($check['remote']['commit_sha'] ?? '') ?: ($state['current_commit'] ?? '')),
                 'current_commit_short' => (string) (($check['remote']['commit_short'] ?? '') ?: ($state['current_commit_short'] ?? '')),
-                'current_version' => $this->currentVersion(),
+                'current_version' => (string) (($remoteManifest['release_version'] ?? '') ?: ($check['remote']['version'] ?? $this->currentVersion())),
                 'last_checked_at' => (string) ($check['checked_at'] ?? date('Y-m-d H:i:s')),
                 'last_updated_at' => date('Y-m-d H:i:s'),
                 'last_report_file' => '',
@@ -319,11 +348,12 @@ final class GitHubAppUpdaterService
             $result['file_backup_dir'] = basename($fileBackupRoot);
             $result['applied_files'] = $applied;
             $result['created_files'] = $created;
-            $result['message'] = 'Update selesai. Sistem hanya mengganti file yang berubah dari GitHub dan tidak menyentuh upload, storage, atau generated config.';
+            $result['migration_result'] = $migrationResult;
+            $result['message'] = 'Update selesai. Sistem mengganti file yang berubah, menjalankan migration yang belum terpasang, dan tidak menyentuh upload, storage, atau generated config.';
             $reportFile = $this->writeReport('update-success', $result);
             $result['report_file'] = basename($reportFile);
             $newState['last_report_file'] = basename($reportFile);
-            $newState['current_version'] = $this->currentVersion();
+            $newState['current_version'] = (string) (($remoteManifest['release_version'] ?? '') ?: ($check['remote']['version'] ?? $this->currentVersion()));
             $this->writeJson(self::statePath(), $newState);
             $this->writeJson(self::lastCheckPath(), $result);
 
@@ -347,6 +377,7 @@ final class GitHubAppUpdaterService
                 'rollback_applied' => true,
                 'applied_before_error' => $applied,
                 'created_before_error' => $created,
+                'migration_result' => $migrationResult,
                 'last_check' => $check,
             ];
             $reportFile = $this->writeReport('update-failed', $failure);
@@ -354,6 +385,7 @@ final class GitHubAppUpdaterService
             $this->writeJson(self::lastCheckPath(), $failure);
             throw new RuntimeException('Update aplikasi gagal. Rollback file lokal sudah dicoba otomatis. Lihat laporan: ' . basename($reportFile) . '. Detail: ' . $e->getMessage(), 0, $e);
         } finally {
+            MaintenanceMode::disable();
             $this->cleanupWorkspace($workspace['workspace']);
         }
     }
@@ -540,7 +572,7 @@ final class GitHubAppUpdaterService
         if (preg_match('/\Atest_.*\.php\z/i', $baseName)) {
             return false;
         }
-        if (preg_match('/\.sql\z/i', $baseName)) {
+        if (preg_match('/\.sql\z/i', $baseName) && !str_starts_with($relativePath, 'database/migrations/')) {
             return false;
         }
         if (preg_match('/\.tar\.gz\.?\z/i', $baseName)) {
@@ -561,6 +593,47 @@ final class GitHubAppUpdaterService
         }
 
         return 'unknown';
+    }
+
+    public function currentManifest(): array
+    {
+        return $this->readReleaseManifest(ROOT_PATH);
+    }
+
+    public function pendingMigrations(): array
+    {
+        $db = Database::getInstance(db_config());
+        return (new MigrationRunner($db))->pendingMigrations();
+    }
+
+    private function readReleaseManifest(string $basePath): array
+    {
+        $path = rtrim($basePath, '/\\') . '/release-manifest.json';
+        if (!is_file($path)) {
+            return [];
+        }
+
+        try {
+            $payload = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+            return is_array($payload) ? $payload : [];
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    private function buildPreflight(array $remoteManifest, array $localManifest): array
+    {
+        $requiredCapability = (int) ($remoteManifest['min_updater_capability'] ?? 1);
+        $compatible = $requiredCapability <= self::UPDATER_CAPABILITY;
+
+        return [
+            'updater_capability' => self::UPDATER_CAPABILITY,
+            'required_capability' => $requiredCapability,
+            'compatible' => $compatible,
+            'migration_count' => count((array) ($remoteManifest['schema_migrations'] ?? [])),
+            'remote_release_version' => (string) ($remoteManifest['release_version'] ?? ''),
+            'local_release_version' => (string) ($localManifest['release_version'] ?? ''),
+        ];
     }
 
     private function httpJson(string $url): array
@@ -689,10 +762,28 @@ final class GitHubAppUpdaterService
             $lines[] = '';
         }
 
+        $preflight = (array) ($payload['preflight'] ?? (($payload['last_check']['preflight'] ?? []) ?: []));
+        if ($preflight !== []) {
+            $lines[] = 'Preflight compatibility:';
+            foreach ($preflight as $key => $value) {
+                $lines[] = '- ' . $key . ': ' . (is_bool($value) ? ($value ? 'true' : 'false') : (string) $value);
+            }
+            $lines[] = '';
+        }
+
         if (isset($payload['database_backup']) && is_array($payload['database_backup'])) {
             $lines[] = 'Backup database otomatis:';
             $lines[] = '- file_name: ' . (string) ($payload['database_backup']['file_name'] ?? '-');
             $lines[] = '- size: ' . format_bytes((int) ($payload['database_backup']['size'] ?? 0));
+            $lines[] = '';
+        }
+
+        if (isset($payload['migration_result']) && is_array($payload['migration_result'])) {
+            $lines[] = 'Migration result:';
+            $lines[] = '- applied_count: ' . count((array) ($payload['migration_result']['applied'] ?? []));
+            foreach ((array) ($payload['migration_result']['applied'] ?? []) as $migrationName) {
+                $lines[] = '- applied: ' . (string) $migrationName;
+            }
             $lines[] = '';
         }
 

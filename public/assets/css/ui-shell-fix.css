@@ -36,11 +36,12 @@ body.app-shell .app-main {
     flex-direction: column;
     min-width: 0;
     height: 100vh;
-    margin-left: var(--sidebar-width, 276px);
+    margin-left: 0;
+    width: auto;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
-    transition: margin-left .24s ease;
+    transition: width .24s ease;
     scrollbar-gutter: stable;
 }
 
@@ -146,6 +147,6 @@ body.app-shell .brand-mark__image {
     }
 
     body.app-shell:not(.sidebar-collapsed) .app-main {
-        margin-left: var(--sidebar-width, 276px) !important;
+        margin-left: 0 !important;
     }
 }

@@ -1,12 +1,23 @@
 <?php declare(strict_types=1); ?>
-<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
-    <div>
-        <h1 class="h3 mb-1">Rekonsiliasi Bank</h1>
-        <p class="text-secondary mb-0">Import CSV mutasi bank, cocokkan ke jurnal bank, lalu cetak ringkasan selisih agar penutupan buku lebih aman.</p>
+<div class="bank-reconciliation-page module-page">
+<section class="module-hero mb-4">
+    <div class="module-hero__content">
+        <div>
+            <div class="module-hero__eyebrow">Rekonsiliasi</div>
+            <h1 class="module-hero__title">Rekonsiliasi Bank</h1>
+            <p class="module-hero__text">Import CSV mutasi bank, cocokkan ke jurnal bank, lalu review selisih agar proses closing lebih aman dan lebih mudah dipahami.</p>
+        </div>
+        <div class="module-hero__actions">
+            <?php if ($selected): ?>
+                <a href="<?= e(base_url('/bank-reconciliations/print?id=' . (int) $selected['id'])) ?>" target="_blank" class="btn btn-outline-secondary">Cetak Rekonsiliasi</a>
+            <?php endif; ?>
+        </div>
     </div>
-    <?php if ($selected): ?>
-        <a href="<?= e(base_url('/bank-reconciliations/print?id=' . (int) $selected['id'])) ?>" target="_blank" class="btn btn-outline-light">Cetak Rekonsiliasi</a>
-    <?php endif; ?>
+</section>
+
+<div class="alert alert-info mb-4">
+    <div class="fw-semibold mb-1">Panduan singkat rekonsiliasi</div>
+    <div class="small">Urutan yang paling aman adalah import CSV mutasi, cek hasil auto match, pastikan selisih jurnal vs bank mendekati nol, lalu review checklist tutup buku sebelum periode ditutup.</div>
 </div>
 
 <div class="row g-4 mb-4">
@@ -265,3 +276,4 @@
         </div>
     </div>
 <?php endif; ?>
+</div>

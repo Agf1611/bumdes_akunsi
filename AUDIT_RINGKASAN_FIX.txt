@@ -1,0 +1,13 @@
+RINGKASAN FIX PACKAGE
+
+Perbaikan utama:
+1. Menghapus file konfigurasi produksi app/config/generated.php agar paket aman untuk upload baru.
+2. Menghapus storage/installed.lock agar installer bisa dijalankan ulang di server tujuan.
+3. Membersihkan runtime artifacts: log, backup SQL, file import, lampiran jurnal, logo, dan tanda tangan lama.
+4. Mengeraskan beberapa view agar tidak mudah memunculkan warning Undefined array key saat data parsial.
+5. Menghapus file patch/arsip sisa yang tidak dibutuhkan untuk deploy.
+
+Setelah upload:
+- Buat database kosong.
+- Jalankan /install.php.
+- Isi koneksi database baru.

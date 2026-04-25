@@ -1,7 +1,7 @@
 <?php declare(strict_types=1); ?>
 <?php
-$listing = listing_paginate($journals ?? []);
-$journals = $listing['items'];
+$listing = is_array($listing ?? null) ? $listing : listing_paginate($journals ?? []);
+$journals = $listing['items'] ?? ($journals ?? []);
 $listingPath = '/journals';
 $importErrors = Session::pull('import_errors', []);
 $importSuccess = Session::pull('import_success', '');
@@ -464,7 +464,12 @@ $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $curr
                             <td class="col-attach text-center"><span class="badge text-bg-dark border"><?= e((string) ((int) ($journal['attachment_count'] ?? 0))) ?></span></td>
                             <td class="col-amount text-end fw-semibold"><?= e(number_format((float) $journal['total_debit'], 2, ',', '.')) ?></td>
                             <td class="col-amount text-end fw-semibold"><?= e(number_format((float) $journal['total_credit'], 2, ',', '.')) ?></td>
-                            <td class="col-status"><span class="badge <?= (string) $journal['period_status'] === 'OPEN' ? 'text-bg-success' : 'text-bg-danger' ?>"><?= (string) $journal['period_status'] === 'OPEN' ? 'Buka' : 'Tutup' ?></span></td>
+                            <td class="col-status">
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="badge <?= (string) ($journal['workflow_status'] ?? 'POSTED') === 'POSTED' ? 'text-bg-primary' : 'text-bg-secondary' ?>"><?= e((string) ($journal['workflow_status'] ?? 'POSTED')) ?></span>
+                                    <span class="badge <?= (string) $journal['period_status'] === 'OPEN' ? 'text-bg-success' : 'text-bg-danger' ?>"><?= (string) $journal['period_status'] === 'OPEN' ? 'Periode Buka' : 'Periode Tutup' ?></span>
+                                </div>
+                            </td>
                             <td class="col-actions text-end">
                                 <details class="journal-action-menu">
                                     <summary class="btn btn-sm btn-outline-primary journal-action-trigger">Aksi</summary>
@@ -513,7 +518,10 @@ $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $curr
                         <div class="small text-secondary mb-1">No. Jurnal</div>
                         <div class="fw-semibold text-dark"><?= e((string) $journal['journal_no']) ?></div>
                     </div>
-                    <span class="badge <?= (string) $journal['period_status'] === 'OPEN' ? 'text-bg-success' : 'text-bg-danger' ?>"><?= (string) $journal['period_status'] === 'OPEN' ? 'Buka' : 'Tutup' ?></span>
+                    <div class="d-flex flex-column align-items-end gap-1">
+                        <span class="badge <?= (string) ($journal['workflow_status'] ?? 'POSTED') === 'POSTED' ? 'text-bg-primary' : 'text-bg-secondary' ?>"><?= e((string) ($journal['workflow_status'] ?? 'POSTED')) ?></span>
+                        <span class="badge <?= (string) $journal['period_status'] === 'OPEN' ? 'text-bg-success' : 'text-bg-danger' ?>"><?= (string) $journal['period_status'] === 'OPEN' ? 'Periode Buka' : 'Periode Tutup' ?></span>
+                    </div>
                 </div>
                 <div class="journal-card__meta">
                     <div>

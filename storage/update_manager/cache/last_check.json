@@ -1,0 +1,155 @@
+{
+    "status": "checked",
+    "checked_at": "2026-04-24 12:08:17",
+    "repo_url": "https://github.com/Agf1611/bumdes_akunsi.git",
+    "branch": "main",
+    "remote": {
+        "commit_sha": "c407d9cce6d993dcac1c34792a3ca6be3c7d6f09",
+        "commit_short": "c407d9c",
+        "commit_message": "update lagi",
+        "commit_date": "2026-04-20 06:33:26",
+        "html_url": "https://github.com/Agf1611/bumdes_akunsi/tree/main",
+        "version": "1.0.0"
+    },
+    "local": {
+        "version": "1.0.0",
+        "commit": "26edc92a7c9ced38e0adf6ea68140e50f0c4466b"
+    },
+    "summary": {
+        "update_available": true,
+        "changed_count": 7,
+        "new_count": 0,
+        "unchanged_count": 222,
+        "obsolete_count": 11
+    },
+    "files": {
+        "changed": [
+            {
+                "path": "app/config/app.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../storage/update_manager/temp/update-20260424-120815-65c64c0a/extract/bumdes_akunsi-main/app/config/app.php",
+                "sha1": "5ffa0a668be3180940403be0254851bbdae1504b",
+                "size": 369,
+                "local_sha1": "ddd3ac83e528bbc8c887fe16852116ba4230122f",
+                "local_size": 405
+            },
+            {
+                "path": "app/config/auth.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../storage/update_manager/temp/update-20260424-120815-65c64c0a/extract/bumdes_akunsi-main/app/config/auth.php",
+                "sha1": "bcf887b6fbbf02fea00ee596cb3eb3b3b9ba61fc",
+                "size": 179,
+                "local_sha1": "39d27cf693bca63bf8629a6a4241c356160355d9",
+                "local_size": 580
+            },
+            {
+                "path": "app/core/App.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../storage/update_manager/temp/update-20260424-120815-65c64c0a/extract/bumdes_akunsi-main/app/core/App.php",
+                "sha1": "07262e133d701d72e635493f376dd2e6feec04f7",
+                "size": 1693,
+                "local_sha1": "291f7f2a4623b8872a6c248cbc6faea41ff0863a",
+                "local_size": 1958
+            },
+            {
+                "path": "app/core/Auth.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../storage/update_manager/temp/update-20260424-120815-65c64c0a/extract/bumdes_akunsi-main/app/core/Auth.php",
+                "sha1": "144633f492ee90269f2372d1ceee4180a0e483c3",
+                "size": 877,
+                "local_sha1": "d7c84c96bd3e31711aace3c9b92b0f811d79121b",
+                "local_size": 1955
+            },
+            {
+                "path": "app/core/Session.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../storage/update_manager/temp/update-20260424-120815-65c64c0a/extract/bumdes_akunsi-main/app/core/Session.php",
+                "sha1": "8bf583486a9a0355afd1be6045e3cab6874d6899",
+                "size": 1842,
+                "local_sha1": "e434570bbec0dbb4b25e925e6fc97acd761637e8",
+                "local_size": 1924
+            },
+            {
+                "path": "app/modules/journals/JournalController.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../storage/update_manager/temp/update-20260424-120815-65c64c0a/extract/bumdes_akunsi-main/app/modules/journals/JournalController.php",
+                "sha1": "81c46d9135d1af67e379f97bd3f4c21705eabf02",
+                "size": 58531,
+                "local_sha1": "4431ab7979cafe1717c8d9335736c7b62bd03d5d",
+                "local_size": 58024
+            },
+            {
+                "path": "app/modules/journals/views/detail.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../storage/update_manager/temp/update-20260424-120815-65c64c0a/extract/bumdes_akunsi-main/app/modules/journals/views/detail.php",
+                "sha1": "2859e3ac6aa76c852841870f989c6eda6a4dc318",
+                "size": 24211,
+                "local_sha1": "b81c2b7df7adf2bdd65e4c169e3e915f36d1f7bb",
+                "local_size": 14596
+            }
+        ],
+        "new": [],
+        "obsolete": [
+            {
+                "path": "AUDIT_RINGKASAN_FIX.txt",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../AUDIT_RINGKASAN_FIX.txt",
+                "sha1": "74c6962aae496421f0e2afe898b697ba6f984152",
+                "size": 612
+            },
+            {
+                "path": "INSTALL_WINDOWS_XAMPP.bat",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../INSTALL_WINDOWS_XAMPP.bat",
+                "sha1": "2f183aec51f3fcf2878375cea368f2763bad2e8a",
+                "size": 54
+            },
+            {
+                "path": "RESET_INSTALL_LOCALHOST.bat",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../RESET_INSTALL_LOCALHOST.bat",
+                "sha1": "ed1c0eae462fdc5b227dc232d6e8f8ef141d93dd",
+                "size": 60
+            },
+            {
+                "path": "app/core/MaintenanceMode.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../app/core/MaintenanceMode.php",
+                "sha1": "8d9769c0346be872a79ead1f1dc12196f242c660",
+                "size": 1710
+            },
+            {
+                "path": "app/core/MigrationRunner.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../app/core/MigrationRunner.php",
+                "sha1": "143e44ea1ed7ab64bab97da345f3e500dc8c31a2",
+                "size": 6117
+            },
+            {
+                "path": "app/modules/auth/AuthMfa.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../app/modules/auth/AuthMfa.php",
+                "sha1": "d55a7dca2c2332c000c1ac9f5c2e2b32501f4d32",
+                "size": 2687
+            },
+            {
+                "path": "app/modules/auth/AuthRateLimiter.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../app/modules/auth/AuthRateLimiter.php",
+                "sha1": "08193a4b72b909ede0a49aab4997ccaf86ace9d6",
+                "size": 4201
+            },
+            {
+                "path": "app/views/errors/503.php",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../app/views/errors/503.php",
+                "sha1": "84ed6d280d1adad808c846c5b2a0ab481daf0665",
+                "size": 1076
+            },
+            {
+                "path": "release-manifest.json",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../release-manifest.json",
+                "sha1": "376cf8dddab012b8b02b9b39b46ecc232bc68a25",
+                "size": 330
+            },
+            {
+                "path": "tools/windows/install-xampp.bat",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../tools/windows/install-xampp.bat",
+                "sha1": "ad201a611dfb6919b105292a78f0e713f45ba501",
+                "size": 4129
+            },
+            {
+                "path": "tools/windows/reset-local-install.bat",
+                "full_path": "C:/xampp/htdocs/bumdes/app/../tools/windows/reset-local-install.bat",
+                "sha1": "d6daa54f625ab72e7654e95cef44f495586b415b",
+                "size": 2070
+            }
+        ]
+    },
+    "report_file": "reset-local-install.bat"
+}

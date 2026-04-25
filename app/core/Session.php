@@ -21,6 +21,7 @@ final class Session {
     }
     public static function forget(string $key): void { unset($_SESSION[$key]); }
     public static function regenerate(): void { if (session_status()===PHP_SESSION_ACTIVE) session_regenerate_id(true); }
+    public static function touch(string $key): void { $_SESSION[$key] = time(); }
     public static function destroy(): void {
         if (session_status() !== PHP_SESSION_ACTIVE) return;
         $_SESSION = [];

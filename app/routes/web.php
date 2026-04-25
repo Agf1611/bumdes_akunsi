@@ -24,6 +24,7 @@ $router->post('/user-accounts/store', [UserAccountController::class, 'store'], [
 $router->get('/user-accounts/edit', [UserAccountController::class, 'edit'], [[RoleMiddleware::class, ['admin']]]);
 $router->post('/user-accounts/update', [UserAccountController::class, 'update'], [[RoleMiddleware::class, ['admin']]]);
 $router->post('/user-accounts/toggle-active', [UserAccountController::class, 'toggleActive'], [[RoleMiddleware::class, ['admin']]]);
+$router->post('/user-accounts/reset-password', [UserAccountController::class, 'resetPassword'], [[RoleMiddleware::class, ['admin']]]);
 $router->get('/audit-logs', [AuditLogController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
 $router->get('/backups', [BackupController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
 $router->post('/backups/create', [BackupController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);
@@ -35,6 +36,10 @@ $router->get('/updates', [UpdateController::class, 'index'], [[RoleMiddleware::c
 $router->post('/updates/check', [UpdateController::class, 'check'], [[RoleMiddleware::class, ['admin']]]);
 $router->post('/updates/apply', [UpdateController::class, 'apply'], [[RoleMiddleware::class, ['admin']]]);
 $router->get('/updates/report', [UpdateController::class, 'report'], [[RoleMiddleware::class, ['admin']]]);
+
+$router->get('/search/global', [WorkspaceController::class, 'search'], [AuthMiddleware::class]);
+$router->post('/workspace/toggle-favorite', [WorkspaceController::class, 'toggleFavorite'], [AuthMiddleware::class]);
+$router->post('/workspace/save-filter', [WorkspaceController::class, 'saveFilter'], [AuthMiddleware::class]);
 
 $router->get('/coa', [CoaController::class, 'index'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/coa/create', [CoaController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);
@@ -88,6 +93,9 @@ $router->get('/periods/year-end-close', [PeriodController::class, 'yearEndClose'
 $router->post('/periods/year-end-close', [PeriodController::class, 'executeYearEndClose'], [[RoleMiddleware::class, ['admin']]]);
 
 $router->get('/journals', [JournalController::class, 'index'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
+$router->get('/journals/quick', [QuickJournalController::class, 'create'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
+$router->post('/journals/quick', [QuickJournalController::class, 'store'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
+$router->post('/journals/quick/favorite-template', [QuickJournalController::class, 'toggleFavoriteTemplate'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/journals/create', [JournalController::class, 'create'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->post('/journals/store', [JournalController::class, 'store'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/journals/edit', [JournalController::class, 'edit'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);

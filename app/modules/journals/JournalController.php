@@ -18,10 +18,36 @@ final class JournalController extends Controller
     {
         try {
             $filters = $this->readFilters();
+            $page = listing_resolve_page();
+            $perPage = listing_resolve_per_page(10);
+            $total = $this->model()->countList($filters);
+            $totalPages = max(1, (int) ceil($total / max(1, $perPage)));
+            if ($page > $totalPages) {
+                $page = $totalPages;
+            }
+            $offset = max(0, ($page - 1) * $perPage);
+            $journals = $this->model()->getList($filters, [
+                'limit' => $perPage,
+                'offset' => $offset,
+            ]);
+
             $this->view('journals/views/index', [
                 'title' => 'Jurnal Umum',
                 'filters' => $filters,
-                'journals' => $this->model()->getList($filters),
+                'journals' => $journals,
+                'listing' => [
+                    'items' => $journals,
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'total_pages' => $totalPages,
+                    'from' => $total === 0 ? 0 : ($offset + 1),
+                    'to' => $total === 0 ? 0 : min($total, $offset + count($journals)),
+                    'has_prev' => $page > 1,
+                    'has_next' => $page < $totalPages,
+                    'prev_page' => $page > 1 ? ($page - 1) : 1,
+                    'next_page' => $page < $totalPages ? ($page + 1) : $totalPages,
+                ],
                 'periods' => $this->model()->getOpenPeriods(),
                 'unitOptions' => business_unit_options(),
             ]);
@@ -372,9 +398,6 @@ final class JournalController extends Controller
             return;
         }
 
-        $requestedMode = strtolower(trim((string) get_query('mode', 'download')));
-        $inlineMode = in_array($requestedMode, ['preview', 'inline', 'view'], true);
-
         try {
             $attachment = $this->model()->findAttachmentById($attachmentId);
             if (!$attachment) {
@@ -391,9 +414,8 @@ final class JournalController extends Controller
             $downloadName = JournalAttachmentService::downloadFileName($attachment);
             $fallbackName = preg_replace('/[^A-Za-z0-9._-]+/', '_', $downloadName) ?: ('lampiran-jurnal-' . $attachmentId);
             $contentType = JournalAttachmentService::contentType($attachment);
-            $disposition = $inlineMode ? 'inline' : 'attachment';
 
-            audit_log('Lampiran Jurnal', $inlineMode ? 'preview' : 'download', $inlineMode ? 'Lampiran bukti transaksi dipratinjau.' : 'Lampiran bukti transaksi diunduh.', [
+            audit_log('Lampiran Jurnal', 'download', 'Lampiran bukti transaksi diunduh.', [
                 'entity_type' => 'journal_attachment',
                 'entity_id' => (string) $attachmentId,
                 'context' => [
@@ -401,21 +423,19 @@ final class JournalController extends Controller
                     'journal_no' => (string) ($attachment['journal_no'] ?? ''),
                     'original_name' => (string) ($attachment['original_name'] ?? ''),
                     'file_size' => (int) ($attachment['file_size'] ?? 0),
-                    'mode' => $inlineMode ? 'preview' : 'download',
                 ],
             ]);
 
             header('Content-Type: ' . $contentType);
             header('X-Content-Type-Options: nosniff');
-            header('Cache-Control: private, max-age=300');
             header('Content-Length: ' . (string) ((int) (@filesize($path) ?: 0)));
-            header("Content-Disposition: {$disposition}; filename=\"{$fallbackName}\"; filename*=UTF-8''" . rawurlencode($downloadName));
+            header("Content-Disposition: attachment; filename=\"{$fallbackName}\"; filename*=UTF-8''" . rawurlencode($downloadName));
             readfile($path);
             exit;
         } catch (Throwable $e) {
             log_error($e);
             http_response_code(500);
-            render_error_page(500, $inlineMode ? 'Lampiran jurnal belum dapat dipratinjau.' : 'Lampiran jurnal belum dapat diunduh.', $e);
+            render_error_page(500, 'Lampiran jurnal belum dapat diunduh.', $e);
         }
     }
 

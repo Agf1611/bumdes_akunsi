@@ -1,13 +1,21 @@
-<?php declare(strict_types=1); ?>
+<?php declare(strict_types=1);
+
+$releaseVersion = '1.1.0';
+$releaseManifest = ROOT_PATH . '/release-manifest.json';
+if (is_file($releaseManifest)) {
+    $payload = json_decode((string) file_get_contents($releaseManifest), true);
+    if (is_array($payload) && trim((string) ($payload['release_version'] ?? '')) !== '') {
+        $releaseVersion = (string) $payload['release_version'];
+    }
+}
+?>
 <footer class="app-footer">
     <div class="container-fluid app-footer__inner">
-        <div>
-            <div class="app-footer__brand"><?= e(app_config('name')) ?></div>
-            <div class="app-footer__meta">Antarmuka modern untuk operasional harian dan pelaporan keuangan BUMDes.</div>
+        <div class="app-footer__meta">
+            &copy; <?= date('Y') ?> <?= e(app_profile()['bumdes_name'] ?: app_config('name')) ?>
         </div>
-        <div class="app-footer__meta text-md-end">
-            <div><?= date('Y') ?> &middot; Produksi</div>
-            <div>Bootstrap 5 · PHP Native · MariaDB/MySQL</div>
+        <div class="app-footer__meta">
+            Versi <?= e($releaseVersion) ?>
         </div>
     </div>
 </footer>

@@ -200,6 +200,7 @@ final class Installer
             $pdo = $this->createPdo($input);
             $this->importSqlFiles($pdo);
             $this->seedRoles($pdo);
+            $this->runMigrations($pdo);
             $this->createFirstAdmin($pdo, $input);
             $this->writeGeneratedConfig($input);
             $this->writeLockFile($input);
@@ -373,8 +374,8 @@ final class Installer
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO users (role_id, full_name, username, password_hash, is_active, created_at, updated_at)
-             VALUES (:role_id, :full_name, :username, :password_hash, 1, NOW(), NOW())'
+            'INSERT INTO users (role_id, full_name, username, password_hash, is_active, mfa_enabled, mfa_secret, created_at, updated_at)
+             VALUES (:role_id, :full_name, :username, :password_hash, 1, 0, \'\', NOW(), NOW())'
         );
 
         $stmt->execute([
@@ -383,6 +384,12 @@ final class Installer
             ':username' => trim((string) $input['admin_username']),
             ':password_hash' => password_hash((string) $input['admin_password'], PASSWORD_DEFAULT),
         ]);
+    }
+
+    private function runMigrations(PDO $pdo): void
+    {
+        $runner = new MigrationRunner($pdo, $this->rootPath . '/database/migrations');
+        $runner->migrate();
     }
 
     private function writeGeneratedConfig(array $input): void

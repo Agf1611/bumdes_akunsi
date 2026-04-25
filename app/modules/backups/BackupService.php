@@ -17,10 +17,16 @@ final class BackupService
 
     public static function ensureDirectory(): void
     {
-        $dir = self::directory();
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0775, true);
+        foreach ([self::directory(), self::stagingDirectory()] as $dir) {
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0775, true);
+            }
         }
+    }
+
+    public static function stagingDirectory(): string
+    {
+        return self::directory() . '/restore_staging';
     }
 
     public static function safeFileName(string $fileName): ?string
@@ -69,8 +75,49 @@ final class BackupService
         return $files;
     }
 
+    public static function stageUploadedRestoreFile(array $file): array
+    {
+        self::ensureDirectory();
+        self::validateUpload($file);
 
-    public function restoreFromFile(string $path): array
+        $originalName = basename((string) ($file['name'] ?? 'restore.sql'));
+        $stagedName = 'restore-review-' . date('Ymd-His') . '-' . bin2hex(random_bytes(4)) . '.sql';
+        $stagedPath = self::stagingDirectory() . '/' . $stagedName;
+
+        if (!@copy((string) $file['tmp_name'], $stagedPath)) {
+            throw new RuntimeException('File upload tidak dapat dipindahkan ke area staging restore.');
+        }
+
+        return [
+            'staged_name' => $stagedName,
+            'path' => $stagedPath,
+            'original_name' => $originalName,
+            'size' => (int) (@filesize($stagedPath) ?: 0),
+            'sha1' => sha1_file($stagedPath) ?: '',
+        ];
+    }
+
+    public static function stagedFilePath(string $fileName): ?string
+    {
+        $safe = basename(trim($fileName));
+        if ($safe === '' || !preg_match('/\A[a-zA-Z0-9._-]+\.sql\z/', $safe)) {
+            return null;
+        }
+
+        $path = self::stagingDirectory() . '/' . $safe;
+        return is_file($path) ? $path : null;
+    }
+
+    public static function deleteStagedFile(?string $fileName): void
+    {
+        $path = $fileName !== null ? self::stagedFilePath($fileName) : null;
+        if ($path !== null && is_file($path)) {
+            @unlink($path);
+        }
+    }
+
+
+    public function inspectSqlFile(string $path): array
     {
         if (!is_file($path) || !is_readable($path)) {
             throw new RuntimeException('File backup tidak ditemukan atau tidak dapat dibaca.');
@@ -83,28 +130,122 @@ final class BackupService
 
         $statements = $this->splitSqlStatements($sql);
         if ($statements === []) {
-            throw new RuntimeException('Isi file backup tidak berisi statement SQL yang dapat dijalankan.');
+            throw new RuntimeException('Isi file backup tidak berisi statement SQL yang dapat dianalisis.');
         }
+
+        $summary = [
+            'file_name' => basename($path),
+            'size' => (int) (@filesize($path) ?: 0),
+            'sha1' => sha1_file($path) ?: '',
+            'statement_count' => count($statements),
+            'transaction_control_count' => 0,
+            'insert_count' => 0,
+            'drop_count' => 0,
+            'create_count' => 0,
+            'alter_count' => 0,
+            'other_count' => 0,
+            'table_names' => [],
+            'contains_ddl' => false,
+        ];
+
+        $tables = [];
+        foreach ($statements as $statement) {
+            $trimmed = trim($statement);
+            if ($trimmed === '') {
+                continue;
+            }
+
+            if ($this->isTransactionControlStatement($trimmed)) {
+                $summary['transaction_control_count']++;
+                continue;
+            }
+
+            $upper = strtoupper($trimmed);
+            if (str_starts_with($upper, 'INSERT ')) {
+                $summary['insert_count']++;
+                $table = $this->extractTableName($trimmed, '/INSERT\s+INTO\s+`?([a-zA-Z0-9_]+)`?/i');
+                if ($table !== null) {
+                    $tables[$table] = true;
+                }
+                continue;
+            }
+            if (str_starts_with($upper, 'DROP TABLE')) {
+                $summary['drop_count']++;
+                $summary['contains_ddl'] = true;
+                $table = $this->extractTableName($trimmed, '/DROP\s+TABLE(?:\s+IF\s+EXISTS)?\s+`?([a-zA-Z0-9_]+)`?/i');
+                if ($table !== null) {
+                    $tables[$table] = true;
+                }
+                continue;
+            }
+            if (str_starts_with($upper, 'CREATE TABLE')) {
+                $summary['create_count']++;
+                $summary['contains_ddl'] = true;
+                $table = $this->extractTableName($trimmed, '/CREATE\s+TABLE\s+`?([a-zA-Z0-9_]+)`?/i');
+                if ($table !== null) {
+                    $tables[$table] = true;
+                }
+                continue;
+            }
+            if (str_starts_with($upper, 'ALTER TABLE')) {
+                $summary['alter_count']++;
+                $summary['contains_ddl'] = true;
+                $table = $this->extractTableName($trimmed, '/ALTER\s+TABLE\s+`?([a-zA-Z0-9_]+)`?/i');
+                if ($table !== null) {
+                    $tables[$table] = true;
+                }
+                continue;
+            }
+
+            $summary['other_count']++;
+        }
+
+        $summary['table_names'] = array_values(array_keys($tables));
+        $summary['table_count'] = count($summary['table_names']);
+
+        return $summary;
+    }
+
+    public function restoreFromFile(string $path): array
+    {
+        $analysis = $this->inspectSqlFile($path);
+        $sql = (string) file_get_contents($path);
+        $statements = $this->splitSqlStatements($sql);
 
         $executed = 0;
         try {
+            if (!$this->db->inTransaction()) {
+                $this->db->beginTransaction();
+            }
+            $this->db->exec('SET FOREIGN_KEY_CHECKS=0');
             foreach ($statements as $statement) {
                 $trimmed = trim($statement);
                 if ($trimmed === '') {
                     continue;
                 }
+                if ($this->isTransactionControlStatement($trimmed)) {
+                    continue;
+                }
                 $this->db->exec($trimmed);
                 $executed++;
             }
+            if ($this->db->inTransaction()) {
+                $this->db->commit();
+            }
+            $this->db->exec('SET FOREIGN_KEY_CHECKS=1');
         } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            try {
+                $this->db->exec('SET FOREIGN_KEY_CHECKS=1');
+            } catch (Throwable) {
+            }
             throw new RuntimeException('Restore database gagal pada statement ke-' . ($executed + 1) . ': ' . $e->getMessage(), 0, $e);
         }
 
-        return [
+        return $analysis + [
             'executed_statements' => $executed,
-            'file_name' => basename($path),
-            'size' => (int) (@filesize($path) ?: 0),
-            'sha1' => sha1_file($path) ?: '',
         ];
     }
 
@@ -217,6 +358,33 @@ final class BackupService
         }
 
         return $statements;
+    }
+
+    private function isTransactionControlStatement(string $statement): bool
+    {
+        $statement = strtoupper(trim($statement));
+        foreach ([
+            'START TRANSACTION',
+            'BEGIN',
+            'COMMIT',
+            'ROLLBACK',
+            'SET AUTOCOMMIT',
+        ] as $prefix) {
+            if (str_starts_with($statement, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function extractTableName(string $statement, string $pattern): ?string
+    {
+        if (preg_match($pattern, $statement, $matches) === 1) {
+            return (string) ($matches[1] ?? '');
+        }
+
+        return null;
     }
 
     public function createBackup(array $meta = []): array

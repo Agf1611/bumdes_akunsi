@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 $user = Auth::user();
 $profile = app_profile();
 $logoPath = (string) ($profile['logo_path'] ?? '');
@@ -6,10 +7,19 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
 $active = static function (array $needles) use ($currentPath): string {
     foreach ($needles as $needle) {
-        if ($needle === '/' && ($currentPath === '/' || str_contains($currentPath, '/dashboard'))) {
+        if ($needle === '/' && $currentPath === '/') {
             return ' is-active';
         }
-        if ($needle !== '/' && str_contains($currentPath, $needle)) {
+        if ($needle === '/dashboard' && $currentPath === '/dashboard') {
+            return ' is-active';
+        }
+        if ($needle === '/dashboard/pimpinan' && $currentPath === '/dashboard/pimpinan') {
+            return ' is-active';
+        }
+        if ($needle === '/journals' && str_starts_with($currentPath, '/journals') && !str_starts_with($currentPath, '/journals/quick')) {
+            return ' is-active';
+        }
+        if ($needle !== '/' && $needle !== '/dashboard' && $needle !== '/dashboard/pimpinan' && $needle !== '/journals' && str_contains($currentPath, $needle)) {
             return ' is-active';
         }
     }
@@ -32,7 +42,6 @@ $icon = static function (string $name): string {
         'equity' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"></path><path d="M7 8l5-5 5 5"></path><path d="M17 16l-5 5-5-5"></path></svg>',
         'notes' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h8"></path><path d="M8 9h3"></path></svg>',
         'lpj' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path><path d="M14 2v6h6"></path><path d="M8 12h8"></path><path d="M8 16h8"></path><path d="M8 8h3"></path></svg>',
-        'import' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 10l5 5 5-5"></path><path d="M5 21h14"></path></svg>',
         'users' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="10" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
         'audit' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>',
         'backup' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>',
@@ -42,194 +51,159 @@ $icon = static function (string $name): string {
 
     return $icons[$name] ?? $icons['dashboard'];
 };
+
+$sections = [
+    [
+        'label' => 'Dashboard',
+        'items' => [
+            ['title' => 'Dashboard Utama', 'note' => 'Ringkasan operasional harian', 'path' => '/dashboard', 'icon' => 'dashboard', 'needles' => ['/dashboard', '/']],
+            ['title' => 'Dashboard Pimpinan', 'note' => 'Fokus keputusan dan closing', 'path' => '/dashboard/pimpinan', 'icon' => 'dashboard', 'needles' => ['/dashboard/pimpinan']],
+        ],
+    ],
+];
+
+if (Auth::hasRole(['admin', 'bendahara'])) {
+    $sections[] = [
+        'label' => 'Manajemen Keuangan',
+        'items' => array_values(array_filter([
+            ['title' => 'Transaksi Cepat', 'note' => 'Kas masuk, keluar, dan setoran', 'path' => '/journals/quick', 'icon' => 'cash', 'needles' => ['/journals/quick']],
+            ['title' => 'Jurnal Umum', 'note' => 'Double entry dan bukti transaksi', 'path' => '/journals', 'icon' => 'journals', 'needles' => ['/journals']],
+            ['title' => 'Chart of Accounts', 'note' => 'Struktur akun keuangan', 'path' => '/coa', 'icon' => 'coa', 'needles' => ['/coa']],
+            Auth::hasRole('admin') ? ['title' => 'Unit Usaha', 'note' => 'Cabang dan layanan usaha', 'path' => '/business-units', 'icon' => 'units', 'needles' => ['/business-units']] : null,
+            ['title' => 'Periode Akuntansi', 'note' => 'Buka, tutup, dan periode aktif', 'path' => '/periods', 'icon' => 'periods', 'needles' => ['/periods']],
+            ['title' => 'Aset', 'note' => 'Master aset dan penyusutan', 'path' => '/assets', 'icon' => 'assets', 'needles' => ['/assets']],
+            ['title' => 'Rekonsiliasi Bank', 'note' => 'Mutasi bank vs jurnal', 'path' => '/bank-reconciliations', 'icon' => 'cash', 'needles' => ['/bank-reconciliations']],
+            class_exists('ReferenceMasterController') ? ['title' => 'Referensi Jurnal', 'note' => 'Mitra dan referensi transaksi', 'path' => '/reference-masters', 'icon' => 'coa', 'needles' => ['/reference-masters']] : null,
+        ])),
+    ];
+}
+
+$reportItems = [];
+if (class_exists('ReceivableLedgerController')) {
+    $reportItems[] = ['title' => 'BP Piutang', 'note' => 'Mutasi piutang per mitra', 'path' => '/receivable-ledgers', 'icon' => 'ledger', 'needles' => ['/receivable-ledgers']];
+}
+if (class_exists('PayableLedgerController')) {
+    $reportItems[] = ['title' => 'BP Utang', 'note' => 'Mutasi utang per kreditur', 'path' => '/payable-ledgers', 'icon' => 'ledger', 'needles' => ['/payable-ledgers']];
+}
+$reportItems = array_merge($reportItems, [
+    ['title' => 'Buku Besar', 'note' => 'Mutasi akun dan saldo', 'path' => '/ledger', 'icon' => 'ledger', 'needles' => ['/ledger']],
+    ['title' => 'Neraca Saldo', 'note' => 'Ringkasan debit dan kredit', 'path' => '/trial-balance', 'icon' => 'trial', 'needles' => ['/trial-balance']],
+    ['title' => 'Laba Rugi', 'note' => 'Pendapatan dan beban', 'path' => '/profit-loss', 'icon' => 'profit', 'needles' => ['/profit-loss']],
+    ['title' => 'Neraca', 'note' => 'Aset, liabilitas, ekuitas', 'path' => '/balance-sheet', 'icon' => 'balance', 'needles' => ['/balance-sheet']],
+    ['title' => 'Arus Kas', 'note' => 'Pergerakan kas dan bank', 'path' => '/cash-flow', 'icon' => 'cash', 'needles' => ['/cash-flow']],
+    ['title' => 'Perubahan Ekuitas', 'note' => 'Mutasi modal dan saldo akhir', 'path' => '/equity-changes', 'icon' => 'equity', 'needles' => ['/equity-changes']],
+    ['title' => 'CaLK', 'note' => 'Catatan atas laporan keuangan', 'path' => '/financial-notes', 'icon' => 'notes', 'needles' => ['/financial-notes']],
+    ['title' => 'Paket LPJ', 'note' => 'Bundel laporan pertanggungjawaban', 'path' => '/lpj', 'icon' => 'lpj', 'needles' => ['/lpj']],
+]);
+$sections[] = [
+    'label' => 'Laporan',
+    'items' => $reportItems,
+];
+
+if (Auth::hasRole('admin')) {
+    $sections[] = [
+        'label' => 'Pengguna',
+        'items' => [
+            ['title' => 'Data User', 'note' => 'Akun pengguna aplikasi', 'path' => '/user-accounts', 'icon' => 'users', 'needles' => ['/user-accounts']],
+            ['title' => 'Hak Akses & Audit', 'note' => 'Role dan riwayat aktivitas', 'path' => '/audit-logs', 'icon' => 'audit', 'needles' => ['/audit-logs']],
+        ],
+    ];
+    $sections[] = [
+        'label' => 'Pengaturan',
+        'items' => [
+            ['title' => 'Backup Database', 'note' => 'Cadangan data dan restore', 'path' => '/backups', 'icon' => 'backup', 'needles' => ['/backups']],
+            ['title' => 'Update Aplikasi', 'note' => 'Patch dan release terbaru', 'path' => '/updates', 'icon' => 'update', 'needles' => ['/updates']],
+            ['title' => 'Profil BUMDes', 'note' => 'Identitas lembaga dan tanda tangan', 'path' => '/settings/profile', 'icon' => 'settings', 'needles' => ['/settings/profile']],
+        ],
+    ];
+}
+
+$categoryIcons = [
+    'Dashboard' => 'dashboard',
+    'Manajemen Keuangan' => 'cash',
+    'Laporan' => 'ledger',
+    'Pengguna' => 'users',
+    'Pengaturan' => 'settings',
+];
+
+$hasActiveItem = static function (array $section) use ($active): bool {
+    foreach (($section['items'] ?? []) as $item) {
+        if ($active((array) ($item['needles'] ?? [])) !== '') {
+            return true;
+        }
+    }
+
+    return false;
+};
 ?>
 <aside class="sidebar app-sidebar" id="appSidebar" aria-label="Sidebar navigasi">
     <div class="app-sidebar__inner">
         <div class="app-sidebar__brand">
-            <div class="brand-mark">
-                <?php if ($logoPath !== ''): ?>
-                    <img src="<?= e(upload_url($logoPath)) ?>" alt="Logo BUMDes" class="brand-mark__image">
-                <?php else: ?>
-                    <span class="brand-mark__fallback">B</span>
-                <?php endif; ?>
-            </div>
-            <div class="brand-copy min-w-0">
-                <div class="brand-copy__label">Sistem Akuntansi BUMDes</div>
-                <div class="brand-copy__title"><?= e($profile['bumdes_name'] ?: 'BUMDes') ?></div>
-                <div class="brand-copy__meta"><?= e(current_accounting_period_label()) ?></div>
-            </div>
-            <button type="button" class="app-sidebar__close d-lg-none" id="sidebarClose" aria-label="Tutup menu">
-                <span aria-hidden="true">×</span>
-            </button>
+            <a href="<?= e(base_url('/dashboard')) ?>" class="app-sidebar__brand-link text-decoration-none">
+                <div class="brand-mark">
+                    <?php if ($logoPath !== ''): ?>
+                        <img src="<?= e(upload_url($logoPath)) ?>" alt="Logo BUMDes" class="brand-mark__image">
+                    <?php else: ?>
+                        <span class="brand-mark__fallback">B</span>
+                    <?php endif; ?>
+                </div>
+                <div class="brand-copy min-w-0">
+                    <div class="brand-copy__label">BUMDes Finance Suite</div>
+                    <div class="brand-copy__title"><?= e($profile['bumdes_name'] ?: 'BUMDes') ?></div>
+                    <div class="brand-copy__meta"><?= e(current_accounting_period_label()) ?></div>
+                </div>
+            </a>
+            <button type="button" class="app-sidebar__close d-lg-none" id="sidebarClose" aria-label="Tutup menu">&times;</button>
         </div>
 
         <nav class="app-nav" aria-label="Menu utama">
-            <div class="app-nav__group">
-                <div class="app-nav__caption">Ringkasan</div>
-                <a class="app-nav__link<?= $active(['/dashboard', '/']) ?>" href="<?= e(base_url('/dashboard')) ?>">
-                    <span class="app-nav__icon"><?= $icon('dashboard') ?></span>
-                    <span class="app-nav__text">
-                        <span class="app-nav__title">Dashboard</span>
-                        <span class="app-nav__note">Ikhtisar eksekutif dan tren</span>
-                    </span>
-                </a>
-                <a class="app-nav__link<?= $active(['/dashboard/pimpinan']) ?>" href="<?= e(base_url('/dashboard/pimpinan')) ?>">
-                    <span class="app-nav__icon"><?= $icon('dashboard') ?></span>
-                    <span class="app-nav__text">
-                        <span class="app-nav__title">Dashboard Pimpinan</span>
-                        <span class="app-nav__note">Fokus keputusan, risiko, dan closing</span>
-                    </span>
-                </a>
-            </div>
-
-            <?php if (Auth::hasRole(['admin', 'bendahara'])): ?>
-                <div class="app-nav__group">
-                    <div class="app-nav__caption">Data Master</div>
-
-                    <?php if (Auth::hasRole('admin')): ?>
-                        <a class="app-nav__link<?= $active(['/business-units']) ?>" href="<?= e(base_url('/business-units')) ?>">
-                            <span class="app-nav__icon"><?= $icon('units') ?></span>
-                            <span class="app-nav__text">
-                                <span class="app-nav__title">Unit Usaha</span>
-                                <span class="app-nav__note">Cabang dan layanan usaha</span>
-                            </span>
-                        </a>
-                    <?php endif; ?>
-
-                    <a class="app-nav__link<?= $active(['/coa']) ?>" href="<?= e(base_url('/coa')) ?>">
-                        <span class="app-nav__icon"><?= $icon('coa') ?></span>
-                        <span class="app-nav__text">
-                            <span class="app-nav__title">Chart of Accounts</span>
-                            <span class="app-nav__note">Struktur akun dan kategori</span>
+            <?php foreach ($sections as $section): ?>
+                <?php
+                    $label = (string) ($section['label'] ?? 'Kategori');
+                    $items = (array) ($section['items'] ?? []);
+                    $groupKey = strtolower((string) preg_replace('/[^a-z0-9]+/i', '-', $label));
+                    $groupIcon = (string) ($categoryIcons[$label] ?? ($items[0]['icon'] ?? 'dashboard'));
+                    $groupActive = $hasActiveItem($section);
+                ?>
+                <div class="app-nav__group<?= $groupActive ? ' is-current' : '' ?>" data-sidebar-group="<?= e($groupKey) ?>">
+                    <button
+                        type="button"
+                        class="app-nav__section-trigger"
+                        data-sidebar-trigger
+                        data-sidebar-group="<?= e($groupKey) ?>"
+                        aria-expanded="false"
+                    >
+                        <span class="app-nav__section-marker" aria-hidden="true"></span>
+                        <span class="app-nav__icon"><?= $icon($groupIcon) ?></span>
+                        <span class="app-nav__section-copy">
+                            <span class="app-nav__caption"><?= e($label) ?></span>
                         </span>
-                    </a>
-
-                    <a class="app-nav__link<?= $active(['/assets']) ?>" href="<?= e(base_url('/assets')) ?>">
-                        <span class="app-nav__icon"><?= $icon('assets') ?></span>
-                        <span class="app-nav__text">
-                            <span class="app-nav__title">Aset</span>
-                            <span class="app-nav__note">Master, penyusutan, dan laporan aset</span>
+                        <span class="app-nav__section-badge"><?= count($items) ?></span>
+                        <span class="app-nav__section-chevron" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></svg>
                         </span>
-                    </a>
-
-                    <a class="app-nav__link<?= $active(['/periods']) ?>" href="<?= e(base_url('/periods')) ?>">
-                        <span class="app-nav__icon"><?= $icon('periods') ?></span>
-                        <span class="app-nav__text">
-                            <span class="app-nav__title">Periode Akuntansi</span>
-                            <span class="app-nav__note">Buka tutup dan periode aktif</span>
-                        </span>
-                    </a>
-
-
-                    <?php if (class_exists('ReferenceMasterController')): ?>
-                        <a class="app-nav__link<?= $active(['/reference-masters']) ?>" href="<?= e(base_url('/reference-masters')) ?>">
-                            <span class="app-nav__icon"><?= $icon('coa') ?></span>
-                            <span class="app-nav__text">
-                                <span class="app-nav__title">Referensi Jurnal</span>
-                                <span class="app-nav__note">Mitra, persediaan, dan komponen arus kas</span>
-                            </span>
-                        </a>
-                    <?php endif; ?>
+                    </button>
+                    <div
+                        class="app-nav__section-panel"
+                        data-sidebar-panel
+                        data-sidebar-group="<?= e($groupKey) ?>"
+                        hidden
+                    >
+                        <div class="app-nav__section-rail" aria-hidden="true"></div>
+                        <div class="app-nav__section-links">
+                            <?php foreach ($items as $item): ?>
+                                <a class="app-nav__link<?= $active((array) ($item['needles'] ?? [])) ?>" href="<?= e(base_url((string) ($item['path'] ?? '/dashboard'))) ?>">
+                                    <span class="app-nav__icon"><?= $icon((string) ($item['icon'] ?? 'dashboard')) ?></span>
+                                    <span class="app-nav__text">
+                                        <span class="app-nav__title"><?= e((string) ($item['title'] ?? '-')) ?></span>
+                                        <span class="app-nav__note"><?= e((string) ($item['note'] ?? '')) ?></span>
+                                    </span>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="app-nav__group">
-                    <div class="app-nav__caption">Transaksi</div>
-                    <a class="app-nav__link<?= $active(['/journals']) ?>" href="<?= e(base_url('/journals')) ?>">
-                        <span class="app-nav__icon"><?= $icon('journals') ?></span>
-                        <span class="app-nav__text">
-                            <span class="app-nav__title">Jurnal Umum</span>
-                            <span class="app-nav__note">Input double-entry dan cetak bukti</span>
-                        </span>
-                    </a>
-                </div>
-            <?php endif; ?>
-
-            <div class="app-nav__group">
-                <div class="app-nav__caption">Laporan</div>
-                <?php if (class_exists('ReceivableLedgerController') || class_exists('PayableLedgerController')): ?>
-                    <div class="app-nav__subcaption">Buku Pembantu</div>
-                    <?php if (class_exists('ReceivableLedgerController')): ?>
-                        <a class="app-nav__link<?= $active(['/receivable-ledgers']) ?>" href="<?= e(base_url('/receivable-ledgers')) ?>">
-                            <span class="app-nav__icon"><?= $icon('ledger') ?></span>
-                            <span class="app-nav__text"><span class="app-nav__title">BP Piutang</span><span class="app-nav__note">Mutasi dan saldo per mitra</span></span>
-                        </a>
-                    <?php endif; ?>
-                    <?php if (class_exists('PayableLedgerController')): ?>
-                        <a class="app-nav__link<?= $active(['/payable-ledgers']) ?>" href="<?= e(base_url('/payable-ledgers')) ?>">
-                            <span class="app-nav__icon"><?= $icon('ledger') ?></span>
-                            <span class="app-nav__text"><span class="app-nav__title">BP Utang</span><span class="app-nav__note">Mutasi dan saldo per kreditur</span></span>
-                        </a>
-                    <?php endif; ?>
-                <?php endif; ?>
-                <a class="app-nav__link<?= $active(['/ledger']) ?>" href="<?= e(base_url('/ledger')) ?>">
-                    <span class="app-nav__icon"><?= $icon('ledger') ?></span>
-                    <span class="app-nav__text"><span class="app-nav__title">Buku Besar</span><span class="app-nav__note">Mutasi akun dan saldo berjalan</span></span>
-                </a>
-                <a class="app-nav__link<?= $active(['/trial-balance']) ?>" href="<?= e(base_url('/trial-balance')) ?>">
-                    <span class="app-nav__icon"><?= $icon('trial') ?></span>
-                    <span class="app-nav__text"><span class="app-nav__title">Neraca Saldo</span><span class="app-nav__note">Ringkasan debit dan kredit</span></span>
-                </a>
-                <a class="app-nav__link<?= $active(['/profit-loss']) ?>" href="<?= e(base_url('/profit-loss')) ?>">
-                    <span class="app-nav__icon"><?= $icon('profit') ?></span>
-                    <span class="app-nav__text"><span class="app-nav__title">Laba Rugi</span><span class="app-nav__note">Kinerja pendapatan dan beban</span></span>
-                </a>
-                <a class="app-nav__link<?= $active(['/balance-sheet']) ?>" href="<?= e(base_url('/balance-sheet')) ?>">
-                    <span class="app-nav__icon"><?= $icon('balance') ?></span>
-                    <span class="app-nav__text"><span class="app-nav__title">Neraca</span><span class="app-nav__note">Posisi aset, liabilitas, ekuitas</span></span>
-                </a>
-                <a class="app-nav__link<?= $active(['/cash-flow']) ?>" href="<?= e(base_url('/cash-flow')) ?>">
-                    <span class="app-nav__icon"><?= $icon('cash') ?></span>
-                    <span class="app-nav__text"><span class="app-nav__title">Arus Kas</span><span class="app-nav__note">Kas operasional dan non-operasional</span></span>
-                </a>
-                <a class="app-nav__link<?= $active(['/equity-changes']) ?>" href="<?= e(base_url('/equity-changes')) ?>">
-                    <span class="app-nav__icon"><?= $icon('equity') ?></span>
-                    <span class="app-nav__text"><span class="app-nav__title">Perubahan Ekuitas</span><span class="app-nav__note">Mutasi modal dan saldo akhir</span></span>
-                </a>
-                <a class="app-nav__link<?= $active(['/financial-notes']) ?>" href="<?= e(base_url('/financial-notes')) ?>">
-                    <span class="app-nav__icon"><?= $icon('notes') ?></span>
-                    <span class="app-nav__text"><span class="app-nav__title">CaLK</span><span class="app-nav__note">Catatan atas laporan keuangan</span></span>
-                </a>
-                <a class="app-nav__link<?= $active(['/lpj']) ?>" href="<?= e(base_url('/lpj')) ?>">
-                    <span class="app-nav__icon"><?= $icon('lpj') ?></span>
-                    <span class="app-nav__text"><span class="app-nav__title">Paket LPJ</span><span class="app-nav__note">Bundel formal laporan pertanggungjawaban</span></span>
-                </a>
-            </div>
-
-            <?php if (Auth::hasRole(['admin', 'bendahara'])): ?>
-                <div class="app-nav__group">
-                    <div class="app-nav__caption">Utilitas</div>
-                    <a class="app-nav__link<?= $active(['/bank-reconciliations']) ?>" href="<?= e(base_url('/bank-reconciliations')) ?>">
-                        <span class="app-nav__icon"><?= $icon('cash') ?></span>
-                        <span class="app-nav__text"><span class="app-nav__title">Rekonsiliasi Bank</span><span class="app-nav__note">Mutasi bank vs jurnal</span></span>
-                    </a>
-                </div>
-            <?php endif; ?>
-
-            <?php if (Auth::hasRole('admin')): ?>
-                <div class="app-nav__group">
-                    <div class="app-nav__caption">Pengaturan</div>
-                    <a class="app-nav__link<?= $active(['/user-accounts']) ?>" href="<?= e(base_url('/user-accounts')) ?>">
-                        <span class="app-nav__icon"><?= $icon('users') ?></span>
-                        <span class="app-nav__text"><span class="app-nav__title">Akun Pengguna</span><span class="app-nav__note">Role dan akses aplikasi</span></span>
-                    </a>
-                    <a class="app-nav__link<?= $active(['/audit-logs']) ?>" href="<?= e(base_url('/audit-logs')) ?>">
-                        <span class="app-nav__icon"><?= $icon('audit') ?></span>
-                        <span class="app-nav__text"><span class="app-nav__title">Audit Trail</span><span class="app-nav__note">Riwayat aktivitas penting</span></span>
-                    </a>
-                    <a class="app-nav__link<?= $active(['/backups']) ?>" href="<?= e(base_url('/backups')) ?>">
-                        <span class="app-nav__icon"><?= $icon('backup') ?></span>
-                        <span class="app-nav__text"><span class="app-nav__title">Backup Database</span><span class="app-nav__note">Cadangan data sebelum update</span></span>
-                    </a>
-                    <a class="app-nav__link<?= $active(['/updates']) ?>" href="<?= e(base_url('/updates')) ?>">
-                        <span class="app-nav__icon"><?= $icon('update') ?></span>
-                        <span class="app-nav__text"><span class="app-nav__title">Update Aplikasi</span><span class="app-nav__note">Tarik patch file dari GitHub</span></span>
-                    </a>
-                    <a class="app-nav__link<?= $active(['/settings/profile']) ?>" href="<?= e(base_url('/settings/profile')) ?>">
-                        <span class="app-nav__icon"><?= $icon('settings') ?></span>
-                        <span class="app-nav__text"><span class="app-nav__title">Profil BUMDes</span><span class="app-nav__note">Identitas aplikasi dan tanda tangan</span></span>
-                    </a>
-                </div>
-            <?php endif; ?>
+            <?php endforeach; ?>
         </nav>
 
         <div class="app-sidebar__footer">

@@ -21,6 +21,8 @@ final class UpdateController extends Controller
                 'repo_url' => $this->service()->repoUrl(),
                 'branch' => $this->service()->branch(),
                 'current_version' => $this->service()->currentVersion(),
+                'current_manifest' => $this->service()->currentManifest(),
+                'pending_migrations' => $this->service()->pendingMigrations(),
                 'state' => $this->service()->state(),
                 'last_check' => $this->service()->lastCheck(),
                 'latest_backup' => $latestBackup,

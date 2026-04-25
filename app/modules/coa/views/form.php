@@ -1,16 +1,19 @@
 <?php declare(strict_types=1); ?>
+<div class="coa-form-page module-page">
+<section class="module-hero mb-4">
+    <div class="module-hero__content">
+        <div>
+            <div class="module-hero__eyebrow">Chart Of Accounts</div>
+            <h1 class="module-hero__title"><?= e($title) ?></h1>
+            <p class="module-hero__text">Isi data akun dengan benar agar struktur COA rapi, mudah diaudit, dan siap dipakai ke seluruh modul laporan keuangan.</p>
+        </div>
+        <div class="module-hero__actions">
+            <a href="<?= e(base_url('/coa')) ?>" class="btn btn-outline-secondary">Kembali ke Daftar Akun</a>
+        </div>
+    </div>
+</section>
 <div class="row justify-content-center">
     <div class="col-12 col-xl-10">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-            <div>
-                <h1 class="h3 mb-1"><?= e($title) ?></h1>
-                <p class="text-secondary mb-0">Isi data akun dengan benar agar struktur COA rapi dan siap dipakai ke modul jurnal.</p>
-            </div>
-            <div>
-                <a href="<?= e(base_url('/coa')) ?>" class="btn btn-outline-light">Kembali ke Daftar Akun</a>
-            </div>
-        </div>
-
         <div class="card shadow-sm">
             <div class="card-body p-4 p-lg-5">
                 <?php if (!empty($errorMessage)): ?>
@@ -91,6 +94,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <script>

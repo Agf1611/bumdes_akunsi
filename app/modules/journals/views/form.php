@@ -255,17 +255,26 @@ $referenceJs = [
 </style>
 
 <div class="jf-shell">
-  <div class="jf-page-head mb-2">
-    <div>
-      <h1 class="h3 mb-1"><?= e($title ?? 'Form Jurnal Umum') ?></h1>
-      <p class="jf-muted mb-0">Form jurnal dibuat ringan, universal, dan tetap punya validasi inti agar aman dipakai lintas jenis usaha.</p>
+  <div class="jf-page-head module-hero mb-2">
+    <div class="module-hero__content">
+      <div>
+        <div class="module-hero__eyebrow">Jurnal Umum</div>
+        <h1 class="module-hero__title"><?= e($title ?? 'Form Jurnal Umum') ?></h1>
+        <p class="module-hero__text">Form jurnal lengkap untuk transaksi yang memerlukan kontrol detail penuh, dengan validasi inti yang tetap aman dipakai lintas jenis usaha.</p>
+      </div>
+      <div class="module-hero__actions jf-toolbar">
+        <?php if ($duplicateUrl !== ''): ?>
+          <a href="<?= e($duplicateUrl) ?>" class="btn btn-outline-secondary">Duplikat Jurnal</a>
+        <?php endif; ?>
+        <a href="<?= e(base_url('/journals/quick')) ?>" class="btn btn-outline-info">Transaksi Cepat</a>
+        <a href="<?= e($backUrl) ?>" class="btn btn-outline-secondary">Kembali ke Daftar</a>
+      </div>
     </div>
-    <div class="jf-toolbar">
-      <?php if ($duplicateUrl !== ''): ?>
-        <a href="<?= e($duplicateUrl) ?>" class="btn btn-outline-secondary">Duplikat Jurnal</a>
-      <?php endif; ?>
-      <a href="<?= e($backUrl) ?>" class="btn btn-outline-secondary">Kembali ke Daftar</a>
-    </div>
+  </div>
+
+  <div class="alert alert-info mb-4">
+    <div class="fw-semibold mb-1">Bantuan pengisian</div>
+    <div class="small">Gunakan form ini jika Anda perlu kontrol detail penuh atas baris jurnal. Untuk pemasukan, pengeluaran, setoran bank, atau koreksi sederhana, pakai <a href="<?= e(base_url('/journals/quick')) ?>" class="alert-link">Transaksi Cepat</a> agar input lebih sedikit tetapi hasil jurnal tetap sama validnya.</div>
   </div>
 
   <?php if (!$header): ?>

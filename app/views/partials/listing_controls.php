@@ -5,7 +5,7 @@ $listingPerPageOptions = listing_per_page_options();
 $currentPage = max(1, (int) ($listing['page'] ?? 1));
 $totalPages = max(1, (int) ($listing['total_pages'] ?? 1));
 ?>
-<div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3 px-3 py-3 border-top">
+<div class="listing-controls-shell d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3 px-3 py-3 border-top">
     <div class="small text-secondary">
         Menampilkan <strong><?= e((string) ($listing['from'] ?? 0)) ?></strong> - <strong><?= e((string) ($listing['to'] ?? 0)) ?></strong> dari <strong><?= e((string) ($listing['total'] ?? 0)) ?></strong> data
     </div>

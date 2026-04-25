@@ -2,6 +2,22 @@
 <?php $listing = listing_paginate($accounts ?? []); $accounts = $listing['items']; $listingPath = '/coa'; ?>
 <?php require APP_PATH . '/views/partials/table_action_menu.php'; ?>
 <?php $importErrors = Session::pull('import_errors', []); $importSuccess = Session::pull('import_success', ''); $importResult = Session::pull('import_result', []); ?>
+<div class="coa-page module-page">
+<section class="module-hero mb-4">
+    <div class="module-hero__content">
+        <div>
+            <div class="module-hero__eyebrow">Chart Of Accounts</div>
+            <h1 class="module-hero__title">Struktur Akun BUMDes</h1>
+            <p class="module-hero__text">Kelola akun inti, impor template, dan pastikan struktur COA rapi sebelum dipakai di jurnal, buku besar, dan laporan.</p>
+        </div>
+        <div class="module-hero__actions">
+            <?php if (Auth::hasRole('admin')): ?>
+                <a href="<?= e(base_url('/coa/create')) ?>" class="btn btn-primary">Tambah Akun</a>
+            <?php endif; ?>
+            <a href="<?= e(base_url('/coa/export?' . http_build_query($filters))) ?>" class="btn btn-outline-info">Export COA</a>
+        </div>
+    </div>
+</section>
 <div class="row g-4 mb-4">
     <div class="col-12 col-md-4">
         <div class="card dashboard-card h-100">
@@ -215,3 +231,4 @@
 </div>
 
 <?php require APP_PATH . '/views/partials/listing_controls.php'; ?>
+</div>

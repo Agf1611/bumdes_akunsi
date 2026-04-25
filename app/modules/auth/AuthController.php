@@ -18,6 +18,7 @@ final class AuthController extends Controller
             'title' => 'Login',
             'errorMessage' => get_flash('error'),
             'successMessage' => get_flash('success'),
+            'mfaEnabled' => (bool) (auth_config('mfa')['enabled'] ?? false),
         ], 'auth');
     }
 
@@ -25,6 +26,7 @@ final class AuthController extends Controller
     {
         $username = trim((string) post('username'));
         $password = (string) post('password');
+        $otpCode = trim((string) post('otp_code', ''));
         $token = (string) post('_token');
 
         with_old_input(['username' => $username]);
@@ -46,6 +48,20 @@ final class AuthController extends Controller
             $this->redirect('/login');
         }
 
+        $ipAddress = trim((string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+        try {
+            AuthRateLimiter::assertCanAttempt($username, $ipAddress);
+        } catch (Throwable $e) {
+            audit_log('Autentikasi', 'login_blocked', 'Percobaan login diblokir oleh throttle keamanan.', [
+                'severity' => 'warning',
+                'entity_type' => 'auth',
+                'username' => $username,
+                'context' => ['reason' => 'rate_limited', 'message' => $e->getMessage()],
+            ]);
+            flash('error', $e->getMessage());
+            $this->redirect('/login');
+        }
+
         if (!Database::isConnected(db_config())) {
             flash('error', 'Koneksi ke database belum tersedia. Periksa konfigurasi database Anda terlebih dahulu.');
             $this->redirect('/login');
@@ -53,13 +69,22 @@ final class AuthController extends Controller
 
         $user = $this->authModel()->findByUsername($username);
         if (!$user || !password_verify($password, (string) $user['password_hash'])) {
+            $throttle = AuthRateLimiter::recordFailure($username, $ipAddress);
             audit_log('Autentikasi', 'login_failed', 'Percobaan login gagal.', [
                 'severity' => 'warning',
                 'entity_type' => 'auth',
                 'username' => $username,
-                'context' => ['reason' => 'invalid_credentials'],
+                'context' => [
+                    'reason' => 'invalid_credentials',
+                    'failed_attempts' => $throttle['failed_attempts'] ?? 0,
+                    'lockout_seconds' => $throttle['lockout_seconds'] ?? 0,
+                ],
             ]);
-            flash('error', 'Login gagal. Periksa kembali username dan password Anda.');
+            $message = 'Login gagal. Periksa kembali username dan password Anda.';
+            if ((int) ($throttle['lockout_seconds'] ?? 0) > 0) {
+                $message .= ' Sistem mengunci percobaan login sementara karena terlalu banyak percobaan gagal.';
+            }
+            flash('error', $message);
             $this->redirect('/login');
         }
 
@@ -77,7 +102,25 @@ final class AuthController extends Controller
             $this->redirect('/login');
         }
 
+        if (AuthMfa::isEnabledForUser($user) && !AuthMfa::verifyForUser($user, $otpCode)) {
+            $throttle = AuthRateLimiter::recordFailure($username, $ipAddress);
+            audit_log('Autentikasi', 'login_failed', 'Percobaan login gagal karena OTP MFA tidak valid.', [
+                'severity' => 'warning',
+                'entity_type' => 'auth',
+                'username' => $username,
+                'user_id' => (int) ($user['id'] ?? 0),
+                'context' => [
+                    'reason' => 'invalid_mfa',
+                    'failed_attempts' => $throttle['failed_attempts'] ?? 0,
+                    'lockout_seconds' => $throttle['lockout_seconds'] ?? 0,
+                ],
+            ]);
+            flash('error', 'Kode OTP MFA tidak valid. Silakan periksa aplikasi authenticator Anda.');
+            $this->redirect('/login');
+        }
+
         clear_old_input();
+        AuthRateLimiter::clear($username, $ipAddress);
         $this->authModel()->updateLastLogin((int) $user['id']);
         Auth::login($user);
         initialize_working_year_session();

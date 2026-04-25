@@ -342,6 +342,28 @@ final class DashboardModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    public function getOperationalStatus(string $dateFrom, string $dateTo, int $unitId = 0): array
+    {
+        $activePeriod = current_accounting_period();
+        $closingChecklist = null;
+        if (is_array($activePeriod) && (int) ($activePeriod['id'] ?? 0) > 0) {
+            try {
+                $closingChecklist = (new PeriodModel($this->db))->buildClosingChecklist((int) $activePeriod['id']);
+            } catch (Throwable) {
+                $closingChecklist = null;
+            }
+        }
+
+        return [
+            'negative_cash_accounts' => $this->countNegativeCashAccounts($dateTo, $unitId),
+            'journals_without_attachments' => $this->countJournalsWithoutAttachments($dateFrom, $dateTo, $unitId),
+            'reconciliation_issues' => $this->countReconciliationIssues($unitId),
+            'latest_backup' => $this->latestBackupInfo(),
+            'update_signal' => GitHubAppUpdaterService::readJsonFile(GitHubAppUpdaterService::lastCheckPath()),
+            'closing_checklist' => $closingChecklist,
+        ];
+    }
+
     private function getDetectedCashAccounts(): array
     {
         if (!$this->tableExists('coa_accounts')) {
@@ -389,6 +411,116 @@ final class DashboardModel
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    private function countNegativeCashAccounts(string $dateTo, int $unitId = 0): int
+    {
+        $cashAccounts = $this->getDetectedCashAccounts();
+        if ($cashAccounts === []) {
+            return 0;
+        }
+
+        $supportsUnits = $this->supportsBusinessUnits();
+        $ids = array_map(static fn (array $row): int => (int) $row['id'], $cashAccounts);
+        $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+        $sql = "SELECT COUNT(*)
+                FROM (
+                    SELECT l.coa_id, COALESCE(SUM(CASE WHEN h.journal_date <= ? THEN (l.debit - l.credit) ELSE 0 END), 0) AS balance
+                    FROM journal_lines l
+                    INNER JOIN journal_headers h ON h.id = l.journal_id
+                    WHERE l.coa_id IN ($placeholders)";
+        $params = array_merge([$dateTo], $ids);
+        if ($supportsUnits && $unitId > 0) {
+            $sql .= ' AND h.business_unit_id = ?';
+            $params[] = $unitId;
+        }
+        $sql .= ' GROUP BY l.coa_id
+                ) balances
+                WHERE balances.balance < -0.009';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int) ($stmt->fetchColumn() ?: 0);
+    }
+
+    private function countJournalsWithoutAttachments(string $dateFrom, string $dateTo, int $unitId = 0): int
+    {
+        if (!$this->tableExists('journal_headers') || !$this->tableExists('journal_attachments')) {
+            return 0;
+        }
+
+        $supportsUnits = $this->supportsBusinessUnits();
+        $sql = 'SELECT COUNT(*)
+                FROM journal_headers j
+                LEFT JOIN journal_attachments a ON a.journal_id = j.id
+                WHERE j.journal_date >= :date_from
+                  AND j.journal_date <= :date_to
+                  AND j.print_template = :print_template
+                GROUP BY j.id
+                HAVING COUNT(a.id) = 0';
+        if ($supportsUnits && $unitId > 0) {
+            $sql = str_replace('GROUP BY', 'AND j.business_unit_id = :unit_id GROUP BY', $sql);
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':date_from', $dateFrom, PDO::PARAM_STR);
+        $stmt->bindValue(':date_to', $dateTo, PDO::PARAM_STR);
+        $stmt->bindValue(':print_template', 'receipt', PDO::PARAM_STR);
+        if ($supportsUnits && $unitId > 0) {
+            $stmt->bindValue(':unit_id', $unitId, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        return count($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+    }
+
+    private function countReconciliationIssues(int $unitId = 0): int
+    {
+        if (!$this->tableExists('bank_reconciliations')) {
+            return 0;
+        }
+
+        $sql = 'SELECT COUNT(*)
+                FROM bank_reconciliations
+                WHERE total_unmatched_rows > 0
+                   OR ABS((opening_balance + total_statement_net) - closing_balance) > 0.009';
+        if ($this->columnExists('bank_reconciliations', 'business_unit_id') && $unitId > 0) {
+            $sql .= ' AND business_unit_id = :unit_id';
+        }
+
+        $stmt = $this->db->prepare($sql);
+        if ($this->columnExists('bank_reconciliations', 'business_unit_id') && $unitId > 0) {
+            $stmt->bindValue(':unit_id', $unitId, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        return (int) ($stmt->fetchColumn() ?: 0);
+    }
+
+    private function latestBackupInfo(): array
+    {
+        $dir = ROOT_PATH . '/storage/backups';
+        if (!is_dir($dir)) {
+            return ['exists' => false, 'name' => '', 'modified_at' => ''];
+        }
+
+        $latestPath = '';
+        $latestTime = 0;
+        foreach (glob($dir . '/*.sql') ?: [] as $file) {
+            $mtime = (int) (@filemtime($file) ?: 0);
+            if ($mtime >= $latestTime) {
+                $latestTime = $mtime;
+                $latestPath = $file;
+            }
+        }
+
+        if ($latestPath === '') {
+            return ['exists' => false, 'name' => '', 'modified_at' => ''];
+        }
+
+        return [
+            'exists' => true,
+            'name' => basename($latestPath),
+            'modified_at' => date('Y-m-d H:i:s', $latestTime),
+        ];
     }
 
     private function hasAccountingTables(): bool

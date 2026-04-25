@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 final class UserAccountModel
 {
+    private ?bool $hasMfaEnabledColumn = null;
+    private ?bool $hasMfaSecretColumn = null;
     public function __construct(private PDO $db)
     {
     }
 
     public function getList(string $search = '', string $roleCode = ''): array
     {
-        $sql = 'SELECT u.id, u.full_name, u.username, u.is_active, u.last_login_at, u.created_at,
+        $sql = 'SELECT u.id, u.full_name, u.username, u.is_active, u.last_login_at, u.created_at, '
+                . ($this->hasMfaEnabledColumn() ? 'u.mfa_enabled' : '0 AS mfa_enabled') . ',
                        r.code AS role_code, r.name AS role_name,
                        (SELECT COUNT(*) FROM journal_headers j WHERE j.created_by = u.id) AS journal_count
                 FROM users u
@@ -83,14 +86,23 @@ final class UserAccountModel
 
     public function create(array $data): int
     {
-        $sql = 'INSERT INTO users (role_id, full_name, username, password_hash, is_active, created_at, updated_at)
-                VALUES (:role_id, :full_name, :username, :password_hash, :is_active, NOW(), NOW())';
+        if ($this->hasMfaEnabledColumn() && $this->hasMfaSecretColumn()) {
+            $sql = 'INSERT INTO users (role_id, full_name, username, password_hash, is_active, mfa_enabled, mfa_secret, created_at, updated_at)
+                    VALUES (:role_id, :full_name, :username, :password_hash, :is_active, :mfa_enabled, :mfa_secret, NOW(), NOW())';
+        } else {
+            $sql = 'INSERT INTO users (role_id, full_name, username, password_hash, is_active, created_at, updated_at)
+                    VALUES (:role_id, :full_name, :username, :password_hash, :is_active, NOW(), NOW())';
+        }
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':role_id', $data['role_id'], PDO::PARAM_INT);
         $stmt->bindValue(':full_name', $data['full_name'], PDO::PARAM_STR);
         $stmt->bindValue(':username', $data['username'], PDO::PARAM_STR);
         $stmt->bindValue(':password_hash', $data['password_hash'], PDO::PARAM_STR);
         $stmt->bindValue(':is_active', $data['is_active'] ? 1 : 0, PDO::PARAM_INT);
+        if ($this->hasMfaEnabledColumn() && $this->hasMfaSecretColumn()) {
+            $stmt->bindValue(':mfa_enabled', !empty($data['mfa_enabled']) ? 1 : 0, PDO::PARAM_INT);
+            $stmt->bindValue(':mfa_secret', (string) ($data['mfa_secret'] ?? ''), PDO::PARAM_STR);
+        }
         $stmt->execute();
         return (int) $this->db->lastInsertId();
     }
@@ -106,6 +118,12 @@ final class UserAccountModel
         if (!empty($data['password_hash'])) {
             $sql .= ', password_hash = :password_hash';
         }
+        if ($this->hasMfaEnabledColumn()) {
+            $sql .= ', mfa_enabled = :mfa_enabled';
+        }
+        if ($this->hasMfaSecretColumn()) {
+            $sql .= ', mfa_secret = :mfa_secret';
+        }
         $sql .= ' WHERE id = :id';
 
         $stmt = $this->db->prepare($sql);
@@ -117,6 +135,12 @@ final class UserAccountModel
         if (!empty($data['password_hash'])) {
             $stmt->bindValue(':password_hash', $data['password_hash'], PDO::PARAM_STR);
         }
+        if ($this->hasMfaEnabledColumn()) {
+            $stmt->bindValue(':mfa_enabled', !empty($data['mfa_enabled']) ? 1 : 0, PDO::PARAM_INT);
+        }
+        if ($this->hasMfaSecretColumn()) {
+            $stmt->bindValue(':mfa_secret', (string) ($data['mfa_secret'] ?? ''), PDO::PARAM_STR);
+        }
         $stmt->execute();
     }
 
@@ -126,5 +150,49 @@ final class UserAccountModel
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->bindValue(':is_active', $isActive ? 1 : 0, PDO::PARAM_INT);
         $stmt->execute();
+    }
+
+    public function resetPassword(int $id, string $passwordHash): void
+    {
+        $stmt = $this->db->prepare('UPDATE users SET password_hash = :password_hash, updated_at = NOW() WHERE id = :id');
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->bindValue(':password_hash', $passwordHash, PDO::PARAM_STR);
+        $stmt->execute();
+    }
+
+    private function hasMfaEnabledColumn(): bool
+    {
+        if ($this->hasMfaEnabledColumn !== null) {
+            return $this->hasMfaEnabledColumn;
+        }
+        $this->hasMfaEnabledColumn = $this->columnExists('users', 'mfa_enabled');
+        return $this->hasMfaEnabledColumn;
+    }
+
+    private function hasMfaSecretColumn(): bool
+    {
+        if ($this->hasMfaSecretColumn !== null) {
+            return $this->hasMfaSecretColumn;
+        }
+        $this->hasMfaSecretColumn = $this->columnExists('users', 'mfa_secret');
+        return $this->hasMfaSecretColumn;
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name
+                 LIMIT 1'
+            );
+            $stmt->execute([
+                ':table_name' => $table,
+                ':column_name' => $column,
+            ]);
+            return (bool) $stmt->fetchColumn();
+        } catch (Throwable) {
+            return false;
+        }
     }
 }

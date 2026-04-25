@@ -1,43 +1,7 @@
 <?php
 
 declare(strict_types=1);
-
-$router->get('/', [DashboardController::class, 'index'], [AuthMiddleware::class]);
-$router->get('/dashboard', [DashboardController::class, 'index'], [AuthMiddleware::class]);
-$router->get('/dashboard/pimpinan', [DashboardController::class, 'leadership'], [[RoleMiddleware::class, ['admin', 'bendahara', 'pimpinan']]]);
-$router->get('/eis', [DashboardController::class, 'index'], [AuthMiddleware::class]);
-
-$router->get('/settings/profile', [ProfileController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/settings/profile', [ProfileController::class, 'save'], [[RoleMiddleware::class, ['admin']]]);
-
-$router->get('/business-units', [BusinessUnitController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
-$router->get('/business-units/create', [BusinessUnitController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/business-units/store', [BusinessUnitController::class, 'store'], [[RoleMiddleware::class, ['admin']]]);
-$router->get('/business-units/edit', [BusinessUnitController::class, 'edit'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/business-units/update', [BusinessUnitController::class, 'update'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/business-units/toggle-active', [BusinessUnitController::class, 'toggleActive'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/business-units/delete', [BusinessUnitController::class, 'delete'], [[RoleMiddleware::class, ['admin']]]);
-
-$router->get('/user-accounts', [UserAccountController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
-$router->get('/user-accounts/create', [UserAccountController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/user-accounts/store', [UserAccountController::class, 'store'], [[RoleMiddleware::class, ['admin']]]);
-$router->get('/user-accounts/edit', [UserAccountController::class, 'edit'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/user-accounts/update', [UserAccountController::class, 'update'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/user-accounts/toggle-active', [UserAccountController::class, 'toggleActive'], [[RoleMiddleware::class, ['admin']]]);
-$router->get('/audit-logs', [AuditLogController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
-$router->get('/backups', [BackupController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/backups/create', [BackupController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);
-$router->get('/backups/download', [BackupController::class, 'download'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/backups/restore', [BackupController::class, 'restore'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/backups/delete', [BackupController::class, 'delete'], [[RoleMiddleware::class, ['admin']]]);
-
-$router->get('/updates', [UpdateController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/updates/check', [UpdateController::class, 'check'], [[RoleMiddleware::class, ['admin']]]);
-$router->post('/updates/apply', [UpdateController::class, 'apply'], [[RoleMiddleware::class, ['admin']]]);
-$router->get('/updates/report', [UpdateController::class, 'report'], [[RoleMiddleware::class, ['admin']]]);
-
-$router->get('/coa', [CoaController::class, 'index'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
-$router->get('/coa/create', [CoaController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);
+require __DIR__ . '/../app/routes/web.php';
 $router->post('/coa/store', [CoaController::class, 'store'], [[RoleMiddleware::class, ['admin']]]);
 $router->get('/coa/edit', [CoaController::class, 'edit'], [[RoleMiddleware::class, ['admin']]]);
 $router->post('/coa/update', [CoaController::class, 'update'], [[RoleMiddleware::class, ['admin']]]);

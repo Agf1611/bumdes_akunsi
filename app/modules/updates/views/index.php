@@ -8,6 +8,9 @@ $newFiles = array_slice((array) (($last_check['files']['new'] ?? [])), 0, 25);
 $obsoleteFiles = array_slice((array) (($last_check['files']['obsolete'] ?? [])), 0, 20);
 $totalNeedUpdate = (int) ($summary['changed_count'] ?? 0) + (int) ($summary['new_count'] ?? 0);
 $updateAvailable = (bool) ($summary['update_available'] ?? false);
+$preflight = (array) (($last_check['preflight'] ?? []));
+$pendingMigrations = is_array($pending_migrations ?? null) ? $pending_migrations : [];
+$currentManifest = is_array($current_manifest ?? null) ? $current_manifest : [];
 ?>
 
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
@@ -23,13 +26,49 @@ $updateAvailable = (bool) ($summary['update_available'] ?? false);
         <form method="post" action="<?= e(base_url('/updates/apply')) ?>" class="m-0">
             <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="confirm_backup" value="1">
-            <button type="submit" class="btn btn-primary" onclick="return confirm('Sistem akan membuat backup database otomatis lalu hanya mengganti file aplikasi yang berubah dari GitHub. Lanjutkan update?');">Backup DB &amp; Jalankan Update</button>
+            <button type="submit" class="btn btn-primary" <?= array_key_exists('compatible', $preflight) && !(bool) ($preflight['compatible'] ?? false) ? 'disabled' : '' ?> onclick="return confirm('Sistem akan membuat backup database otomatis, mengaktifkan mode maintenance, lalu mengganti file aplikasi yang berubah dari GitHub. Lanjutkan update?');">Backup DB &amp; Jalankan Update</button>
         </form>
     </div>
 </div>
 
 <div class="alert alert-warning mb-4">
-    <strong>Wajib backup database:</strong> setiap update akan otomatis membuat file backup SQL terlebih dahulu. Jika update gagal, sistem juga mencoba rollback file yang sempat berubah dan menyiapkan laporan audit yang bisa diunduh.
+    <strong>Wajib backup database:</strong> setiap update akan otomatis membuat file backup SQL terlebih dahulu. Jika update gagal, sistem juga mencoba rollback file yang sempat berubah, menjalankan preflight compatibility check, dan menyiapkan laporan audit yang bisa diunduh.
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-6">
+        <div class="card shadow-sm h-100"><div class="card-body p-4">
+            <h2 class="h5 mb-3">Preflight Update</h2>
+            <div class="small text-secondary mb-3">Update hanya boleh jalan jika paket rilis GitHub kompatibel dengan updater lokal dan migration-nya bisa dikenali.</div>
+            <div class="row g-3">
+                <div class="col-md-6"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Capability Lokal</div><div class="fw-bold"><?= e((string) ($preflight['updater_capability'] ?? '1')) ?></div></div></div>
+                <div class="col-md-6"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Capability Remote</div><div class="fw-bold"><?= e((string) ($preflight['required_capability'] ?? '-')) ?></div></div></div>
+                <div class="col-md-6"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Manifest Lokal</div><div class="fw-bold"><?= e((string) ($currentManifest['release_version'] ?? 'Belum ada')) ?></div></div></div>
+                <div class="col-md-6"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Manifest Remote</div><div class="fw-bold"><?= e((string) ($preflight['remote_release_version'] ?? 'Belum dicek')) ?></div></div></div>
+            </div>
+            <div class="mt-3">
+                <span class="badge <?= !array_key_exists('compatible', $preflight) || (bool) ($preflight['compatible'] ?? false) ? 'text-bg-success' : 'text-bg-danger' ?>">
+                    <?= !array_key_exists('compatible', $preflight) || (bool) ($preflight['compatible'] ?? false) ? 'Kompatibel / siap dicek' : 'Tidak kompatibel' ?>
+                </span>
+            </div>
+        </div></div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card shadow-sm h-100"><div class="card-body p-4">
+            <h2 class="h5 mb-3">Schema & Migration</h2>
+            <div class="small text-secondary mb-3">Migration lokal yang masih pending akan ikut dijalankan saat update sukses diterapkan.</div>
+            <?php if ($pendingMigrations === []): ?>
+                <div class="text-success fw-semibold">Tidak ada migration lokal yang pending.</div>
+            <?php else: ?>
+                <div class="mb-2 fw-semibold"><?= e((string) count($pendingMigrations)) ?> migration pending</div>
+                <ul class="small mb-0 ps-3 text-secondary">
+                    <?php foreach (array_slice($pendingMigrations, 0, 8) as $migrationName): ?>
+                        <li><code><?= e((string) $migrationName) ?></code></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </div></div>
+    </div>
 </div>
 
 <div class="row g-4 mb-4">

@@ -204,6 +204,27 @@
         updateSidebarToggleUi();
     }
 
+
+    function enhanceMobileTables() {
+        const skipSelectors = '.table-responsive, .coa-table-wrapper, .ledger-table-wrapper, .trial-balance-table-wrapper, .income-statement-table-wrapper, .balance-sheet-table-wrapper, .cash-flow-table-wrapper, .journal-table-wrapper, .report-table-wrapper, .print-layout, .print-sheet';
+        document.querySelectorAll('body.app-shell .card-body > table, body.app-shell .card-body > .table, body.app-shell .report-table-head + table, body.app-shell main table').forEach(function (table) {
+            if (!(table instanceof HTMLElement)) {
+                return;
+            }
+
+            if (table.closest(skipSelectors) || table.dataset.mobileWrapped === '1') {
+                return;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-responsive mobile-table-scroll';
+            wrapper.setAttribute('data-mobile-table-wrapper', '1');
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+            table.dataset.mobileWrapped = '1';
+        });
+    }
+
     function initShellUi() {
         resetSidebarStateOnce();
         applyTheme(getPreferredTheme());
@@ -296,6 +317,7 @@
             document.body.dataset.sidebarDocumentBound = '1';
         }
 
+        enhanceMobileTables();
         syncSidebarState();
     }
 

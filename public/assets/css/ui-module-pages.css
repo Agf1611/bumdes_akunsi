@@ -805,3 +805,386 @@ body.app-shell .report-status-badge--warn {
         grid-template-columns: 1fr;
     }
 }
+
+/* Mobile compatibility audit patch - 2026-04-26
+   Tujuan: menjaga shell, topbar, form, tabel, dan kartu tetap responsif pada layar HP
+   tanpa mengubah struktur halaman atau file modul satu per satu. */
+@supports (height: 100dvh) {
+    body.app-shell,
+    body.app-shell .app-frame,
+    body.app-shell .app-main,
+    body.app-shell .app-sidebar,
+    body.app-shell .app-sidebar__inner {
+        height: 100dvh;
+        min-height: 100dvh;
+    }
+}
+
+body.app-shell .app-main,
+body.app-shell .app-content,
+body.app-shell .content-wrap,
+body.app-shell .card,
+body.app-shell .card-body,
+body.app-shell .modal-content,
+body.app-shell .dropdown-menu,
+body.app-shell .alert {
+    max-width: 100%;
+}
+
+body.app-shell .table-responsive,
+body.app-shell .coa-table-wrapper,
+body.app-shell .ledger-table-wrapper,
+body.app-shell .trial-balance-table-wrapper,
+body.app-shell .income-statement-table-wrapper,
+body.app-shell .balance-sheet-table-wrapper,
+body.app-shell .cash-flow-table-wrapper,
+body.app-shell .journal-table-wrapper,
+body.app-shell .report-table-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable both-edges;
+}
+
+body.app-shell .table-responsive > table,
+body.app-shell .coa-table-wrapper > table,
+body.app-shell .ledger-table-wrapper > table,
+body.app-shell .trial-balance-table-wrapper > table,
+body.app-shell .income-statement-table-wrapper > table,
+body.app-shell .balance-sheet-table-wrapper > table,
+body.app-shell .cash-flow-table-wrapper > table,
+body.app-shell .journal-table-wrapper > table,
+body.app-shell .report-table-wrapper > table {
+    margin-bottom: 0;
+}
+
+body.app-shell .table th,
+body.app-shell .table td {
+    vertical-align: middle;
+}
+
+body.app-shell .form-control,
+body.app-shell .form-select,
+body.app-shell textarea,
+body.app-shell input,
+body.app-shell select,
+body.app-shell .btn {
+    max-width: 100%;
+}
+
+body.app-shell .card .btn,
+body.app-shell .card .btn-group,
+body.app-shell .action-toolbar,
+body.app-shell .page-actions,
+body.app-shell .filter-actions,
+body.app-shell .table-action-menu,
+body.app-shell .topbar-actions {
+    flex-wrap: wrap;
+}
+
+@supports selector(.card-body:has(> table)) {
+    body.app-shell .card-body:has(> table),
+    body.app-shell .card-body:has(> .table),
+    body.app-shell .card-body:has(> form + table),
+    body.app-shell .card-body:has(> .report-analytics-table) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.app-shell .card-body:has(> table) > table,
+    body.app-shell .card-body:has(> .table) > .table,
+    body.app-shell .card-body:has(> form + table) > table,
+    body.app-shell .card-body:has(> .report-analytics-table) > .report-analytics-table {
+        min-width: max-content;
+    }
+}
+
+@media (max-width: 991.98px) {
+    html,
+    body {
+        overflow-x: hidden;
+    }
+
+    body.app-shell {
+        width: 100%;
+        min-width: 0;
+    }
+
+    body.app-shell .app-frame {
+        width: 100%;
+        min-width: 0;
+    }
+
+    body.app-shell .app-main {
+        width: 100% !important;
+        min-width: 0 !important;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.app-shell .app-sidebar,
+    body.app-shell .sidebar.app-sidebar {
+        max-width: calc(100vw - 18px) !important;
+        overflow: hidden;
+    }
+
+    body.app-shell .app-sidebar__inner {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    body.app-shell .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1040;
+        background: rgba(15, 23, 42, 0.42);
+        backdrop-filter: blur(2px);
+    }
+
+    body.app-shell .app-topbar,
+    body.app-shell .app-content,
+    body.app-shell .app-footer {
+        padding-left: clamp(0.72rem, 3.5vw, 1rem) !important;
+        padding-right: clamp(0.72rem, 3.5vw, 1rem) !important;
+    }
+
+    body.app-shell .app-topbar__inner {
+        grid-template-columns: minmax(0, 1fr) !important;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    body.app-shell .app-topbar__left,
+    body.app-shell .app-topbar__utility,
+    body.app-shell .app-topbar__meta-row,
+    body.app-shell .app-topbar__right,
+    body.app-shell .topbar-actions {
+        width: 100%;
+        min-width: 0;
+    }
+
+    body.app-shell .app-topbar__left {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    body.app-shell .app-topbar__search-row,
+    body.app-shell .app-topbar__title-row {
+        width: 100%;
+        min-width: 0;
+    }
+
+    body.app-shell .app-topbar__title-row {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+    }
+
+    body.app-shell .command-search {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    body.app-shell .command-search__text,
+    body.app-shell .page-meta__title,
+    body.app-shell .brand-copy__title,
+    body.app-shell .topbar-profile__name,
+    body.app-shell .topbar-profile__role,
+    body.app-shell .dropdown-item {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    body.app-shell .content-wrap {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        width: 100%;
+    }
+
+    body.app-shell .row {
+        --bs-gutter-x: 1rem;
+    }
+
+    body.app-shell .card-body,
+    body.app-shell .dashboard-card .card-body {
+        padding: clamp(1rem, 4vw, 1.25rem) !important;
+    }
+
+    body.app-shell .dropdown-menu {
+        max-width: min(92vw, 360px);
+    }
+
+    body.app-shell .table-action-panel,
+    body.app-shell .dropdown-menu-end {
+        max-width: calc(100vw - 1.5rem);
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.app-shell .app-topbar {
+        padding-top: max(0.6rem, env(safe-area-inset-top)) !important;
+    }
+
+    body.app-shell .app-topbar__inner {
+        padding: 0.72rem !important;
+        gap: 0.65rem !important;
+        border-radius: 18px !important;
+    }
+
+    body.app-shell .app-topbar__right,
+    body.app-shell .topbar-actions {
+        justify-content: flex-start !important;
+        gap: 0.45rem !important;
+    }
+
+    body.app-shell .app-topbar__menu,
+    body.app-shell .topbar-icon-button,
+    body.app-shell .topbar-profile {
+        flex: 0 0 auto;
+    }
+
+    body.app-shell .topbar-profile {
+        max-width: 100%;
+    }
+
+    body.app-shell .page-meta {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    body.app-shell .page-meta__eyebrow {
+        font-size: 0.68rem !important;
+    }
+
+    body.app-shell .page-meta__title {
+        font-size: clamp(0.92rem, 4vw, 1.05rem) !important;
+        line-height: 1.2;
+    }
+
+    body.app-shell .command-search__text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    body.app-shell .btn-toolbar,
+    body.app-shell .d-flex.gap-2,
+    body.app-shell .d-flex.gap-3,
+    body.app-shell form.row,
+    body.app-shell .card-header,
+    body.app-shell .report-table-head {
+        min-width: 0;
+    }
+
+    body.app-shell .card-header,
+    body.app-shell .report-table-head,
+    body.app-shell .module-page-head,
+    body.app-shell .page-header,
+    body.app-shell .dashboard-welcome,
+    body.app-shell .dashboard-panel__head {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    body.app-shell .btn:not(.dropdown-toggle):not(.btn-close):not(.topbar-icon-button):not(.app-topbar__menu):not(.table-action-trigger) {
+        white-space: normal;
+    }
+
+    body.app-shell .table {
+        font-size: 0.86rem;
+    }
+
+    body.app-shell .table th,
+    body.app-shell .table td {
+        padding: 0.68rem 0.72rem;
+        white-space: nowrap;
+    }
+
+    body.app-shell .table td .text-muted,
+    body.app-shell .table td small,
+    body.app-shell .table td .small {
+        white-space: normal;
+    }
+
+    body.app-shell .table-action-col {
+        position: sticky;
+        right: 0;
+        z-index: 2;
+        background: var(--ui-panel, #fff) !important;
+        box-shadow: -8px 0 18px rgba(15, 23, 42, 0.08);
+    }
+
+    html[data-theme="dark"] body.app-shell .table-action-col {
+        background: var(--ui-panel, #101928) !important;
+    }
+
+    body.app-shell .form-label {
+        margin-bottom: 0.35rem;
+    }
+
+    body.app-shell .form-control,
+    body.app-shell .form-select,
+    body.app-shell .btn {
+        min-height: 42px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body.app-shell .app-topbar,
+    body.app-shell .app-content,
+    body.app-shell .app-footer {
+        padding-left: 0.62rem !important;
+        padding-right: 0.62rem !important;
+    }
+
+    body.app-shell .app-content {
+        padding-top: 0.75rem !important;
+    }
+
+    body.app-shell .app-topbar__inner,
+    body.app-shell .card,
+    body.app-shell .dashboard-card,
+    body.app-shell .modal-content {
+        border-radius: 16px !important;
+    }
+
+    body.app-shell .card-body,
+    body.app-shell .dashboard-card .card-body {
+        padding: 0.9rem !important;
+    }
+
+    body.app-shell .topbar-dropdown,
+    body.app-shell .dropdown-menu {
+        width: calc(100vw - 1.25rem) !important;
+        max-width: calc(100vw - 1.25rem) !important;
+    }
+
+    body.app-shell .table th,
+    body.app-shell .table td {
+        padding: 0.58rem 0.62rem;
+    }
+
+    body.app-shell .table-action-panel {
+        min-width: min(220px, calc(100vw - 1.5rem));
+    }
+}
+
+@media print {
+    body.app-shell .table-responsive,
+    body.app-shell .coa-table-wrapper,
+    body.app-shell .ledger-table-wrapper,
+    body.app-shell .trial-balance-table-wrapper,
+    body.app-shell .income-statement-table-wrapper,
+    body.app-shell .balance-sheet-table-wrapper,
+    body.app-shell .cash-flow-table-wrapper,
+    body.app-shell .journal-table-wrapper,
+    body.app-shell .report-table-wrapper {
+        overflow: visible !important;
+        scrollbar-gutter: auto;
+    }
+
+    body.app-shell .table-action-col {
+        position: static !important;
+        box-shadow: none !important;
+    }
+}

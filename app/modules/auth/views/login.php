@@ -54,6 +54,10 @@
                     <div class="mb-4">
                         <label for="password" class="form-label">Password</label>
                         <input type="password" name="password" id="password" class="form-control form-control-lg" autocomplete="current-password" placeholder="Masukkan password" required>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" value="1" id="togglePasswordVisibility">
+                            <label class="form-check-label text-secondary" for="togglePasswordVisibility">Tampilkan sandi</label>
+                        </div>
                     </div>
 
                     <?php if (!empty($mfaEnabled)): ?>
@@ -70,3 +74,17 @@
         </section>
     </div>
 </div>
+
+<script>
+(function () {
+    var passwordInput = document.getElementById('password');
+    var toggle = document.getElementById('togglePasswordVisibility');
+    if (!passwordInput || !toggle) {
+        return;
+    }
+
+    toggle.addEventListener('change', function () {
+        passwordInput.setAttribute('type', toggle.checked ? 'text' : 'password');
+    });
+})();
+</script>

@@ -41,40 +41,33 @@ final class ProfitLossController extends Controller
             [$viewData, $selectedPeriod, $selectedUnit] = $this->buildReportData();
             $profile = app_profile();
             $unitLabel = business_unit_label($selectedUnit);
-            $pdf = new ReportPdf('P');
+            $pdf = new ReportPdf('L');
             report_pdf_init($pdf, $profile, 'Laporan Laba Rugi', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
 
-            $widths = [16, 84, 44, 44];
+            $widths = [16, 112, 42];
             $headerPrinter = static function (ReportPdf $pdfObj) use ($profile, $viewData, $selectedPeriod, $unitLabel, $widths): void {
                 report_pdf_init($pdfObj, $profile, 'Laporan Laba Rugi', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
-                $pdfObj->tableRow(['No', 'Uraian', $viewData['report']['current_column_label'], $viewData['report']['cumulative_column_label']], $widths, ['C', 'L', 'R', 'R'], 8.0, true);
+                $pdfObj->tableRow([
+                    'No',
+                    'Uraian',
+                    (string) $viewData['report']['current_column_label'],
+                ], $widths, ['C', 'L', 'R'], 8.0, true);
             };
-            $pdf->tableRow(['No', 'Uraian', $viewData['report']['current_column_label'], $viewData['report']['cumulative_column_label']], $widths, ['C', 'L', 'R', 'R'], 8.0, true);
+            $headerPrinter($pdf);
 
             foreach ($viewData['statement_rows'] as $row) {
-                if ($row['row_type'] === 'section') {
-                    $pdf->tableRow([(string) $row['order'], (string) $row['label'], '', ''], $widths, ['C', 'L', 'R', 'R'], 8.0, true, $headerPrinter);
-                    continue;
-                }
-                if ($row['row_type'] === 'category') {
-                    $pdf->tableRow([(string) $row['order'], (string) $row['label'], '', ''], $widths, ['C', 'L', 'R', 'R'], 8.0, false, $headerPrinter);
-                    continue;
-                }
-
                 $pdf->tableRow([
                     (string) $row['order'],
                     (string) $row['label'],
                     $row['current_amount'] === null ? '' : profit_loss_currency((float) $row['current_amount']),
-                    $row['cumulative_amount'] === null ? '' : profit_loss_currency((float) $row['cumulative_amount']),
-                ], $widths, ['C', 'L', 'R', 'R'], 8.0, $row['row_type'] !== 'account', $headerPrinter);
+                ], $widths, ['C', 'L', 'R'], 8.0, $row['row_type'] !== 'account', $headerPrinter);
             }
 
             $pdf->tableRow([
                 '',
                 profit_loss_display_label(),
                 profit_loss_currency((float) $viewData['report']['net_income']),
-                profit_loss_currency((float) $viewData['report']['cumulative_net_income']),
-            ], $widths, ['C', 'L', 'R', 'R'], 8.0, true, $headerPrinter);
+            ], $widths, ['C', 'L', 'R'], 8.0, true, $headerPrinter);
 
             report_pdf_footer_note($pdf, $profile);
             $pdf->output('laporan-laba-rugi.pdf');
@@ -82,6 +75,45 @@ final class ProfitLossController extends Controller
             log_error($e);
             http_response_code(500);
             render_error_page(500, 'File PDF laba rugi belum dapat dibuat. Pastikan filter laporan valid lalu coba lagi.', $e);
+        }
+    }
+
+    public function xlsx(): void
+    {
+        try {
+            [$viewData] = $this->buildReportData();
+            $rows = [];
+            foreach ($viewData['statement_rows'] as $row) {
+                $rows[] = [
+                    (string) ($row['order'] ?? ''),
+                    (string) ($row['row_type'] ?? ''),
+                    (string) ($row['label'] ?? ''),
+                    $row['current_amount'] === null ? '' : profit_loss_currency((float) $row['current_amount']),
+                ];
+            }
+
+            $rows[] = [
+                '',
+                'grand_total',
+                strtoupper(profit_loss_display_label()),
+                profit_loss_currency((float) $viewData['report']['net_income']),
+            ];
+
+            report_download_xlsx(
+                'profit_loss_' . date('Ymd_His') . '.xlsx',
+                'Laba Rugi',
+                'Laporan Laba Rugi',
+                $viewData['filters'],
+                ['No', 'Tipe Baris', 'Uraian', (string) $viewData['report']['current_column_label']],
+                $rows,
+                [
+                    'Mode Laporan' => (string) ($viewData['report']['mode_label'] ?? '-'),
+                ]
+            );
+        } catch (Throwable $e) {
+            log_error($e);
+            flash('error', 'Export XLSX laba rugi belum dapat diproses.');
+            $this->redirect('/profit-loss');
         }
     }
 
@@ -97,6 +129,10 @@ final class ProfitLossController extends Controller
             'date_to' => trim((string) get_query('date_to', '')),
             'unit_id' => (int) get_query('unit_id', 0),
             'mode' => trim((string) get_query('mode', 'period')),
+            'comparison_mode' => report_normalize_comparison_mode((string) get_query('comparison_mode', 'none')),
+            'comparison_period_id' => (int) get_query('comparison_period_id', 0),
+            'show_variance' => report_query_flag(get_query('show_variance', '0'), false),
+            'show_visual' => report_query_flag(get_query('show_visual', '1')),
         ];
 
         $filters = apply_fiscal_year_filter($filters);
@@ -104,12 +140,18 @@ final class ProfitLossController extends Controller
 
         $periods = $this->model()->getPeriods();
         $selectedPeriod = null;
+        $selectedComparisonPeriod = null;
         $selectedUnit = null;
         $report = $this->emptyReport();
         $statementRows = [];
+        $trend = [];
 
         if ($filters['period_id'] > 0 || $filters['date_from'] !== '' || $filters['date_to'] !== '') {
             [$filters, $selectedPeriod, $selectedUnit] = $this->resolveFilters($filters);
+            if ($filters['comparison_period_id'] > 0) {
+                $selectedComparisonPeriod = $this->model()->findPeriodById((int) $filters['comparison_period_id']);
+            }
+
             $normalized = $this->normalizeCurrentRange($filters, $selectedPeriod);
             $filters['date_from'] = $normalized['date_from'];
             $filters['date_to'] = $normalized['date_to'];
@@ -118,9 +160,18 @@ final class ProfitLossController extends Controller
             $currentRawRows = $this->model()->getRows($filters['date_from'], $filters['date_to'], (int) $filters['unit_id']);
             $current = $this->buildSectionReport($currentRawRows);
 
-            $cumulativeStart = $this->resolveCumulativeStartDate($filters, $selectedPeriod);
-            $cumulativeRawRows = $this->model()->getRows($cumulativeStart, $filters['date_to'], (int) $filters['unit_id']);
-            $cumulative = $this->buildSectionReport($cumulativeRawRows);
+            $comparisonContext = report_resolve_comparison_range(
+                (string) $filters['comparison_mode'],
+                (string) $filters['date_from'],
+                (string) $filters['date_to'],
+                $selectedPeriod,
+                $selectedComparisonPeriod
+            );
+            $comparison = $this->emptyReport();
+            if (($comparisonContext['enabled'] ?? false) === true) {
+                $comparisonRawRows = $this->model()->getRows((string) $comparisonContext['date_from'], (string) $comparisonContext['date_to'], (int) $filters['unit_id']);
+                $comparison = $this->buildSectionReport($comparisonRawRows);
+            }
 
             $report = $current;
             $report['mode'] = $filters['mode'];
@@ -131,18 +182,20 @@ final class ProfitLossController extends Controller
             $report['period_total_label'] = $filters['mode'] === 'to_date'
                 ? 'Total ' . $this->monthYearLabel($filters['date_to']) . ' s.d. ' . format_id_date($filters['date_to'])
                 : 'Total ' . $this->resolveCurrentColumnLabel($filters, $selectedPeriod);
-            $report['cumulative_date_from'] = $cumulativeStart;
-            $report['cumulative_date_to'] = $filters['date_to'];
-            $report['cumulative_label'] = 'Akumulasi Tahun Berjalan';
-            $report['cumulative_column_label'] = 'Akumulasi s.d. ' . format_id_date($filters['date_to']);
-            $report['cumulative_range_label'] = format_id_date($cumulativeStart) . ' s.d. ' . format_id_date($filters['date_to']);
-            $report['cumulative_revenue_rows'] = $cumulative['revenue_rows'];
-            $report['cumulative_expense_rows'] = $cumulative['expense_rows'];
-            $report['cumulative_total_revenue'] = $cumulative['total_revenue'];
-            $report['cumulative_total_expense'] = $cumulative['total_expense'];
-            $report['cumulative_net_income'] = $cumulative['net_income'];
-            $report['combined_rows'] = $this->combineReportRows($current, $cumulative);
+            $report['comparison_label'] = (string) ($comparisonContext['label'] ?? 'Pembanding');
+            $report['comparison_column_label'] = (string) ($comparisonContext['column_label'] ?? 'Pembanding');
+            $report['comparison_date_from'] = (string) ($comparisonContext['date_from'] ?? '');
+            $report['comparison_date_to'] = (string) ($comparisonContext['date_to'] ?? '');
+            $report['comparison_revenue_rows'] = $comparison['revenue_rows'];
+            $report['comparison_expense_rows'] = $comparison['expense_rows'];
+            $report['comparison_total_revenue'] = (float) ($comparison['total_revenue'] ?? 0);
+            $report['comparison_total_expense'] = (float) ($comparison['total_expense'] ?? 0);
+            $report['comparison_net_income'] = (float) ($comparison['net_income'] ?? 0);
+            $report['comparison_enabled'] = (bool) ($comparisonContext['enabled'] ?? false);
+            $report['comparison_mode'] = (string) ($comparisonContext['mode'] ?? 'none');
+            $report['combined_rows'] = $this->combineReportRows($current, $comparison);
             $statementRows = $this->buildStatementRows($report['combined_rows']);
+            $trend = $this->buildTrendSeries((string) $filters['date_to'], (int) $filters['unit_id']);
         }
 
         return [[
@@ -152,14 +205,22 @@ final class ProfitLossController extends Controller
                 'period' => 'Bulanan / Periode penuh',
                 'to_date' => 'Sampai tanggal akhir',
             ],
+            'comparisonModes' => [
+                'ytd' => 'Aktual vs Akumulasi Tahun Berjalan',
+                'previous_period' => 'Aktual vs Periode Lalu',
+                'previous_year' => 'Aktual vs Tahun Lalu',
+                'none' => 'Tanpa Pembanding',
+            ],
             'reportYears' => accounting_report_year_options(),
             'periods' => $periods,
             'units' => business_unit_options(),
             'selectedPeriod' => $selectedPeriod,
+            'selectedComparisonPeriod' => $selectedComparisonPeriod,
             'selectedUnit' => $selectedUnit,
             'selectedUnitLabel' => business_unit_label($selectedUnit),
             'report' => $report,
             'statement_rows' => $statementRows,
+            'trend' => $trend,
         ], $selectedPeriod, $selectedUnit];
     }
 
@@ -174,6 +235,8 @@ final class ProfitLossController extends Controller
         $filters['date_to'] = trim((string) ($filters['date_to'] ?? ''));
         $filters['fiscal_year'] = (int) ($filters['fiscal_year'] ?? 0);
         $filters['mode'] = $this->normalizeMode((string) ($filters['mode'] ?? 'period'));
+        $filters['comparison_mode'] = report_normalize_comparison_mode((string) ($filters['comparison_mode'] ?? 'ytd'));
+        $filters['comparison_period_id'] = (int) ($filters['comparison_period_id'] ?? 0);
         $filters = apply_fiscal_year_filter($filters);
 
         if ($filters['period_id'] > 0) {
@@ -241,6 +304,7 @@ final class ProfitLossController extends Controller
             );
 
             $entry = [
+                'account_id' => (int) ($row['id'] ?? 0),
                 'account_code' => (string) $row['account_code'],
                 'account_name' => (string) $row['account_name'],
                 'account_type' => (string) $row['account_type'],
@@ -265,36 +329,38 @@ final class ProfitLossController extends Controller
         return $report;
     }
 
-    private function combineReportRows(array $current, array $cumulative): array
+    private function combineReportRows(array $current, array $comparison): array
     {
         $combined = [];
         foreach (['REVENUE' => 'revenue_rows', 'EXPENSE' => 'expense_rows'] as $type => $key) {
             foreach (($current[$key] ?? []) as $row) {
                 $code = (string) $row['account_code'];
                 $combined[$type][$code] = [
+                    'account_id' => (int) ($row['account_id'] ?? 0),
                     'account_code' => $code,
                     'account_name' => (string) $row['account_name'],
                     'account_type' => $type,
                     'account_category' => trim((string) ($row['account_category'] ?? '')),
                     'current_amount' => (float) $row['amount'],
-                    'cumulative_amount' => 0.0,
+                    'comparison_amount' => 0.0,
                 ];
             }
-            foreach (($cumulative[$key] ?? []) as $row) {
+            foreach (($comparison[$key] ?? []) as $row) {
                 $code = (string) $row['account_code'];
                 if (!isset($combined[$type][$code])) {
                     $combined[$type][$code] = [
+                        'account_id' => (int) ($row['account_id'] ?? 0),
                         'account_code' => $code,
                         'account_name' => (string) $row['account_name'],
                         'account_type' => $type,
                         'account_category' => trim((string) ($row['account_category'] ?? '')),
                         'current_amount' => 0.0,
-                        'cumulative_amount' => 0.0,
+                        'comparison_amount' => 0.0,
                     ];
                 }
-                $combined[$type][$code]['cumulative_amount'] = (float) $row['amount'];
-                if ($combined[$type][$code]['account_category'] === '') {
-                    $combined[$type][$code]['account_category'] = trim((string) ($row['account_category'] ?? ''));
+                $combined[$type][$code]['comparison_amount'] = (float) $row['amount'];
+                if ($combined[$type][$code]['account_id'] === 0) {
+                    $combined[$type][$code]['account_id'] = (int) ($row['account_id'] ?? 0);
                 }
             }
             uasort($combined[$type], static function (array $a, array $b): int {
@@ -334,7 +400,8 @@ final class ProfitLossController extends Controller
                 'order' => $order++,
                 'label' => $sectionTitle,
                 'current_amount' => null,
-                'cumulative_amount' => null,
+                'comparison_amount' => null,
+                'account_id' => 0,
             ];
 
             $grouped = [];
@@ -347,7 +414,7 @@ final class ProfitLossController extends Controller
             }
 
             $sectionCurrent = 0.0;
-            $sectionCumulative = 0.0;
+            $sectionComparison = 0.0;
             $groupCount = count($grouped);
 
             foreach ($grouped as $category => $items) {
@@ -360,22 +427,24 @@ final class ProfitLossController extends Controller
                         'order' => $order++,
                         'label' => $categoryLabel,
                         'current_amount' => null,
-                        'cumulative_amount' => null,
+                        'comparison_amount' => null,
+                        'account_id' => 0,
                     ];
                 }
 
                 $categoryCurrent = 0.0;
-                $categoryCumulative = 0.0;
+                $categoryComparison = 0.0;
                 foreach ($items as $item) {
                     $rows[] = [
                         'row_type' => 'account',
                         'order' => $order++,
                         'label' => (string) $item['account_name'],
                         'current_amount' => (float) $item['current_amount'],
-                        'cumulative_amount' => (float) $item['cumulative_amount'],
+                        'comparison_amount' => (float) $item['comparison_amount'],
+                        'account_id' => (int) ($item['account_id'] ?? 0),
                     ];
                     $categoryCurrent += (float) $item['current_amount'];
-                    $categoryCumulative += (float) $item['cumulative_amount'];
+                    $categoryComparison += (float) $item['comparison_amount'];
                 }
 
                 if ($showCategory) {
@@ -384,11 +453,13 @@ final class ProfitLossController extends Controller
                         'order' => '',
                         'label' => 'Total ' . $categoryLabel,
                         'current_amount' => $categoryCurrent,
-                        'cumulative_amount' => $categoryCumulative,
+                        'comparison_amount' => $categoryComparison,
+                        'account_id' => 0,
                     ];
                 }
+
                 $sectionCurrent += $categoryCurrent;
-                $sectionCumulative += $categoryCumulative;
+                $sectionComparison += $categoryComparison;
             }
 
             $rows[] = [
@@ -396,11 +467,37 @@ final class ProfitLossController extends Controller
                 'order' => '',
                 'label' => $key === 'revenue_rows' ? 'TOTAL PENDAPATAN USAHA' : 'TOTAL BEBAN USAHA',
                 'current_amount' => $sectionCurrent,
-                'cumulative_amount' => $sectionCumulative,
+                'comparison_amount' => $sectionComparison,
+                'account_id' => 0,
             ];
         }
 
         return $rows;
+    }
+
+    private function buildTrendSeries(string $dateTo, int $unitId): array
+    {
+        if (!$this->isValidDate($dateTo)) {
+            return [];
+        }
+
+        $end = new DateTimeImmutable(substr($dateTo, 0, 7) . '-01');
+        $points = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $monthStart = $end->modify('-' . $i . ' months');
+            $monthEnd = $monthStart->modify('last day of this month');
+            $monthReport = $this->buildSectionReport(
+                $this->model()->getRows($monthStart->format('Y-m-d'), $monthEnd->format('Y-m-d'), $unitId)
+            );
+            $points[] = [
+                'label' => $monthStart->format('Y-m-01'),
+                'revenue' => (float) $monthReport['total_revenue'],
+                'expense' => (float) $monthReport['total_expense'],
+                'net' => (float) $monthReport['net_income'],
+            ];
+        }
+
+        return $points;
     }
 
     private function normalizeCategoryLabel(string $label, string $sectionType = ''): string
@@ -444,28 +541,6 @@ final class ProfitLossController extends Controller
         }
 
         return false;
-    }
-
-    private function resolveCumulativeStartDate(array $filters, ?array $selectedPeriod): string
-    {
-        $dateTo = trim((string) ($filters['date_to'] ?? ''));
-        if ($dateTo === '') {
-            return trim((string) ($filters['date_from'] ?? ''));
-        }
-
-        $year = (int) substr($dateTo, 0, 4);
-        if ($year <= 0 && $selectedPeriod) {
-            $year = (int) substr((string) ($selectedPeriod['start_date'] ?? ''), 0, 4);
-        }
-        if ($year <= 0) {
-            $year = (int) date('Y');
-        }
-
-        if ((int) ($filters['fiscal_year'] ?? 0) > 0) {
-            $year = (int) $filters['fiscal_year'];
-        }
-
-        return sprintf('%04d-01-01', $year);
     }
 
     private function normalizeMode(string $mode): string
@@ -570,22 +645,22 @@ final class ProfitLossController extends Controller
             'mode' => 'period',
             'mode_label' => 'Bulanan / Periode',
             'period_total_label' => 'Total Periode',
-            'cumulative_label' => 'Akumulasi',
-            'cumulative_column_label' => 'Akumulasi',
-            'cumulative_range_label' => '-',
-            'cumulative_date_from' => '',
-            'cumulative_date_to' => '',
-            'cumulative_revenue_rows' => [],
-            'cumulative_expense_rows' => [],
-            'cumulative_total_revenue' => 0.0,
-            'cumulative_total_expense' => 0.0,
-            'cumulative_net_income' => 0.0,
+            'comparison_label' => 'Pembanding',
+            'comparison_column_label' => 'Pembanding',
+            'comparison_date_from' => '',
+            'comparison_date_to' => '',
+            'comparison_revenue_rows' => [],
+            'comparison_expense_rows' => [],
+            'comparison_total_revenue' => 0.0,
+            'comparison_total_expense' => 0.0,
+            'comparison_net_income' => 0.0,
+            'comparison_enabled' => false,
+            'comparison_mode' => 'none',
         ];
     }
 
     private function isValidDate(string $date): bool
     {
-        $dt = DateTimeImmutable::createFromFormat('Y-m-d', $date);
-        return $dt instanceof DateTimeImmutable && $dt->format('Y-m-d') === $date;
+        return report_is_valid_date($date);
     }
 }

@@ -4,6 +4,7 @@
     <div>
         <h1 class="h3 mb-1">Audit Trail / Log Aktivitas</h1>
         <p class="text-secondary mb-0">Riwayat aktivitas penting aplikasi. Data ini membantu pelacakan perubahan jurnal, periode, profil, dan akses pengguna.</p>
+        <div class="small text-secondary mt-2">Tampilan dibatasi maksimal <?= e((string) ($maxRows ?? 100)) ?> log terbaru sesuai filter agar halaman tetap ringan.</div>
     </div>
 </div>
 

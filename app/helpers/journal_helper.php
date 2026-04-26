@@ -22,6 +22,73 @@ function journal_print_template_label(string $template): string
         : 'Detail Standar';
 }
 
+function journal_workflow_statuses(): array
+{
+    return [
+        'DRAFT' => 'Draft',
+        'SUBMITTED' => 'Diajukan',
+        'APPROVED' => 'Disetujui',
+        'POSTED' => 'Posted',
+        'VOIDED' => 'Dibatalkan',
+        'REVERSED' => 'Direversal',
+    ];
+}
+
+function journal_workflow_label(?string $status): string
+{
+    $status = strtoupper(trim((string) $status));
+    $labels = journal_workflow_statuses();
+    return $labels[$status] ?? ($status !== '' ? $status : 'Posted');
+}
+
+function journal_workflow_badge_class(?string $status): string
+{
+    return match (strtoupper(trim((string) $status))) {
+        'DRAFT' => 'text-bg-secondary',
+        'SUBMITTED' => 'text-bg-info',
+        'APPROVED' => 'text-bg-success',
+        'POSTED' => 'text-bg-primary',
+        'VOIDED' => 'text-bg-danger',
+        'REVERSED' => 'text-bg-warning',
+        default => 'text-bg-secondary',
+    };
+}
+
+function journal_workflow_action_label(string $action): string
+{
+    return match ($action) {
+        'submit' => 'Ajukan',
+        'approve' => 'Setujui',
+        'post' => 'Post',
+        'void' => 'Void',
+        'reverse' => 'Reversal',
+        default => ucfirst($action),
+    };
+}
+
+function journal_workflow_allowed_actions(?string $status, string|array|null $roles): array
+{
+    $status = strtoupper(trim((string) ($status ?: 'POSTED')));
+    $roles = is_array($roles) ? array_map('strval', $roles) : [(string) $roles];
+    $isAdmin = in_array('admin', $roles, true);
+    $isBendahara = in_array('bendahara', $roles, true);
+    $isPimpinan = in_array('pimpinan', $roles, true);
+
+    return match ($status) {
+        'DRAFT' => array_values(array_filter([
+            ($isAdmin || $isBendahara) ? 'submit' : null,
+            $isAdmin ? 'post' : null,
+        ])),
+        'SUBMITTED' => array_values(array_filter([
+            ($isAdmin || $isPimpinan) ? 'approve' : null,
+            $isAdmin ? 'post' : null,
+        ])),
+        'APPROVED' => ($isAdmin || $isPimpinan) ? ['post'] : [],
+        'POSTED' => $isAdmin ? ['reverse', 'void'] : [],
+        default => [],
+    };
+}
+
 
 function journal_receipt_is_complete(array $journal): bool
 {

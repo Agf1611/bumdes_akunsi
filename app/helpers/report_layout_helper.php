@@ -10,6 +10,13 @@ function report_filters_query(array $filters, array $extra = []): string
         'date_to' => $filters['date_to'] ?? '',
         'unit_id' => $filters['unit_id'] ?? '',
         'account_id' => $filters['account_id'] ?? '',
+        'fiscal_year' => $filters['fiscal_year'] ?? '',
+        'mode' => $filters['mode'] ?? '',
+        'comparison_mode' => $filters['comparison_mode'] ?? '',
+        'comparison_period_id' => $filters['comparison_period_id'] ?? '',
+        'show_variance' => $filters['show_variance'] ?? '',
+        'show_visual' => $filters['show_visual'] ?? '',
+        'source_report' => $filters['source_report'] ?? '',
     ], $extra);
 
     $query = array_filter($query, static fn ($value): bool => $value !== null && $value !== '' && $value !== 0 && $value !== '0');

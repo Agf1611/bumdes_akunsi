@@ -83,7 +83,7 @@ final class WorkspaceController extends Controller
             $results['users'] = array_map(
                 static fn (array $row): array => [
                     'title' => (string) ($row['full_name'] ?? '-'),
-                    'subtitle' => (string) (($row['username'] ?? '-') . ' · ' . ($row['role_name'] ?? '')),
+                    'subtitle' => (string) (($row['username'] ?? '-') . ' - ' . ($row['role_name'] ?? '')),
                     'path' => '/user-accounts/edit?id=' . (int) ($row['id'] ?? 0),
                 ],
                 $this->model()->searchUsers($query)

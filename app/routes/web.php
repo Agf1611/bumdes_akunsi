@@ -9,6 +9,7 @@ $router->get('/eis', [DashboardController::class, 'index'], [AuthMiddleware::cla
 
 $router->get('/settings/profile', [ProfileController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
 $router->post('/settings/profile', [ProfileController::class, 'save'], [[RoleMiddleware::class, ['admin']]]);
+$router->get('/settings/health', [HealthController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
 
 $router->get('/business-units', [BusinessUnitController::class, 'index'], [[RoleMiddleware::class, ['admin']]]);
 $router->get('/business-units/create', [BusinessUnitController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);
@@ -102,6 +103,7 @@ $router->get('/journals/edit', [JournalController::class, 'edit'], [[RoleMiddlew
 $router->post('/journals/update', [JournalController::class, 'update'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->post('/journals/delete', [JournalController::class, 'delete'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->post('/journals/bulk-action', [JournalController::class, 'bulkAction'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
+$router->post('/journals/workflow-action', [JournalController::class, 'workflowAction'], [[RoleMiddleware::class, ['admin', 'bendahara', 'pimpinan']]]);
 $router->get('/journals/detail', [JournalController::class, 'detail'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/journals/print', [JournalController::class, 'print'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/journals/print-receipt', [JournalController::class, 'printReceipt'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
@@ -114,22 +116,27 @@ $router->get('/journals/export', [JournalController::class, 'export'], [[RoleMid
 $router->get('/ledger', [LedgerController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/ledger/print', [LedgerController::class, 'print'], [AuthMiddleware::class]);
 $router->get('/ledger/pdf', [LedgerController::class, 'pdf'], [AuthMiddleware::class]);
+$router->get('/ledger/xlsx', [LedgerController::class, 'xlsx'], [AuthMiddleware::class]);
 
 $router->get('/trial-balance', [TrialBalanceController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/trial-balance/print', [TrialBalanceController::class, 'print'], [AuthMiddleware::class]);
 $router->get('/trial-balance/pdf', [TrialBalanceController::class, 'pdf'], [AuthMiddleware::class]);
+$router->get('/trial-balance/xlsx', [TrialBalanceController::class, 'xlsx'], [AuthMiddleware::class]);
 
 $router->get('/profit-loss', [ProfitLossController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/profit-loss/print', [ProfitLossController::class, 'print'], [AuthMiddleware::class]);
 $router->get('/profit-loss/pdf', [ProfitLossController::class, 'pdf'], [AuthMiddleware::class]);
+$router->get('/profit-loss/xlsx', [ProfitLossController::class, 'xlsx'], [AuthMiddleware::class]);
 
 $router->get('/balance-sheet', [BalanceSheetController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/balance-sheet/print', [BalanceSheetController::class, 'print'], [AuthMiddleware::class]);
 $router->get('/balance-sheet/pdf', [BalanceSheetController::class, 'pdf'], [AuthMiddleware::class]);
+$router->get('/balance-sheet/xlsx', [BalanceSheetController::class, 'xlsx'], [AuthMiddleware::class]);
 
 $router->get('/cash-flow', [CashFlowController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/cash-flow/print', [CashFlowController::class, 'print'], [AuthMiddleware::class]);
 $router->get('/cash-flow/pdf', [CashFlowController::class, 'pdf'], [AuthMiddleware::class]);
+$router->get('/cash-flow/xlsx', [CashFlowController::class, 'xlsx'], [AuthMiddleware::class]);
 
 $router->get('/equity-changes', [EquityChangesController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/equity-changes/print', [EquityChangesController::class, 'print'], [AuthMiddleware::class]);
@@ -138,6 +145,8 @@ $router->get('/equity-changes/pdf', [EquityChangesController::class, 'pdf'], [Au
 $router->get('/financial-notes', [FinancialNotesController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/financial-notes/print', [FinancialNotesController::class, 'print'], [AuthMiddleware::class]);
 $router->get('/financial-notes/pdf', [FinancialNotesController::class, 'pdf'], [AuthMiddleware::class]);
+$router->get('/reports/drilldown', [ReportDrilldownController::class, 'index'], [AuthMiddleware::class]);
+$router->get('/closing-pack', [ClosingPackController::class, 'index'], [AuthMiddleware::class]);
 
 $router->get('/lpj', [LpjPackageController::class, 'index'], [AuthMiddleware::class]);
 $router->post('/lpj', [LpjPackageController::class, 'index'], [AuthMiddleware::class]);

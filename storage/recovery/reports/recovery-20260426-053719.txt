@@ -1,0 +1,17 @@
+RECOVERY READINESS REPORT
+Recorded at: 2026-04-26 05:37:19
+Restored at: 2026-04-26T05:37:19+07:00
+App version: 1.1.1-professional-foundation
+Restore mode: upload
+Source file: restore-review-20260426-053650-16f5a4eb.sql
+Source file modified at: 
+Source backup age days: -
+Restored by: Agus Feri
+Pre-restore backup: backup-bumdes-20260426-053715.sql
+Backup count now: 2
+Latest backup now: backup-bumdes-20260426-053715.sql
+Pending migrations: 0
+Data audit users: 5
+Data audit roles: 3
+Data audit periods: 5
+Data audit journals: 18

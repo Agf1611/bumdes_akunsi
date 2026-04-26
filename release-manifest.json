@@ -1,11 +1,12 @@
 {
-  "release_version": "1.1.0-security-foundation",
-  "release_date": "2026-04-24",
+  "release_version": "1.1.1-professional-foundation",
+  "release_date": "2026-04-25",
   "min_updater_capability": 1,
   "migration_path": "database/migrations",
   "schema_migrations": [
     "20260424_000001_schema_versions.sql",
     "20260424_000002_user_security_fields.sql",
-    "20260424_000003_journal_workflow_fields.sql"
+    "20260424_000003_journal_workflow_fields.sql",
+    "20260424_000004_user_preferences.sql"
   ]
 }

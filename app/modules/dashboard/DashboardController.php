@@ -243,11 +243,14 @@ final class DashboardController extends Controller
         ];
 
         if ($roleCode === 'admin') {
+            $backupStatus = (string) ($latestBackup['stale_level'] ?? (!empty($latestBackup['exists']) ? 'ok' : 'warning'));
             $tasks[] = [
                 'title' => 'Backup terakhir',
-                'status' => !empty($latestBackup['exists']) ? 'success' : 'warning',
-                'value' => !empty($latestBackup['exists']) ? 'Tersedia' : 'Belum ada',
-                'note' => !empty($latestBackup['exists']) ? (string) ($latestBackup['name'] ?? '-') : 'Segera buat backup database',
+                'status' => $backupStatus === 'critical' ? 'danger' : ($backupStatus === 'warning' ? 'warning' : 'success'),
+                'value' => !empty($latestBackup['exists']) ? ($backupStatus === 'ok' ? 'Aman' : 'Perlu backup') : 'Belum ada',
+                'note' => !empty($latestBackup['exists'])
+                    ? (string) ($latestBackup['name'] ?? '-') . ' · ' . (string) ($latestBackup['age_label'] ?? 'baru dibuat')
+                    : 'Segera buat backup database',
                 'url' => '/backups',
             ];
             $tasks[] = [

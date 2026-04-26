@@ -5,6 +5,10 @@ declare(strict_types=1);
 final class BackupService
 {
     private const MAX_UPLOAD_SIZE = 31457280;
+    private const RETENTION_DAYS = 30;
+    private const MIN_KEEP_FILES = 7;
+    private const BACKUP_STALE_WARNING_SECONDS = 86400;
+    private const BACKUP_STALE_CRITICAL_SECONDS = 259200;
 
     public function __construct(private PDO $db)
     {
@@ -17,7 +21,7 @@ final class BackupService
 
     public static function ensureDirectory(): void
     {
-        foreach ([self::directory(), self::stagingDirectory()] as $dir) {
+        foreach ([self::directory(), self::stagingDirectory(), self::recoveryDirectory(), self::recoveryReportDirectory()] as $dir) {
             if (!is_dir($dir)) {
                 @mkdir($dir, 0775, true);
             }
@@ -27,6 +31,21 @@ final class BackupService
     public static function stagingDirectory(): string
     {
         return self::directory() . '/restore_staging';
+    }
+
+    public static function recoveryDirectory(): string
+    {
+        return ROOT_PATH . '/storage/recovery';
+    }
+
+    public static function recoveryReportDirectory(): string
+    {
+        return self::recoveryDirectory() . '/reports';
+    }
+
+    public static function recoveryStatePath(): string
+    {
+        return self::recoveryDirectory() . '/recovery-state.json';
     }
 
     public static function safeFileName(string $fileName): ?string
@@ -57,22 +76,86 @@ final class BackupService
     public static function listFiles(): array
     {
         self::ensureDirectory();
+        $paths = array_values(array_filter(
+            glob(self::directory() . '/*.sql') ?: [],
+            static fn (string $path): bool => is_file($path)
+        ));
+
+        usort($paths, static fn (string $a, string $b): int => ((int) (@filemtime($b) ?: 0)) <=> ((int) (@filemtime($a) ?: 0)));
+
         $files = [];
-        foreach (glob(self::directory() . '/*.sql') ?: [] as $path) {
-            if (!is_file($path)) {
-                continue;
-            }
-            $files[] = [
-                'name' => basename($path),
-                'path' => $path,
-                'size' => (int) (@filesize($path) ?: 0),
-                'modified_at' => date('Y-m-d H:i:s', (int) (@filemtime($path) ?: time())),
-                'sha1' => sha1_file($path) ?: '',
+        foreach ($paths as $index => $path) {
+            $files[] = self::describeFile($path, $index === 0);
+        }
+
+        return $files;
+    }
+
+    public static function summarizeFiles(array $files): array
+    {
+        $latest = $files[0] ?? null;
+        $stale = self::backupStaleStatus($latest);
+
+        return [
+            'count' => count($files),
+            'total_size' => array_sum(array_map(static fn (array $file): int => (int) ($file['size'] ?? 0), $files)),
+            'latest' => $latest['modified_at'] ?? '',
+            'latest_file' => $latest,
+            'latest_age_label' => $latest['age_label'] ?? 'Belum ada',
+            'latest_stale_level' => $stale['level'],
+            'latest_stale_note' => $stale['note'],
+            'latest_is_stale_1d' => $stale['is_warning'],
+            'latest_is_stale_3d' => $stale['is_critical'],
+        ];
+    }
+
+    public static function backupStaleStatus(?array $latestFile): array
+    {
+        if (!is_array($latestFile)) {
+            return [
+                'level' => 'critical',
+                'is_warning' => true,
+                'is_critical' => true,
+                'note' => 'Belum ada backup database yang tersedia.',
             ];
         }
 
-        usort($files, static fn (array $a, array $b): int => strcmp((string) $b['modified_at'], (string) $a['modified_at']));
-        return $files;
+        $ageSeconds = (int) ($latestFile['age_seconds'] ?? PHP_INT_MAX);
+        if ($ageSeconds >= self::BACKUP_STALE_CRITICAL_SECONDS) {
+            return [
+                'level' => 'critical',
+                'is_warning' => true,
+                'is_critical' => true,
+                'note' => 'Backup terakhir sudah lebih dari 3 hari. Risiko kehilangan data tinggi jika terjadi gangguan.',
+            ];
+        }
+        if ($ageSeconds >= self::BACKUP_STALE_WARNING_SECONDS) {
+            return [
+                'level' => 'warning',
+                'is_warning' => true,
+                'is_critical' => false,
+                'note' => 'Backup terakhir lebih dari 1 hari. Sebaiknya buat backup baru hari ini.',
+            ];
+        }
+
+        return [
+            'level' => 'ok',
+            'is_warning' => false,
+            'is_critical' => false,
+            'note' => 'Backup terakhir masih segar dan aman untuk baseline recovery.',
+        ];
+    }
+
+    public static function readRecoveryState(): array
+    {
+        self::ensureDirectory();
+        $path = self::recoveryStatePath();
+        if (!is_file($path)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) file_get_contents($path), true);
+        return is_array($decoded) ? $decoded : [];
     }
 
     public static function stageUploadedRestoreFile(array $file): array
@@ -115,7 +198,6 @@ final class BackupService
             @unlink($path);
         }
     }
-
 
     public function inspectSqlFile(string $path): array
     {
@@ -249,6 +331,178 @@ final class BackupService
         ];
     }
 
+    public function createDailySafetyBackupIfMissing(array $meta = []): array
+    {
+        $today = date('Y-m-d');
+        foreach (self::listFiles() as $file) {
+            if ((string) ($file['date_key'] ?? '') === $today) {
+                return [
+                    'created' => false,
+                    'skipped' => true,
+                    'reason' => 'daily_backup_already_exists',
+                    'file' => $file,
+                ];
+            }
+        }
+
+        $result = $this->createBackup($meta + ['reason' => 'admin_daily_safety_backup']);
+        return [
+            'created' => true,
+            'skipped' => false,
+            'reason' => 'created_new_daily_backup',
+            'file' => $result,
+        ];
+    }
+
+    public function recordRecoveryEvent(array $payload): array
+    {
+        self::ensureDirectory();
+
+        $state = [
+            'recorded_at' => date('c'),
+            'restored_at' => (string) ($payload['restored_at'] ?? date('c')),
+            'source_file_name' => (string) ($payload['source_file_name'] ?? ''),
+            'source_file_sha1' => (string) ($payload['source_file_sha1'] ?? ''),
+            'source_file_size' => (int) ($payload['source_file_size'] ?? 0),
+            'source_file_modified_at' => (string) ($payload['source_file_modified_at'] ?? ''),
+            'source_backup_age_days' => isset($payload['source_backup_age_days']) ? (float) $payload['source_backup_age_days'] : null,
+            'restore_mode' => (string) ($payload['restore_mode'] ?? 'server'),
+            'pre_restore_backup' => $payload['pre_restore_backup'] ?? null,
+            'restored_by' => $payload['restored_by'] ?? null,
+            'app_version' => $this->manifestVersion(),
+            'data_audit' => $this->collectDataAuditSummary(),
+            'readiness' => $this->buildRecoveryReadiness(),
+        ];
+
+        file_put_contents(
+            self::recoveryStatePath(),
+            (string) json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
+
+        $reportName = 'recovery-' . date('Ymd-His') . '.txt';
+        $reportPath = self::recoveryReportDirectory() . '/' . $reportName;
+        $lines = [
+            'RECOVERY READINESS REPORT',
+            'Recorded at: ' . date('Y-m-d H:i:s'),
+            'Restored at: ' . (string) $state['restored_at'],
+            'App version: ' . (string) $state['app_version'],
+            'Restore mode: ' . (string) $state['restore_mode'],
+            'Source file: ' . (string) $state['source_file_name'],
+            'Source file modified at: ' . (string) $state['source_file_modified_at'],
+            'Source backup age days: ' . (string) ($state['source_backup_age_days'] ?? '-'),
+            'Restored by: ' . (string) (($state['restored_by']['full_name'] ?? '') ?: ($state['restored_by']['username'] ?? '-')),
+            'Pre-restore backup: ' . (string) (($state['pre_restore_backup']['file_name'] ?? '-') ?: '-'),
+            'Backup count now: ' . (string) (($state['readiness']['backup_summary']['count'] ?? 0)),
+            'Latest backup now: ' . (string) (($state['readiness']['backup_summary']['latest_file']['name'] ?? '-') ?: '-'),
+            'Pending migrations: ' . number_format((int) ($state['readiness']['pending_migrations_count'] ?? 0), 0, ',', '.'),
+            'Data audit users: ' . number_format((int) (($state['data_audit']['counts']['users'] ?? 0)), 0, ',', '.'),
+            'Data audit roles: ' . number_format((int) (($state['data_audit']['counts']['roles'] ?? 0)), 0, ',', '.'),
+            'Data audit periods: ' . number_format((int) (($state['data_audit']['counts']['periods'] ?? 0)), 0, ',', '.'),
+            'Data audit journals: ' . number_format((int) (($state['data_audit']['counts']['journals'] ?? 0)), 0, ',', '.'),
+        ];
+        file_put_contents($reportPath, implode(PHP_EOL, $lines) . PHP_EOL);
+
+        $state['report_file'] = $reportName;
+        file_put_contents(
+            self::recoveryStatePath(),
+            (string) json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
+
+        return $state;
+    }
+
+    public function buildRecoveryReadiness(): array
+    {
+        $files = self::listFiles();
+        $summary = self::summarizeFiles($files);
+        $stale = self::backupStaleStatus($files[0] ?? null);
+        $pendingMigrations = [];
+
+        try {
+            $pendingMigrations = array_map('basename', (new MigrationRunner($this->db))->pendingMigrations());
+        } catch (Throwable) {
+            $pendingMigrations = [];
+        }
+
+        return [
+            'backup_summary' => $summary,
+            'backup_stale' => $stale,
+            'directories' => [
+                'backup' => [
+                    'path' => self::directory(),
+                    'writable' => is_dir(self::directory()) && is_writable(self::directory()),
+                ],
+                'recovery' => [
+                    'path' => self::recoveryDirectory(),
+                    'writable' => is_dir(self::recoveryDirectory()) && is_writable(self::recoveryDirectory()),
+                ],
+            ],
+            'db_connected' => Database::isConnected(db_config()),
+            'manifest_version' => $this->manifestVersion(),
+            'pending_migrations' => $pendingMigrations,
+            'pending_migrations_count' => count($pendingMigrations),
+            'recovery_state' => self::readRecoveryState(),
+        ];
+    }
+
+    public function collectDataAuditSummary(): array
+    {
+        $counts = [
+            'users' => $this->countRowsIfTableExists('users'),
+            'roles' => $this->countRowsIfTableExists('roles'),
+            'periods' => $this->countRowsIfTableExists('accounting_periods'),
+            'journals' => $this->countRowsIfTableExists('journal_headers'),
+            'business_units' => $this->countRowsIfTableExists('business_units'),
+            'coa_accounts' => $this->countRowsIfTableExists('coa_accounts'),
+            'assets' => $this->countRowsIfTableExists('asset_items'),
+        ];
+
+        $activePeriod = current_accounting_period();
+        $profileName = $this->scalarIfTableExists("SELECT bumdes_name FROM app_profiles ORDER BY id ASC LIMIT 1", 'app_profiles');
+        $adminCount = $this->scalarIfTableExists(
+            "SELECT COUNT(*)
+             FROM users u
+             INNER JOIN roles r ON r.id = u.role_id
+             WHERE u.is_active = 1 AND r.code = 'admin'",
+            'users',
+            'roles'
+        );
+
+        $checks = [
+            [
+                'label' => 'User admin aktif tersedia',
+                'status' => ((int) $adminCount) > 0 ? 'ok' : 'critical',
+                'message' => ((int) $adminCount) > 0 ? 'Minimal satu admin aktif tersedia untuk akses pemulihan.' : 'Tidak ada admin aktif yang terdeteksi.',
+            ],
+            [
+                'label' => 'Role aplikasi tersedia',
+                'status' => $counts['roles'] > 0 ? 'ok' : 'critical',
+                'message' => $counts['roles'] > 0 ? 'Role dasar aplikasi tersedia.' : 'Tabel role kosong atau belum siap.',
+            ],
+            [
+                'label' => 'Periode aktif tersedia',
+                'status' => is_array($activePeriod) ? 'ok' : 'warning',
+                'message' => is_array($activePeriod) ? 'Periode aktif: ' . (string) ($activePeriod['period_name'] ?? '-') : 'Periode aktif belum terbaca. Periksa modul periode.',
+            ],
+            [
+                'label' => 'Profil BUMDes terbaca',
+                'status' => trim((string) $profileName) !== '' ? 'ok' : 'warning',
+                'message' => trim((string) $profileName) !== '' ? 'Profil BUMDes terisi: ' . (string) $profileName : 'Nama BUMDes belum terisi atau profil belum terbaca.',
+            ],
+        ];
+
+        return [
+            'counts' => $counts,
+            'checks' => $checks,
+            'active_period' => is_array($activePeriod) ? [
+                'id' => (int) ($activePeriod['id'] ?? 0),
+                'period_name' => (string) ($activePeriod['period_name'] ?? ''),
+                'period_code' => (string) ($activePeriod['period_code'] ?? ''),
+            ] : null,
+            'profile_name' => (string) $profileName,
+        ];
+    }
+
     public static function validateUpload(array $file): void
     {
         $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
@@ -273,6 +527,178 @@ final class BackupService
         if ($tmp === '' || !is_uploaded_file($tmp)) {
             throw new RuntimeException('File upload restore tidak valid.');
         }
+    }
+
+    public function createBackup(array $meta = []): array
+    {
+        self::ensureDirectory();
+        $timestamp = date('Ymd-His');
+        $databaseName = trim((string) db_config('database'));
+        $databaseSlug = preg_replace('/[^a-zA-Z0-9._-]+/', '-', $databaseName) ?: 'database';
+        $fileName = 'backup-' . $databaseSlug . '-' . $timestamp . '.sql';
+        $filePath = self::directory() . '/' . $fileName;
+
+        $handle = @fopen($filePath, 'wb');
+        if (!is_resource($handle)) {
+            throw new RuntimeException('Folder storage/backups tidak dapat ditulis.');
+        }
+
+        try {
+            $tables = $this->getTables();
+            $this->writeHeader($handle, $meta, count($tables));
+            foreach ($tables as $table) {
+                $this->writeTableDump($handle, $table);
+            }
+            fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+            fwrite($handle, "COMMIT;\n");
+        } catch (Throwable $e) {
+            fclose($handle);
+            @unlink($filePath);
+            throw $e;
+        }
+
+        fclose($handle);
+        $cleanup = $this->cleanupRetention();
+        $entry = self::describeFile($filePath, true);
+
+        return $entry + [
+            'file_name' => $fileName,
+            'file_path' => $filePath,
+            'table_count' => count($tables),
+            'retention_deleted' => $cleanup['deleted_count'],
+            'retention_deleted_files' => $cleanup['deleted_files'],
+        ];
+    }
+
+    private function cleanupRetention(): array
+    {
+        $files = self::listFiles();
+        $deleted = [];
+        foreach ($files as $index => $file) {
+            if ($index < self::MIN_KEEP_FILES) {
+                continue;
+            }
+
+            $ageSeconds = (int) ($file['age_seconds'] ?? 0);
+            if ($ageSeconds < (self::RETENTION_DAYS * 86400)) {
+                continue;
+            }
+
+            $path = (string) ($file['path'] ?? '');
+            if ($path !== '' && is_file($path) && @unlink($path)) {
+                $deleted[] = (string) ($file['name'] ?? basename($path));
+            }
+        }
+
+        return [
+            'deleted_count' => count($deleted),
+            'deleted_files' => $deleted,
+        ];
+    }
+
+    private function writeHeader($handle, array $meta, int $tableCount): void
+    {
+        $lines = [
+            '-- Backup Database Sistem Akuntansi BUMDes',
+            '-- Dibuat pada: ' . date('Y-m-d H:i:s'),
+            '-- Database: ' . (string) db_config('database'),
+            '-- Host: ' . (string) db_config('host') . ':' . (string) db_config('port'),
+            '-- Jumlah tabel: ' . $tableCount,
+        ];
+
+        $appName = trim((string) ($meta['app_name'] ?? ''));
+        if ($appName !== '') {
+            $lines[] = '-- Aplikasi: ' . $appName;
+        }
+
+        $bumdesName = trim((string) ($meta['bumdes_name'] ?? ''));
+        if ($bumdesName !== '') {
+            $lines[] = '-- BUMDes: ' . $bumdesName;
+        }
+
+        $reason = trim((string) ($meta['reason'] ?? 'manual_backup'));
+        if ($reason !== '') {
+            $lines[] = '-- Alasan backup: ' . $reason;
+        }
+
+        $actor = trim((string) ($meta['actor_name'] ?? ''));
+        if ($actor !== '') {
+            $lines[] = '-- Dibuat oleh: ' . $actor;
+        }
+
+        $lines[] = '-- ------------------------------------------------------------';
+        $lines[] = 'SET NAMES utf8mb4;';
+        $lines[] = 'SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";';
+        $lines[] = 'SET FOREIGN_KEY_CHECKS=0;';
+        $lines[] = 'START TRANSACTION;';
+        $lines[] = '';
+
+        fwrite($handle, implode("\n", $lines) . "\n");
+    }
+
+    private function getTables(): array
+    {
+        $stmt = $this->db->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+        $rows = $stmt->fetchAll(PDO::FETCH_NUM) ?: [];
+        $tables = [];
+        foreach ($rows as $row) {
+            $tableName = trim((string) ($row[0] ?? ''));
+            if ($tableName !== '') {
+                $tables[] = $tableName;
+            }
+        }
+
+        return $tables;
+    }
+
+    private function writeTableDump($handle, string $table): void
+    {
+        $safeTable = str_replace('`', '``', $table);
+        fwrite($handle, "\n-- ------------------------------------------------------------\n");
+        fwrite($handle, '-- Struktur tabel `' . $table . "`\n");
+        fwrite($handle, 'DROP TABLE IF EXISTS `' . $safeTable . "`;\n");
+
+        $stmt = $this->db->query('SHOW CREATE TABLE `' . $safeTable . '`');
+        $createRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $createSql = (string) ($createRow['Create Table'] ?? '');
+        if ($createSql === '') {
+            throw new RuntimeException('Gagal membaca struktur tabel: ' . $table);
+        }
+        fwrite($handle, $createSql . ";\n\n");
+
+        fwrite($handle, '-- Data tabel `' . $table . "`\n");
+        $stmt = $this->db->query('SELECT * FROM `' . $safeTable . '`');
+        $rowCount = 0;
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $rowCount++;
+            $columns = array_map(static fn (string $column): string => '`' . str_replace('`', '``', $column) . '`', array_keys($row));
+            $values = [];
+            foreach ($row as $value) {
+                $values[] = $this->exportValue($value);
+            }
+            fwrite($handle, 'INSERT INTO `' . $safeTable . '` (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $values) . ");\n");
+        }
+
+        if ($rowCount === 0) {
+            fwrite($handle, '-- Tidak ada data pada tabel ini.' . "\n");
+        }
+    }
+
+    private function exportValue(mixed $value): string
+    {
+        if ($value === null) {
+            return 'NULL';
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        return $this->db->quote((string) $value);
     }
 
     private function splitSqlStatements(string $sql): array
@@ -387,137 +813,88 @@ final class BackupService
         return null;
     }
 
-    public function createBackup(array $meta = []): array
+    private static function describeFile(string $path, bool $isLatest): array
     {
-        self::ensureDirectory();
-        $timestamp = date('Ymd-His');
-        $databaseName = trim((string) db_config('database'));
-        $databaseSlug = preg_replace('/[^a-zA-Z0-9._-]+/', '-', $databaseName) ?: 'database';
-        $fileName = 'backup-' . $databaseSlug . '-' . $timestamp . '.sql';
-        $filePath = self::directory() . '/' . $fileName;
-
-        $handle = @fopen($filePath, 'wb');
-        if (!is_resource($handle)) {
-            throw new RuntimeException('Folder storage/backups tidak dapat ditulis.');
-        }
-
-        try {
-            $tables = $this->getTables();
-            $this->writeHeader($handle, $meta, count($tables));
-            foreach ($tables as $table) {
-                $this->writeTableDump($handle, $table);
-            }
-            fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
-            fwrite($handle, "COMMIT;\n");
-        } catch (Throwable $e) {
-            fclose($handle);
-            @unlink($filePath);
-            throw $e;
-        }
-
-        fclose($handle);
+        $mtime = (int) (@filemtime($path) ?: time());
+        $ageSeconds = max(0, time() - $mtime);
+        $stale = self::backupStaleStatus([
+            'age_seconds' => $ageSeconds,
+        ]);
 
         return [
-            'file_name' => $fileName,
-            'file_path' => $filePath,
-            'size' => (int) (@filesize($filePath) ?: 0),
-            'sha1' => sha1_file($filePath) ?: '',
-            'table_count' => count($tables),
+            'name' => basename($path),
+            'path' => $path,
+            'size' => (int) (@filesize($path) ?: 0),
+            'modified_at' => date('Y-m-d H:i:s', $mtime),
+            'modified_ts' => $mtime,
+            'sha1' => sha1_file($path) ?: '',
+            'date_key' => date('Y-m-d', $mtime),
+            'is_latest' => $isLatest,
+            'age_seconds' => $ageSeconds,
+            'age_label' => self::humanizeAge($ageSeconds),
+            'stale_level' => $stale['level'],
         ];
     }
 
-    private function writeHeader($handle, array $meta, int $tableCount): void
+    private static function humanizeAge(int $seconds): string
     {
-        $lines = [
-            '-- Backup Database Sistem Akuntansi BUMDes',
-            '-- Dibuat pada: ' . date('Y-m-d H:i:s'),
-            '-- Database: ' . (string) db_config('database'),
-            '-- Host: ' . (string) db_config('host') . ':' . (string) db_config('port'),
-            '-- Jumlah tabel: ' . $tableCount,
-        ];
-
-        $appName = trim((string) ($meta['app_name'] ?? ''));
-        if ($appName !== '') {
-            $lines[] = '-- Aplikasi: ' . $appName;
+        if ($seconds < 60) {
+            return 'Baru saja';
+        }
+        if ($seconds < 3600) {
+            return floor($seconds / 60) . ' menit lalu';
+        }
+        if ($seconds < 86400) {
+            return floor($seconds / 3600) . ' jam lalu';
+        }
+        if ($seconds < 604800) {
+            return floor($seconds / 86400) . ' hari lalu';
         }
 
-        $bumdesName = trim((string) ($meta['bumdes_name'] ?? ''));
-        if ($bumdesName !== '') {
-            $lines[] = '-- BUMDes: ' . $bumdesName;
-        }
-
-        $lines[] = '-- ------------------------------------------------------------';
-        $lines[] = 'SET NAMES utf8mb4;';
-        $lines[] = 'SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";';
-        $lines[] = 'SET FOREIGN_KEY_CHECKS=0;';
-        $lines[] = 'START TRANSACTION;';
-        $lines[] = '';
-
-        fwrite($handle, implode("\n", $lines) . "\n");
+        return floor($seconds / 604800) . ' minggu lalu';
     }
 
-    private function getTables(): array
+    private function countRowsIfTableExists(string $table): int
     {
-        $stmt = $this->db->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
-        $rows = $stmt->fetchAll(PDO::FETCH_NUM) ?: [];
-        $tables = [];
-        foreach ($rows as $row) {
-            $tableName = trim((string) ($row[0] ?? ''));
-            if ($tableName !== '') {
-                $tables[] = $tableName;
+        if (!$this->tableExists($table)) {
+            return 0;
+        }
+
+        return (int) $this->db->query('SELECT COUNT(*) FROM `' . str_replace('`', '``', $table) . '`')->fetchColumn();
+    }
+
+    private function scalarIfTableExists(string $sql, string ...$tables): mixed
+    {
+        foreach ($tables as $table) {
+            if (!$this->tableExists($table)) {
+                return null;
             }
         }
 
-        return $tables;
+        return $this->db->query($sql)->fetchColumn();
     }
 
-    private function writeTableDump($handle, string $table): void
+    private function tableExists(string $table): bool
     {
-        $safeTable = str_replace('`', '``', $table);
-        fwrite($handle, "\n-- ------------------------------------------------------------\n");
-        fwrite($handle, '-- Struktur tabel `' . $table . "`\n");
-        fwrite($handle, 'DROP TABLE IF EXISTS `' . $safeTable . "`;\n");
-
-        $stmt = $this->db->query('SHOW CREATE TABLE `' . $safeTable . '`');
-        $createRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-        $createSql = (string) ($createRow['Create Table'] ?? '');
-        if ($createSql === '') {
-            throw new RuntimeException('Gagal membaca struktur tabel: ' . $table);
-        }
-        fwrite($handle, $createSql . ";\n\n");
-
-        fwrite($handle, '-- Data tabel `' . $table . "`\n");
-        $stmt = $this->db->query('SELECT * FROM `' . $safeTable . '`');
-        $rowCount = 0;
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $rowCount++;
-            $columns = array_map(static fn (string $column): string => '`' . str_replace('`', '``', $column) . '`', array_keys($row));
-            $values = [];
-            foreach ($row as $value) {
-                $values[] = $this->exportValue($value);
-            }
-            fwrite($handle, 'INSERT INTO `' . $safeTable . '` (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $values) . ");\n");
-        }
-
-        if ($rowCount === 0) {
-            fwrite($handle, '-- Tidak ada data pada tabel ini.\n');
-        }
+        $stmt = $this->db->prepare(
+            'SELECT 1
+             FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name
+             LIMIT 1'
+        );
+        $stmt->bindValue(':table_name', $table, PDO::PARAM_STR);
+        $stmt->execute();
+        return (bool) $stmt->fetchColumn();
     }
 
-    private function exportValue(mixed $value): string
+    private function manifestVersion(): string
     {
-        if ($value === null) {
-            return 'NULL';
+        $path = ROOT_PATH . '/release-manifest.json';
+        if (!is_file($path)) {
+            return '';
         }
 
-        if (is_bool($value)) {
-            return $value ? '1' : '0';
-        }
-
-        if (is_int($value) || is_float($value)) {
-            return (string) $value;
-        }
-
-        return $this->db->quote((string) $value);
+        $decoded = json_decode((string) file_get_contents($path), true);
+        return is_array($decoded) ? (string) ($decoded['release_version'] ?? '') : '';
     }
 }

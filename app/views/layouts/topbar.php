@@ -167,6 +167,7 @@ $canSaveFilter = array_key_exists($currentPath, $filterTargets) && ((string) par
 </header>
 <div class="workspace-palette" id="workspacePalette" hidden
      data-search-url="<?= e((string) ($workspacePalette['search_url'] ?? '')) ?>"
+     data-app-base-url="<?= e(base_url()) ?>"
      data-save-filter-url="<?= e((string) ($workspacePalette['save_filter_url'] ?? '')) ?>"
      data-csrf="<?= e(csrf_token()) ?>"
      data-page-title="<?= e($pageTitle) ?>"

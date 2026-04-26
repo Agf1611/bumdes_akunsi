@@ -11,6 +11,7 @@
   const favoriteForm = document.getElementById('workspaceFavoriteForm');
   const favoriteButton = document.getElementById('workspaceFavoriteButton');
   const bootstrapPayload = JSON.parse(palette.dataset.bootstrap || '{}');
+  const appBaseUrl = (palette.dataset.appBaseUrl || '').replace(/\/+$/, '');
   const searchUrl = palette.dataset.searchUrl || '';
   const favoriteUrl = bootstrapPayload.toggle_favorite_url || '';
   const saveFilterUrl = palette.dataset.saveFilterUrl || '';
@@ -46,6 +47,27 @@
     document.body.style.overflow = '';
   }
 
+  function resolvePalettePath(path) {
+    const value = String(path || '#').trim();
+    if (value === '' || value === '#') {
+      return '#';
+    }
+
+    if (/^(?:[a-z]+:)?\/\//i.test(value) || value.startsWith('#')) {
+      return value;
+    }
+
+    if (!value.startsWith('/')) {
+      return value;
+    }
+
+    if (!appBaseUrl) {
+      return value;
+    }
+
+    return appBaseUrl + value;
+  }
+
   function renderSection(label, items) {
     if (!Array.isArray(items) || items.length === 0) {
       return '';
@@ -58,7 +80,7 @@
             const title = String(item.title || item.label || '-');
             const subtitle = item.subtitle ? `<div class="workspace-palette__item-subtitle">${String(item.subtitle)}</div>` : '';
             const meta = item.meta ? `<div class="workspace-palette__item-meta">${String(item.meta)}</div>` : '';
-            const path = String(item.path || '#');
+            const path = resolvePalettePath(item.path || '#');
             return `
               <a href="${path}" class="workspace-palette__item">
                 <div>

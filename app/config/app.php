@@ -10,6 +10,7 @@ return [
     'url' => '',
     'session_name' => 'BUMDESSESSID',
     'session_lifetime' => 7200,
+    'session_idle_timeout' => 1800,
     'update_repo_url' => 'https://github.com/Agf1611/bumdes_akunsi.git',
     'update_branch' => 'main',
 ];

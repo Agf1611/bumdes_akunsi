@@ -497,29 +497,17 @@ final class DashboardModel
 
     private function latestBackupInfo(): array
     {
-        $dir = ROOT_PATH . '/storage/backups';
-        if (!is_dir($dir)) {
-            return ['exists' => false, 'name' => '', 'modified_at' => ''];
-        }
-
-        $latestPath = '';
-        $latestTime = 0;
-        foreach (glob($dir . '/*.sql') ?: [] as $file) {
-            $mtime = (int) (@filemtime($file) ?: 0);
-            if ($mtime >= $latestTime) {
-                $latestTime = $mtime;
-                $latestPath = $file;
-            }
-        }
-
-        if ($latestPath === '') {
-            return ['exists' => false, 'name' => '', 'modified_at' => ''];
+        $latest = BackupService::listFiles()[0] ?? null;
+        if (!is_array($latest)) {
+            return ['exists' => false, 'name' => '', 'modified_at' => '', 'age_label' => '', 'stale_level' => 'critical'];
         }
 
         return [
             'exists' => true,
-            'name' => basename($latestPath),
-            'modified_at' => date('Y-m-d H:i:s', $latestTime),
+            'name' => (string) ($latest['name'] ?? ''),
+            'modified_at' => (string) ($latest['modified_at'] ?? ''),
+            'age_label' => (string) ($latest['age_label'] ?? ''),
+            'stale_level' => (string) ($latest['stale_level'] ?? 'ok'),
         ];
     }
 

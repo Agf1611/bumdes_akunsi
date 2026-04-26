@@ -14,19 +14,20 @@ final class BackupController extends Controller
         try {
             BackupService::ensureDirectory();
             $files = BackupService::listFiles();
+            $summary = BackupService::summarizeFiles($files);
             $this->view('backups/views/index', [
                 'title' => 'Backup Database',
                 'files' => $files,
-                'summary' => [
-                    'count' => count($files),
-                    'total_size' => array_sum(array_map(static fn (array $file): int => (int) ($file['size'] ?? 0), $files)),
-                    'latest' => $files[0]['modified_at'] ?? '',
+                'summary' => $summary + [
                     'db_connected' => Database::isConnected(db_config()),
                     'directory' => BackupService::directory(),
                     'directory_writable' => is_dir(BackupService::directory()) && is_writable(BackupService::directory()),
                 ],
                 'restoreAnalysis' => Session::get('backup_restore_analysis'),
                 'restorePayload' => Session::get('backup_restore_payload'),
+                'recoveryReadiness' => $this->service()->buildRecoveryReadiness(),
+                'dataAudit' => $this->service()->collectDataAuditSummary(),
+                'recoveryState' => BackupService::readRecoveryState(),
             ]);
         } catch (Throwable $e) {
             log_error($e);
@@ -52,6 +53,8 @@ final class BackupController extends Controller
             $result = $this->service()->createBackup([
                 'app_name' => (string) app_config('name'),
                 'bumdes_name' => (string) ($profile['bumdes_name'] ?? ''),
+                'actor_name' => (string) (Auth::user()['full_name'] ?? ''),
+                'reason' => trim((string) post('backup_reason', 'manual_backup')),
             ]);
 
             audit_log('backup_database', 'create', 'Membuat backup database manual.', [
@@ -61,13 +64,17 @@ final class BackupController extends Controller
                 'after' => $result,
             ]);
 
-            flash('success', 'Backup database berhasil dibuat: ' . (string) ($result['file_name'] ?? '-'));
+            $message = 'Backup database berhasil dibuat: ' . (string) ($result['file_name'] ?? '-');
+            if ((int) ($result['retention_deleted'] ?? 0) > 0) {
+                $message .= ' Retention otomatis merapikan ' . (string) ($result['retention_deleted'] ?? 0) . ' file lama.';
+            }
+            flash('success', $message);
         } catch (Throwable $e) {
             log_error($e);
             flash('error', 'Backup database gagal dibuat. ' . $e->getMessage());
         }
 
-        $this->redirect('/backups');
+        $this->redirect($this->sanitizeRedirect((string) post('redirect_to', '/backups')));
     }
 
     public function download(): void
@@ -174,6 +181,28 @@ final class BackupController extends Controller
 
             $result['restore_mode'] = (string) ($payload['restore_mode'] ?? 'server');
             $result['pre_restore_backup'] = $preRestoreBackup;
+            $sourceModifiedAt = '';
+            if (($payload['restore_mode'] ?? '') === 'server' && !empty($payload['file_name'])) {
+                $sourcePath = BackupService::filePath((string) $payload['file_name']);
+                if ($sourcePath !== null) {
+                    $sourceModifiedAt = date('Y-m-d H:i:s', (int) (@filemtime($sourcePath) ?: time()));
+                }
+            }
+            $recoveryRecord = $this->service()->recordRecoveryEvent([
+                'restored_at' => date('c'),
+                'source_file_name' => (string) ($result['file_name'] ?? ''),
+                'source_file_sha1' => (string) ($result['sha1'] ?? ''),
+                'source_file_size' => (int) ($result['size'] ?? 0),
+                'source_file_modified_at' => $sourceModifiedAt,
+                'source_backup_age_days' => $sourceModifiedAt !== '' ? round(max(0, time() - strtotime($sourceModifiedAt)) / 86400, 2) : null,
+                'restore_mode' => (string) ($payload['restore_mode'] ?? 'server'),
+                'pre_restore_backup' => $preRestoreBackup,
+                'restored_by' => [
+                    'id' => (int) (Auth::user()['id'] ?? 0),
+                    'username' => (string) (Auth::user()['username'] ?? ''),
+                    'full_name' => (string) (Auth::user()['full_name'] ?? ''),
+                ],
+            ]);
             Session::forget('backup_restore_analysis');
             Session::forget('backup_restore_payload');
 
@@ -181,10 +210,10 @@ final class BackupController extends Controller
                 'severity' => 'warning',
                 'entity_type' => 'backup_file',
                 'entity_id' => (string) ($result['file_name'] ?? ''),
-                'after' => $result,
+                'after' => $result + ['recovery_record' => $recoveryRecord],
             ]);
 
-            flash('success', 'Restore database berhasil dijalankan dari file: ' . (string) ($result['file_name'] ?? '-') . '. Statement dieksekusi: ' . (string) ($result['executed_statements'] ?? 0) . '. Backup pengaman dibuat: ' . (string) (($preRestoreBackup['file_name'] ?? '-')));
+            flash('success', 'Restore database berhasil dijalankan dari file: ' . (string) ($result['file_name'] ?? '-') . '. Statement dieksekusi: ' . (string) ($result['executed_statements'] ?? 0) . '. Backup pengaman dibuat: ' . (string) (($preRestoreBackup['file_name'] ?? '-')) . '. Metadata recovery tersimpan: ' . (string) ($recoveryRecord['report_file'] ?? '-'));
         } catch (Throwable $e) {
             MaintenanceMode::disable();
             log_error($e);
@@ -298,5 +327,20 @@ final class BackupController extends Controller
 
         flash('success', 'File backup berhasil dihapus: ' . (string) $context['file_name']);
         $this->redirect('/backups');
+    }
+
+    private function sanitizeRedirect(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return '/backups';
+        }
+        foreach (['/backups', '/dashboard', '/settings/health'] as $allowedPrefix) {
+            if (str_starts_with($path, $allowedPrefix)) {
+                return $path;
+            }
+        }
+
+        return '/backups';
     }
 }

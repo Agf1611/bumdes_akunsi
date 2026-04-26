@@ -17,11 +17,14 @@ final class WorkspaceModel
         $stmt = $this->db->prepare(
             'SELECT id, journal_no, journal_date, description
              FROM journal_headers
-             WHERE journal_no LIKE :query OR description LIKE :query
+             WHERE journal_no LIKE :journal_no_query
+                OR description LIKE :description_query
              ORDER BY journal_date DESC, id DESC
              LIMIT :limit'
         );
-        $stmt->bindValue(':query', '%' . $query . '%', PDO::PARAM_STR);
+        $likeQuery = '%' . $query . '%';
+        $stmt->bindValue(':journal_no_query', $likeQuery, PDO::PARAM_STR);
+        $stmt->bindValue(':description_query', $likeQuery, PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -36,11 +39,14 @@ final class WorkspaceModel
         $stmt = $this->db->prepare(
             'SELECT id, account_code, account_name, account_type
              FROM coa_accounts
-             WHERE account_code LIKE :query OR account_name LIKE :query
+             WHERE account_code LIKE :account_code_query
+                OR account_name LIKE :account_name_query
              ORDER BY account_code ASC, id ASC
              LIMIT :limit'
         );
-        $stmt->bindValue(':query', '%' . $query . '%', PDO::PARAM_STR);
+        $likeQuery = '%' . $query . '%';
+        $stmt->bindValue(':account_code_query', $likeQuery, PDO::PARAM_STR);
+        $stmt->bindValue(':account_name_query', $likeQuery, PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -55,11 +61,14 @@ final class WorkspaceModel
         $stmt = $this->db->prepare(
             'SELECT id, period_code, period_name, status
              FROM accounting_periods
-             WHERE period_code LIKE :query OR period_name LIKE :query
+             WHERE period_code LIKE :period_code_query
+                OR period_name LIKE :period_name_query
              ORDER BY start_date DESC, id DESC
              LIMIT :limit'
         );
-        $stmt->bindValue(':query', '%' . $query . '%', PDO::PARAM_STR);
+        $likeQuery = '%' . $query . '%';
+        $stmt->bindValue(':period_code_query', $likeQuery, PDO::PARAM_STR);
+        $stmt->bindValue(':period_name_query', $likeQuery, PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -74,11 +83,14 @@ final class WorkspaceModel
         $stmt = $this->db->prepare(
             'SELECT id, unit_code, unit_name
              FROM business_units
-             WHERE unit_code LIKE :query OR unit_name LIKE :query
+             WHERE unit_code LIKE :unit_code_query
+                OR unit_name LIKE :unit_name_query
              ORDER BY unit_code ASC, id ASC
              LIMIT :limit'
         );
-        $stmt->bindValue(':query', '%' . $query . '%', PDO::PARAM_STR);
+        $likeQuery = '%' . $query . '%';
+        $stmt->bindValue(':unit_code_query', $likeQuery, PDO::PARAM_STR);
+        $stmt->bindValue(':unit_name_query', $likeQuery, PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -94,11 +106,14 @@ final class WorkspaceModel
             'SELECT u.id, u.full_name, u.username, r.name AS role_name
              FROM users u
              LEFT JOIN roles r ON r.id = u.role_id
-             WHERE u.full_name LIKE :query OR u.username LIKE :query
+             WHERE u.full_name LIKE :full_name_query
+                OR u.username LIKE :username_query
              ORDER BY u.full_name ASC, u.id ASC
              LIMIT :limit'
         );
-        $stmt->bindValue(':query', '%' . $query . '%', PDO::PARAM_STR);
+        $likeQuery = '%' . $query . '%';
+        $stmt->bindValue(':full_name_query', $likeQuery, PDO::PARAM_STR);
+        $stmt->bindValue(':username_query', $likeQuery, PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

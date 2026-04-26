@@ -10,6 +10,7 @@ $importFeedbackUrl = (string) Session::pull('import_feedback_url', '');
 $currentRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/journals', PHP_URL_PATH) ?: '/journals';
 $currentRequestQuery = parse_url($_SERVER['REQUEST_URI'] ?? '/journals', PHP_URL_QUERY);
 $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $currentRequestQuery : '');
+$currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
 ?>
 
 <style>
@@ -443,6 +444,8 @@ $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $curr
                         $duplicateUrl = base_url('/journals/create?duplicate_id=' . (int) $journal['id']);
                         $editUrl = base_url('/journals/edit?id=' . (int) $journal['id']);
                         $unitLabel = ((string) ($journal['unit_name'] ?? '') !== '' ? ($journal['unit_code'] . ' - ' . $journal['unit_name']) : 'Semua / belum ditentukan');
+                        $workflowStatus = (string) ($journal['workflow_status'] ?? 'POSTED');
+                        $workflowActions = journal_workflow_allowed_actions($workflowStatus, $currentRoleCode);
                         ?>
                         <tr data-journal-id="<?= e((string) (int) $journal['id']) ?>">
                             <td class="journal-bulk-check-col text-center">
@@ -466,7 +469,7 @@ $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $curr
                             <td class="col-amount text-end fw-semibold"><?= e(number_format((float) $journal['total_credit'], 2, ',', '.')) ?></td>
                             <td class="col-status">
                                 <div class="d-flex flex-column gap-1">
-                                    <span class="badge <?= (string) ($journal['workflow_status'] ?? 'POSTED') === 'POSTED' ? 'text-bg-primary' : 'text-bg-secondary' ?>"><?= e((string) ($journal['workflow_status'] ?? 'POSTED')) ?></span>
+                                    <span class="badge <?= e(journal_workflow_badge_class($workflowStatus)) ?>"><?= e(journal_workflow_label($workflowStatus)) ?></span>
                                     <span class="badge <?= (string) $journal['period_status'] === 'OPEN' ? 'text-bg-success' : 'text-bg-danger' ?>"><?= (string) $journal['period_status'] === 'OPEN' ? 'Periode Buka' : 'Periode Tutup' ?></span>
                                 </div>
                             </td>
@@ -482,6 +485,16 @@ $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $curr
                                         <a href="<?= e($duplicateUrl) ?>">Duplikat jurnal</a>
                                         <?php if ((string) $journal['period_status'] === 'OPEN'): ?>
                                             <a href="<?= e($editUrl) ?>">Edit jurnal</a>
+                                            <?php foreach ($workflowActions as $workflowAction): ?>
+                                                <form method="post" action="<?= e(base_url('/journals/workflow-action')) ?>" class="m-0 journal-workflow-form" data-workflow-action="<?= e((string) $workflowAction) ?>">
+                                                    <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
+                                                    <input type="hidden" name="redirect_to" value="<?= e($journalBulkRedirect) ?>">
+                                                    <input type="hidden" name="journal_id" value="<?= e((string) (int) $journal['id']) ?>">
+                                                    <input type="hidden" name="workflow_action" value="<?= e((string) $workflowAction) ?>">
+                                                    <input type="hidden" name="workflow_reason" value="">
+                                                    <button type="submit" class="<?= in_array($workflowAction, ['void', 'reverse'], true) ? 'journal-action-danger' : '' ?>"><?= e(journal_workflow_action_label((string) $workflowAction)) ?></button>
+                                                </form>
+                                            <?php endforeach; ?>
                                             <form method="post" action="<?= e(base_url('/journals/delete?id=' . (int) $journal['id'])) ?>" onsubmit="return confirm('Hapus jurnal ini?');" class="m-0">
                                                 <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
                                                 <button type="submit" class="journal-action-danger">Hapus jurnal</button>
@@ -511,6 +524,8 @@ $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $curr
             $duplicateUrl = base_url('/journals/create?duplicate_id=' . (int) $journal['id']);
             $editUrl = base_url('/journals/edit?id=' . (int) $journal['id']);
             $unitLabel = ((string) ($journal['unit_name'] ?? '') !== '' ? ($journal['unit_code'] . ' - ' . $journal['unit_name']) : 'Semua / belum ditentukan');
+            $workflowStatus = (string) ($journal['workflow_status'] ?? 'POSTED');
+            $workflowActions = journal_workflow_allowed_actions($workflowStatus, $currentRoleCode);
             ?>
             <div class="journal-card">
                 <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
@@ -519,7 +534,7 @@ $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $curr
                         <div class="fw-semibold text-dark"><?= e((string) $journal['journal_no']) ?></div>
                     </div>
                     <div class="d-flex flex-column align-items-end gap-1">
-                        <span class="badge <?= (string) ($journal['workflow_status'] ?? 'POSTED') === 'POSTED' ? 'text-bg-primary' : 'text-bg-secondary' ?>"><?= e((string) ($journal['workflow_status'] ?? 'POSTED')) ?></span>
+                        <span class="badge <?= e(journal_workflow_badge_class($workflowStatus)) ?>"><?= e(journal_workflow_label($workflowStatus)) ?></span>
                         <span class="badge <?= (string) $journal['period_status'] === 'OPEN' ? 'text-bg-success' : 'text-bg-danger' ?>"><?= (string) $journal['period_status'] === 'OPEN' ? 'Periode Buka' : 'Periode Tutup' ?></span>
                     </div>
                 </div>
@@ -566,6 +581,16 @@ $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $curr
                             <a href="<?= e($duplicateUrl) ?>">Duplikat jurnal</a>
                             <?php if ((string) $journal['period_status'] === 'OPEN'): ?>
                                 <a href="<?= e($editUrl) ?>">Edit jurnal</a>
+                                <?php foreach ($workflowActions as $workflowAction): ?>
+                                    <form method="post" action="<?= e(base_url('/journals/workflow-action')) ?>" class="m-0 journal-workflow-form" data-workflow-action="<?= e((string) $workflowAction) ?>">
+                                        <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
+                                        <input type="hidden" name="redirect_to" value="<?= e($journalBulkRedirect) ?>">
+                                        <input type="hidden" name="journal_id" value="<?= e((string) (int) $journal['id']) ?>">
+                                        <input type="hidden" name="workflow_action" value="<?= e((string) $workflowAction) ?>">
+                                        <input type="hidden" name="workflow_reason" value="">
+                                        <button type="submit" class="<?= in_array($workflowAction, ['void', 'reverse'], true) ? 'journal-action-danger' : '' ?>"><?= e(journal_workflow_action_label((string) $workflowAction)) ?></button>
+                                    </form>
+                                <?php endforeach; ?>
                                 <form method="post" action="<?= e(base_url('/journals/delete?id=' . (int) $journal['id'])) ?>" onsubmit="return confirm('Hapus jurnal ini?');" class="m-0">
                                     <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
                                     <button type="submit" class="journal-action-danger">Hapus jurnal</button>
@@ -722,6 +747,40 @@ $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $curr
             });
             if (!isOpen) {
                 menu.setAttribute('open', 'open');
+            }
+        });
+    });
+})();
+</script>
+
+<script>
+(function () {
+    const forms = Array.from(document.querySelectorAll('.journal-workflow-form'));
+    if (forms.length === 0) {
+        return;
+    }
+
+    forms.forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            const action = form.getAttribute('data-workflow-action') || '';
+            if (action === 'void' || action === 'reverse') {
+                const label = action === 'void' ? 'void' : 'reversal';
+                const reason = window.prompt('Tuliskan alasan ' + label + ' jurnal ini:');
+                if (reason === null || reason.trim().length < 3) {
+                    event.preventDefault();
+                    window.alert('Alasan minimal 3 karakter agar jejak audit jelas.');
+                    return;
+                }
+                const input = form.querySelector('input[name="workflow_reason"]');
+                if (input) {
+                    input.value = reason.trim();
+                }
+                return;
+            }
+
+            const confirmed = window.confirm('Jalankan aksi workflow "' + action + '" untuk jurnal ini?');
+            if (!confirmed) {
+                event.preventDefault();
             }
         });
     });

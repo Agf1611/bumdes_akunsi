@@ -1,0 +1,222 @@
+{
+    "recorded_at": "2026-04-26T05:39:02+07:00",
+    "restored_at": "2026-04-26T05:39:02+07:00",
+    "source_file_name": "backup-bumdes-20260419-071203.sql",
+    "source_file_sha1": "f84259ddf78ce56dee9872007472b7cb3920a5fb",
+    "source_file_size": 50389,
+    "source_file_modified_at": "2026-04-19 07:12:03",
+    "source_backup_age_days": 6.94,
+    "restore_mode": "manual_emergency_restore",
+    "pre_restore_backup": null,
+    "restored_by": {
+        "id": 1,
+        "username": "admin",
+        "full_name": "Administrator BUMDes"
+    },
+    "app_version": "1.1.1-professional-foundation",
+    "data_audit": {
+        "counts": {
+            "users": 5,
+            "roles": 3,
+            "periods": 5,
+            "journals": 18,
+            "business_units": 2,
+            "coa_accounts": 161,
+            "assets": 37
+        },
+        "checks": [
+            {
+                "label": "User admin aktif tersedia",
+                "status": "ok",
+                "message": "Minimal satu admin aktif tersedia untuk akses pemulihan."
+            },
+            {
+                "label": "Role aplikasi tersedia",
+                "status": "ok",
+                "message": "Role dasar aplikasi tersedia."
+            },
+            {
+                "label": "Periode aktif tersedia",
+                "status": "ok",
+                "message": "Periode aktif: Maret 2026"
+            },
+            {
+                "label": "Profil BUMDes terbaca",
+                "status": "ok",
+                "message": "Profil BUMDes terisi: Simpang Cipta Karta Sejahtera Simpang"
+            }
+        ],
+        "active_period": {
+            "id": 3,
+            "period_name": "Maret 2026",
+            "period_code": "2026-03"
+        },
+        "profile_name": "Simpang Cipta Karta Sejahtera Simpang"
+    },
+    "readiness": {
+        "backup_summary": {
+            "count": 3,
+            "total_size": 2345125,
+            "latest": "2026-04-26 05:39:02",
+            "latest_file": {
+                "name": "backup-bumdes-20260426-053902.sql",
+                "path": "C:\\xampp\\htdocs\\bumdes\\app/../storage/backups/backup-bumdes-20260426-053902.sql",
+                "size": 2191537,
+                "modified_at": "2026-04-26 05:39:02",
+                "modified_ts": 1777156742,
+                "sha1": "6ce4c07afb7b1f1060f896d1149d8de13487eeb1",
+                "date_key": "2026-04-26",
+                "is_latest": true,
+                "age_seconds": 0,
+                "age_label": "Baru saja",
+                "stale_level": "ok"
+            },
+            "latest_age_label": "Baru saja",
+            "latest_stale_level": "ok",
+            "latest_stale_note": "Backup terakhir masih segar dan aman untuk baseline recovery.",
+            "latest_is_stale_1d": false,
+            "latest_is_stale_3d": false
+        },
+        "backup_stale": {
+            "level": "ok",
+            "is_warning": false,
+            "is_critical": false,
+            "note": "Backup terakhir masih segar dan aman untuk baseline recovery."
+        },
+        "directories": {
+            "backup": {
+                "path": "C:\\xampp\\htdocs\\bumdes\\app/../storage/backups",
+                "writable": true
+            },
+            "recovery": {
+                "path": "C:\\xampp\\htdocs\\bumdes\\app/../storage/recovery",
+                "writable": true
+            }
+        },
+        "db_connected": true,
+        "manifest_version": "1.1.1-professional-foundation",
+        "pending_migrations": [],
+        "pending_migrations_count": 0,
+        "recovery_state": {
+            "recorded_at": "2026-04-26T05:37:19+07:00",
+            "restored_at": "2026-04-26T05:37:19+07:00",
+            "source_file_name": "restore-review-20260426-053650-16f5a4eb.sql",
+            "source_file_sha1": "d005de09f898a6be49a717ad9ef03841d226521b",
+            "source_file_size": 2175768,
+            "source_file_modified_at": "",
+            "source_backup_age_days": null,
+            "restore_mode": "upload",
+            "pre_restore_backup": {
+                "name": "backup-bumdes-20260426-053715.sql",
+                "path": "C:\\xampp\\htdocs\\bumdes\\app/../storage/backups/backup-bumdes-20260426-053715.sql",
+                "size": 103199,
+                "modified_at": "2026-04-26 05:37:15",
+                "modified_ts": 1777156635,
+                "sha1": "39304dc75c9dd68a16b13d55c4936422387f5c24",
+                "date_key": "2026-04-26",
+                "is_latest": true,
+                "age_seconds": 0,
+                "age_label": "Baru saja",
+                "stale_level": "ok",
+                "file_name": "backup-bumdes-20260426-053715.sql",
+                "file_path": "C:\\xampp\\htdocs\\bumdes\\app/../storage/backups/backup-bumdes-20260426-053715.sql",
+                "table_count": 26,
+                "retention_deleted": 0,
+                "retention_deleted_files": []
+            },
+            "restored_by": {
+                "id": 1,
+                "username": "admin",
+                "full_name": "Agus Feri"
+            },
+            "app_version": "1.1.1-professional-foundation",
+            "data_audit": {
+                "counts": {
+                    "users": 5,
+                    "roles": 3,
+                    "periods": 5,
+                    "journals": 18,
+                    "business_units": 2,
+                    "coa_accounts": 161,
+                    "assets": 37
+                },
+                "checks": [
+                    {
+                        "label": "User admin aktif tersedia",
+                        "status": "ok",
+                        "message": "Minimal satu admin aktif tersedia untuk akses pemulihan."
+                    },
+                    {
+                        "label": "Role aplikasi tersedia",
+                        "status": "ok",
+                        "message": "Role dasar aplikasi tersedia."
+                    },
+                    {
+                        "label": "Periode aktif tersedia",
+                        "status": "ok",
+                        "message": "Periode aktif: April 2026"
+                    },
+                    {
+                        "label": "Profil BUMDes terbaca",
+                        "status": "ok",
+                        "message": "Profil BUMDes terisi: Simpang Cipta Karta Sejahtera Simpang"
+                    }
+                ],
+                "active_period": {
+                    "id": 5,
+                    "period_name": "April 2026",
+                    "period_code": "2026-04"
+                },
+                "profile_name": "Simpang Cipta Karta Sejahtera Simpang"
+            },
+            "readiness": {
+                "backup_summary": {
+                    "count": 2,
+                    "total_size": 153588,
+                    "latest": "2026-04-26 05:37:15",
+                    "latest_file": {
+                        "name": "backup-bumdes-20260426-053715.sql",
+                        "path": "C:\\xampp\\htdocs\\bumdes\\app/../storage/backups/backup-bumdes-20260426-053715.sql",
+                        "size": 103199,
+                        "modified_at": "2026-04-26 05:37:15",
+                        "modified_ts": 1777156635,
+                        "sha1": "39304dc75c9dd68a16b13d55c4936422387f5c24",
+                        "date_key": "2026-04-26",
+                        "is_latest": true,
+                        "age_seconds": 4,
+                        "age_label": "Baru saja",
+                        "stale_level": "ok"
+                    },
+                    "latest_age_label": "Baru saja",
+                    "latest_stale_level": "ok",
+                    "latest_stale_note": "Backup terakhir masih segar dan aman untuk baseline recovery.",
+                    "latest_is_stale_1d": false,
+                    "latest_is_stale_3d": false
+                },
+                "backup_stale": {
+                    "level": "ok",
+                    "is_warning": false,
+                    "is_critical": false,
+                    "note": "Backup terakhir masih segar dan aman untuk baseline recovery."
+                },
+                "directories": {
+                    "backup": {
+                        "path": "C:\\xampp\\htdocs\\bumdes\\app/../storage/backups",
+                        "writable": true
+                    },
+                    "recovery": {
+                        "path": "C:\\xampp\\htdocs\\bumdes\\app/../storage/recovery",
+                        "writable": true
+                    }
+                },
+                "db_connected": true,
+                "manifest_version": "1.1.1-professional-foundation",
+                "pending_migrations": [],
+                "pending_migrations_count": 0,
+                "recovery_state": []
+            },
+            "report_file": "recovery-20260426-053719.txt"
+        }
+    },
+    "report_file": "recovery-20260426-053902.txt"
+}

@@ -1,0 +1,17 @@
+RECOVERY READINESS REPORT
+Recorded at: 2026-04-26 05:39:02
+Restored at: 2026-04-26T05:39:02+07:00
+App version: 1.1.1-professional-foundation
+Restore mode: manual_emergency_restore
+Source file: backup-bumdes-20260419-071203.sql
+Source file modified at: 2026-04-19 07:12:03
+Source backup age days: 6.94
+Restored by: Administrator BUMDes
+Pre-restore backup: -
+Backup count now: 3
+Latest backup now: backup-bumdes-20260426-053902.sql
+Pending migrations: 0
+Data audit users: 5
+Data audit roles: 3
+Data audit periods: 5
+Data audit journals: 18

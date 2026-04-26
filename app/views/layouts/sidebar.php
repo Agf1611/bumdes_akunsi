@@ -47,6 +47,7 @@ $icon = static function (string $name): string {
         'backup' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>',
         'settings' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>',
         'update' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v10"></path><path d="M8 9l4 4 4-4"></path><path d="M5 21h14"></path><path d="M5 16a7 7 0 0 0 14 0"></path></svg>',
+        'health' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path><path d="M3.5 12h4l1.5-3 3 6 1.5-3h7"></path></svg>',
     ];
 
     return $icons[$name] ?? $icons['dashboard'];
@@ -93,6 +94,8 @@ $reportItems = array_merge($reportItems, [
     ['title' => 'Arus Kas', 'note' => 'Pergerakan kas dan bank', 'path' => '/cash-flow', 'icon' => 'cash', 'needles' => ['/cash-flow']],
     ['title' => 'Perubahan Ekuitas', 'note' => 'Mutasi modal dan saldo akhir', 'path' => '/equity-changes', 'icon' => 'equity', 'needles' => ['/equity-changes']],
     ['title' => 'CaLK', 'note' => 'Catatan atas laporan keuangan', 'path' => '/financial-notes', 'icon' => 'notes', 'needles' => ['/financial-notes']],
+    ['title' => 'Drill-down Laporan', 'note' => 'Telusuri angka ke jurnal sumber', 'path' => '/reports/drilldown', 'icon' => 'journals', 'needles' => ['/reports/drilldown']],
+    ['title' => 'Paket Tutup Bulan', 'note' => 'Checklist dan bundel laporan closing', 'path' => '/closing-pack', 'icon' => 'lpj', 'needles' => ['/closing-pack']],
     ['title' => 'Paket LPJ', 'note' => 'Bundel laporan pertanggungjawaban', 'path' => '/lpj', 'icon' => 'lpj', 'needles' => ['/lpj']],
 ]);
 $sections[] = [
@@ -113,6 +116,7 @@ if (Auth::hasRole('admin')) {
         'items' => [
             ['title' => 'Backup Database', 'note' => 'Cadangan data dan restore', 'path' => '/backups', 'icon' => 'backup', 'needles' => ['/backups']],
             ['title' => 'Update Aplikasi', 'note' => 'Patch dan release terbaru', 'path' => '/updates', 'icon' => 'update', 'needles' => ['/updates']],
+            ['title' => 'Health Check', 'note' => 'Migration, backup, dan folder sistem', 'path' => '/settings/health', 'icon' => 'health', 'needles' => ['/settings/health']],
             ['title' => 'Profil BUMDes', 'note' => 'Identitas lembaga dan tanda tangan', 'path' => '/settings/profile', 'icon' => 'settings', 'needles' => ['/settings/profile']],
         ],
     ];

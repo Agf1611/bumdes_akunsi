@@ -2,9 +2,7 @@
 <?php
 $modeLabel = (string) ($report['mode_label'] ?? 'Bulanan / Periode');
 $currentColumnLabel = (string) ($report['current_column_label'] ?? 'Periode');
-$cumulativeColumnLabel = (string) ($report['cumulative_column_label'] ?? 'Akumulasi');
 $periodNet = (float) ($report['net_income'] ?? 0);
-$cumulativeNet = (float) ($report['cumulative_net_income'] ?? 0);
 ?>
 <div class="print-sheet classic-report profit-loss-report-formal">
     <?php render_print_header($profile, $title ?? 'Laporan Laba Rugi', report_period_label($filters, $selectedPeriod), $selectedUnitLabel ?? 'Semua Unit'); ?>
@@ -19,52 +17,49 @@ $cumulativeNet = (float) ($report['cumulative_net_income'] ?? 0);
         <tr>
             <th><?= e((string) ($report['current_label'] ?? 'Laba Periode')) ?></th>
             <td class="text-end nowrap <?= $periodNet >= 0 ? 'positive' : 'negative' ?>"><?= e(profit_loss_currency_print($periodNet)) ?></td>
-            <th>Akumulasi s.d. Tanggal Akhir</th>
-            <td class="text-end nowrap <?= $cumulativeNet >= 0 ? 'positive' : 'negative' ?>"><?= e(profit_loss_currency_print($cumulativeNet)) ?></td>
+            <th>Unit Usaha</th>
+            <td class="text-end nowrap"><?= e((string) ($selectedUnitLabel ?? 'Semua Unit')) ?></td>
         </tr>
     </table>
 
     <table class="table table-bordered print-table report-table-compact formal-pl-table mb-0">
         <thead>
         <tr>
-            <th style="width:9%;" class="text-center">No</th>
+            <th style="width:7%;" class="text-center">No</th>
             <th>Uraian</th>
-            <th style="width:22%;" class="text-center"><?= e($currentColumnLabel) ?></th>
-            <th style="width:22%;" class="text-center"><?= e($cumulativeColumnLabel) ?></th>
+            <th style="width:24%;" class="text-center"><?= e($currentColumnLabel) ?></th>
         </tr>
         </thead>
         <tbody>
         <?php if ($statement_rows === []): ?>
-            <tr><td colspan="4" class="text-center text-muted py-3">Tidak ada data laba rugi untuk filter yang dipilih.</td></tr>
+            <tr><td colspan="3" class="text-center text-muted py-3">Tidak ada data laba rugi untuk filter yang dipilih.</td></tr>
         <?php else: ?>
             <?php foreach ($statement_rows as $row): ?>
                 <?php
-                    $rowType = (string) $row['row_type'];
-                    $rowClass = match ($rowType) {
-                        'section' => 'pl-section',
-                        'category' => 'pl-category',
-                        'subtotal', 'section_total' => 'pl-subtotal',
-                        default => '',
-                    };
-                    $labelClass = match ($rowType) {
-                        'section' => 'section-label',
-                        'category' => 'category-label',
-                        'subtotal', 'section_total' => 'subtotal-label',
-                        default => '',
-                    };
+                $rowType = (string) $row['row_type'];
+                $rowClass = match ($rowType) {
+                    'section' => 'pl-section',
+                    'category' => 'pl-category',
+                    'subtotal', 'section_total' => 'pl-subtotal',
+                    default => '',
+                };
+                $labelClass = match ($rowType) {
+                    'section' => 'section-label',
+                    'category' => 'category-label',
+                    'subtotal', 'section_total' => 'subtotal-label',
+                    default => '',
+                };
                 ?>
                 <tr class="<?= e($rowClass) ?>">
                     <td class="text-center"><?= e((string) $row['order']) ?></td>
                     <td class="<?= e($labelClass) ?>"><?= e((string) $row['label']) ?></td>
                     <td class="text-end nowrap <?= ($rowType === 'subtotal' || $rowType === 'section_total') ? 'fw-bold' : '' ?>"><?= $row['current_amount'] === null ? '' : e(profit_loss_currency_print((float) $row['current_amount'])) ?></td>
-                    <td class="text-end nowrap <?= ($rowType === 'subtotal' || $rowType === 'section_total') ? 'fw-bold' : '' ?>"><?= $row['cumulative_amount'] === null ? '' : e(profit_loss_currency_print((float) $row['cumulative_amount'])) ?></td>
                 </tr>
             <?php endforeach; ?>
             <tr class="pl-grand-total">
                 <td></td>
                 <td class="subtotal-label"><?= e(strtoupper(profit_loss_display_label())) ?></td>
                 <td class="text-end nowrap fw-bold <?= $periodNet >= 0 ? 'positive' : 'negative' ?>"><?= e(profit_loss_currency_print($periodNet)) ?></td>
-                <td class="text-end nowrap fw-bold <?= $cumulativeNet >= 0 ? 'positive' : 'negative' ?>"><?= e(profit_loss_currency_print($cumulativeNet)) ?></td>
             </tr>
         <?php endif; ?>
         </tbody>
@@ -76,14 +71,14 @@ $cumulativeNet = (float) ($report['cumulative_net_income'] ?? 0);
 <style>
 .report-heading-main { font-size: 18px; font-weight: 700; letter-spacing: .4px; }
 .report-heading-meta { font-size: 12px; color: #334155; }
-.summary-grid, .formal-pl-table { font-size: 12px; }
+.summary-grid, .formal-pl-table { font-size: 11px; }
 .summary-grid th, .summary-grid td,
 .formal-pl-table th, .formal-pl-table td {
     border: 1px solid #334155 !important;
     padding: 6px 8px !important;
     background: #fff;
 }
-.summary-grid th { width: 28%; background: #f8fafc; }
+.summary-grid th { background: #f8fafc; }
 .formal-pl-table thead th {
     background: #eef2f7;
     text-align: center;

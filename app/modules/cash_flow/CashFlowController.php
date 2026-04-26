@@ -43,73 +43,64 @@ final class CashFlowController extends Controller
             $unitLabel = business_unit_label($selectedUnit);
             $pdf = new ReportPdf('L');
             report_pdf_init($pdf, $profile, 'Laporan Arus Kas Sederhana', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
-            report_pdf_note($pdf, 'Versi awal memakai pendekatan direct method sederhana dari jurnal kas/bank. Klasifikasi didasarkan pada akun lawan dan bisa kurang presisi jika struktur akun belum detail.');
-            foreach ($viewData['warnings'] as $warning) {
-                report_pdf_note($pdf, 'Peringatan: ' . $warning);
+            report_pdf_note($pdf, 'Disajikan dengan metode langsung.');
+
+            $widths = [64, 42];
+            $pdf->tableRow(['Komponen', 'Aktual'], $widths, ['L', 'R'], 8.5, true);
+            foreach ([
+                'Kas Awal' => (float) ($viewData['report']['opening_cash'] ?? 0),
+                'Kas Bersih Operasi' => (float) ($viewData['report']['total_operating'] ?? 0),
+                'Kas Bersih Investasi' => (float) ($viewData['report']['total_investing'] ?? 0),
+                'Kas Bersih Pendanaan' => (float) ($viewData['report']['total_financing'] ?? 0),
+                'Kenaikan / Penurunan Kas' => (float) ($viewData['report']['net_cash_change'] ?? 0),
+                'Kas Akhir' => (float) ($viewData['report']['closing_cash'] ?? 0),
+            ] as $label => $values) {
+                $pdf->tableRow([
+                    $label,
+                    ledger_currency((float) $values),
+                ], $widths, ['L', 'R'], 8.5, false);
             }
-
-            $widths = [18, 28, 62, 32, 22, 22, 22];
-            $sections = [
-                'OPERATING' => ['title' => 'Aktivitas Operasional', 'rows' => $viewData['report']['operating_rows'], 'total' => $viewData['report']['total_operating']],
-                'INVESTING' => ['title' => 'Aktivitas Investasi', 'rows' => $viewData['report']['investing_rows'], 'total' => $viewData['report']['total_investing']],
-                'FINANCING' => ['title' => 'Aktivitas Pendanaan', 'rows' => $viewData['report']['financing_rows'], 'total' => $viewData['report']['total_financing']],
-            ];
-
-            foreach ($sections as $section) {
-                if ($pdf->willOverflow(18)) {
-                    report_pdf_init($pdf, $profile, 'Laporan Arus Kas Sederhana', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
-                }
-                $pdf->text(12, $pdf->getCursorY(), $section['title'], 'B', 10.5);
-                $pdf->ln(6);
-                $pdf->tableRow(['Tanggal', 'No. Jurnal', 'Keterangan', 'Unit', 'Masuk', 'Keluar', 'Bersih'], $widths, ['L', 'L', 'L', 'L', 'R', 'R', 'R'], 8.5, true);
-
-                $sectionHeaderPrinter = static function (ReportPdf $pdfObj) use ($profile, $viewData, $selectedPeriod, $unitLabel, $section, $widths): void {
-                    report_pdf_init($pdfObj, $profile, 'Laporan Arus Kas Sederhana', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
-                    $pdfObj->text(12, $pdfObj->getCursorY(), $section['title'], 'B', 10.5);
-                    $pdfObj->ln(6);
-                    $pdfObj->tableRow(['Tanggal', 'No. Jurnal', 'Keterangan', 'Unit', 'Masuk', 'Keluar', 'Bersih'], $widths, ['L', 'L', 'L', 'L', 'R', 'R', 'R'], 8.5, true);
-                };
-
-                if ($section['rows'] === []) {
-                    $pdf->tableRow(['-', '-', 'Tidak ada mutasi untuk bagian ini.', '-', '-', '-', '-'], $widths, ['C', 'C', 'L', 'C', 'C', 'C', 'C'], 8.5, false, $sectionHeaderPrinter);
-                } else {
-                    foreach ($section['rows'] as $row) {
-                        $description = (string) $row['description'];
-                        if ((string) $row['classification_note'] !== '') {
-                            $description .= ' [' . (string) $row['classification_note'] . ']';
-                        }
-                        $pdf->tableRow([
-                            (string) $row['journal_date'],
-                            (string) $row['journal_no'],
-                            $description,
-                            (string) $row['unit_label'],
-                            ledger_currency((float) $row['cash_in']),
-                            ledger_currency((float) $row['cash_out']),
-                            ledger_currency(abs((float) $row['net_amount'])),
-                        ], $widths, ['L', 'L', 'L', 'L', 'R', 'R', 'R'], 8.5, false, $sectionHeaderPrinter);
-                    }
-                }
-
-                $pdf->tableRow(['', '', 'Total ' . $section['title'], '', '', '', ledger_currency(abs((float) $section['total']))], $widths, ['L', 'R', 'R', 'L', 'R', 'R', 'R'], 8.5, true, $sectionHeaderPrinter);
-                $pdf->ln(4);
-            }
-
-            if ($pdf->willOverflow(30)) {
-                report_pdf_init($pdf, $profile, 'Laporan Arus Kas Sederhana', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
-            }
-            $pdf->tableRow(['Komponen', 'Nilai'], [170, 80], ['L', 'R'], 8.5, true);
-            $pdf->tableRow(['Kas Awal', ledger_currency((float) $viewData['report']['opening_cash'])], [170, 80], ['L', 'R'], 8.5);
-            $pdf->tableRow(['Arus Kas Bersih Operasional', ledger_currency((float) $viewData['report']['total_operating'])], [170, 80], ['L', 'R'], 8.5);
-            $pdf->tableRow(['Arus Kas Bersih Investasi', ledger_currency((float) $viewData['report']['total_investing'])], [170, 80], ['L', 'R'], 8.5);
-            $pdf->tableRow(['Arus Kas Bersih Pendanaan', ledger_currency((float) $viewData['report']['total_financing'])], [170, 80], ['L', 'R'], 8.5);
-            $pdf->tableRow(['Kenaikan / Penurunan Kas Bersih', ledger_currency((float) $viewData['report']['net_cash_change'])], [170, 80], ['L', 'R'], 8.5, true);
-            $pdf->tableRow(['Kas Akhir', ledger_currency((float) $viewData['report']['closing_cash'])], [170, 80], ['L', 'R'], 8.5, true);
             report_pdf_footer_note($pdf, $profile);
             $pdf->output('laporan-arus-kas.pdf');
         } catch (Throwable $e) {
             log_error($e);
             http_response_code(500);
             render_error_page(500, 'File PDF arus kas belum dapat dibuat. Pastikan data laporan valid lalu coba lagi.', $e);
+        }
+    }
+
+    public function xlsx(): void
+    {
+        try {
+            [$viewData] = $this->buildReportData();
+            $rows = [];
+            foreach ([
+                'Kas Awal' => (float) ($viewData['report']['opening_cash'] ?? 0),
+                'Kas Bersih Operasi' => (float) ($viewData['report']['total_operating'] ?? 0),
+                'Kas Bersih Investasi' => (float) ($viewData['report']['total_investing'] ?? 0),
+                'Kas Bersih Pendanaan' => (float) ($viewData['report']['total_financing'] ?? 0),
+                'Kenaikan / Penurunan Kas' => (float) ($viewData['report']['net_cash_change'] ?? 0),
+                'Kas Akhir' => (float) ($viewData['report']['closing_cash'] ?? 0),
+            ] as $label => $values) {
+                $rows[] = [
+                    $label,
+                    ledger_currency((float) $values),
+                ];
+            }
+
+            report_download_xlsx(
+                'cash_flow_' . date('Ymd_His') . '.xlsx',
+                'Arus Kas',
+                'Laporan Arus Kas',
+                $viewData['filters'],
+                ['Komponen', 'Aktual'],
+                $rows,
+                []
+            );
+        } catch (Throwable $e) {
+            log_error($e);
+            flash('error', 'Export XLSX arus kas belum dapat diproses.');
+            $this->redirect('/cash-flow');
         }
     }
 
@@ -124,16 +115,164 @@ final class CashFlowController extends Controller
             'date_from' => trim((string) get_query('date_from', '')),
             'date_to' => trim((string) get_query('date_to', '')),
             'unit_id' => (int) get_query('unit_id', 0),
+            'comparison_mode' => report_normalize_comparison_mode((string) get_query('comparison_mode', 'none'), ['previous_period', 'previous_year', 'none']),
+            'comparison_period_id' => (int) get_query('comparison_period_id', 0),
+            'show_variance' => report_query_flag(get_query('show_variance', '0'), false),
+            'show_visual' => report_query_flag(get_query('show_visual', '1')),
         ];
 
         $filters = apply_fiscal_year_filter($filters);
 
         $periods = $this->model()->getPeriods();
         $selectedPeriod = null;
+        $selectedComparisonPeriod = null;
         $selectedUnit = null;
         $cashAccounts = [];
         $warnings = [];
-        $report = [
+        $report = $this->emptyReport();
+        $comparisonReport = $this->emptyReport();
+        $comparison = ['enabled' => false, 'label' => 'Tanpa Pembanding'];
+
+        if ($filters['period_id'] > 0 || $filters['date_from'] !== '' || $filters['date_to'] !== '') {
+            [$filters, $selectedPeriod, $selectedUnit] = $this->resolveFilters($filters);
+            $cashAccounts = $this->model()->getDetectedCashAccounts();
+
+            if ($cashAccounts === []) {
+                $warnings[] = 'Belum ada akun kas/bank yang terdeteksi dari COA. Pastikan nama akun kas atau bank sudah konsisten.';
+            } else {
+                $report = $this->buildCashFlowReport($cashAccounts, (string) $filters['date_from'], (string) $filters['date_to'], (int) $filters['unit_id'], $warnings);
+                if ($filters['comparison_period_id'] > 0) {
+                    $selectedComparisonPeriod = $this->model()->findPeriodById((int) $filters['comparison_period_id']);
+                }
+                $comparison = report_resolve_comparison_range(
+                    (string) $filters['comparison_mode'],
+                    (string) $filters['date_from'],
+                    (string) $filters['date_to'],
+                    $selectedPeriod,
+                    $selectedComparisonPeriod
+                );
+                if (($comparison['enabled'] ?? false) === true) {
+                    $comparisonReport = $this->buildCashFlowReport($cashAccounts, (string) $comparison['date_from'], (string) $comparison['date_to'], (int) $filters['unit_id'], $warnings);
+                }
+            }
+        }
+
+        return [[
+            'title' => 'Laporan Arus Kas Sederhana',
+            'filters' => $filters,
+            'comparisonModes' => [
+                'previous_period' => 'Bandingkan dengan periode lalu',
+                'previous_year' => 'Bandingkan dengan tahun lalu',
+                'none' => 'Tanpa pembanding',
+            ],
+            'reportYears' => accounting_report_year_options(),
+            'periods' => $periods,
+            'units' => business_unit_options(),
+            'selectedPeriod' => $selectedPeriod,
+            'selectedComparisonPeriod' => $selectedComparisonPeriod,
+            'selectedUnit' => $selectedUnit,
+            'selectedUnitLabel' => business_unit_label($selectedUnit),
+            'cashAccounts' => $cashAccounts,
+            'warnings' => array_values(array_unique($warnings)),
+            'report' => $report,
+            'comparison' => $comparison,
+            'comparison_report' => $comparisonReport,
+            'assumptions' => cash_flow_assumptions(),
+            'limitations' => cash_flow_limitations(),
+        ], $selectedPeriod, $selectedUnit];
+    }
+
+    private function buildCashFlowReport(array $cashAccounts, string $dateFrom, string $dateTo, int $unitId, array &$warnings): array
+    {
+        $report = $this->emptyReport();
+        $cashAccountIds = array_map(static fn (array $row): int => (int) $row['id'], $cashAccounts);
+        $report['opening_cash'] = $this->model()->getOpeningCashBalance($cashAccountIds, $dateFrom, $unitId);
+        $journalRows = $this->model()->getJournalRows($cashAccountIds, $dateFrom, $dateTo, $unitId);
+
+        foreach ($journalRows as $row) {
+            $netAmount = (float) $row['cash_debit'] - (float) $row['cash_credit'];
+            if (abs($netAmount) < 0.005) {
+                continue;
+            }
+
+            [$section, $classificationNote, $ambiguous] = cash_flow_determine_section($row);
+            if ($ambiguous) {
+                $warnings[] = 'Jurnal ' . (string) $row['journal_no'] . ' memiliki lawan akun campuran sehingga klasifikasi arus kas memakai prioritas sederhana.';
+            }
+
+            $entry = [
+                'journal_date' => (string) $row['journal_date'],
+                'journal_no' => (string) $row['journal_no'],
+                'description' => (string) $row['description'],
+                'label' => trim((string) ($row['description'] ?? '')) !== '' ? (string) $row['description'] : 'Mutasi kas',
+                'counterpart_accounts' => (string) ($row['counterpart_accounts'] ?? ''),
+                'classification_note' => $classificationNote,
+                'cash_in' => $netAmount > 0 ? $netAmount : 0.0,
+                'cash_out' => $netAmount < 0 ? abs($netAmount) : 0.0,
+                'net_amount' => $netAmount,
+                'unit_label' => trim((string) ($row['unit_code'] ?? '')) !== '' ? ((string) $row['unit_code'] . ' - ' . (string) ($row['unit_name'] ?? '')) : 'Pusat / umum',
+            ];
+
+            if ($section === 'OPERATING') {
+                $report['operating_rows'][] = $entry;
+                $report['total_operating'] += $netAmount;
+            } elseif ($section === 'INVESTING') {
+                $report['investing_rows'][] = $entry;
+                $report['total_investing'] += $netAmount;
+            } else {
+                $report['financing_rows'][] = $entry;
+                $report['total_financing'] += $netAmount;
+            }
+        }
+
+        $report['net_cash_change'] = $report['total_operating'] + $report['total_investing'] + $report['total_financing'];
+        $report['closing_cash'] = $report['opening_cash'] + $report['net_cash_change'];
+        $report['actual_closing_cash'] = $report['closing_cash'];
+        $report['difference'] = 0.0;
+        $report['row_count'] = count($report['operating_rows']) + count($report['investing_rows']) + count($report['financing_rows']);
+        $report['sections'] = $this->buildSectionSummaries($report);
+
+        return $report;
+    }
+
+    private function buildSectionSummaries(array $report): array
+    {
+        $summaries = [];
+        $map = [
+            'OPERATING' => ['title' => 'Arus Kas dari Aktivitas Operasi', 'rows' => (array) ($report['operating_rows'] ?? []), 'total' => (float) ($report['total_operating'] ?? 0)],
+            'INVESTING' => ['title' => 'Arus Kas dari Aktivitas Investasi', 'rows' => (array) ($report['investing_rows'] ?? []), 'total' => (float) ($report['total_investing'] ?? 0)],
+            'FINANCING' => ['title' => 'Arus Kas dari Aktivitas Pendanaan', 'rows' => (array) ($report['financing_rows'] ?? []), 'total' => (float) ($report['total_financing'] ?? 0)],
+        ];
+
+        foreach ($map as $section => $config) {
+            $inRows = [];
+            $outRows = [];
+            foreach ($config['rows'] as $row) {
+                if ((float) ($row['cash_in'] ?? 0) > 0) {
+                    $inRows[] = ['label' => (string) ($row['label'] ?? ''), 'amount' => (float) ($row['cash_in'] ?? 0)];
+                }
+                if ((float) ($row['cash_out'] ?? 0) > 0) {
+                    $outRows[] = ['label' => (string) ($row['label'] ?? ''), 'amount' => (float) ($row['cash_out'] ?? 0)];
+                }
+            }
+            $summaries[$section] = [
+                'title' => (string) $config['title'],
+                'in_rows' => $inRows,
+                'out_rows' => $outRows,
+                'total_in' => array_sum(array_column($inRows, 'amount')),
+                'total_out' => array_sum(array_column($outRows, 'amount')),
+                'net' => (float) $config['total'],
+                'net_label' => 'Arus kas bersih',
+            ];
+        }
+
+        return $summaries;
+    }
+
+    private function emptyReport(): array
+    {
+        return [
+            'sections' => [],
             'operating_rows' => [],
             'investing_rows' => [],
             'financing_rows' => [],
@@ -143,76 +282,10 @@ final class CashFlowController extends Controller
             'total_financing' => 0.0,
             'net_cash_change' => 0.0,
             'closing_cash' => 0.0,
+            'actual_closing_cash' => 0.0,
+            'difference' => 0.0,
             'row_count' => 0,
         ];
-
-        if ($filters['period_id'] > 0 || $filters['date_from'] !== '' || $filters['date_to'] !== '') {
-            [$filters, $selectedPeriod, $selectedUnit] = $this->resolveFilters($filters);
-            $cashAccounts = $this->model()->getDetectedCashAccounts();
-
-            if ($cashAccounts === []) {
-                $warnings[] = 'Belum ada akun kas/bank yang terdeteksi dari COA. Pastikan nama akun kas atau bank sudah konsisten.';
-            } else {
-                $cashAccountIds = array_map(static fn (array $row): int => (int) $row['id'], $cashAccounts);
-                $report['opening_cash'] = $this->model()->getOpeningCashBalance($cashAccountIds, $filters['date_from'], (int) $filters['unit_id']);
-                $journalRows = $this->model()->getJournalRows($cashAccountIds, $filters['date_from'], $filters['date_to'], (int) $filters['unit_id']);
-
-                foreach ($journalRows as $row) {
-                    $netAmount = (float) $row['cash_debit'] - (float) $row['cash_credit'];
-                    if (abs($netAmount) < 0.005) {
-                        continue;
-                    }
-
-                    [$section, $classificationNote, $ambiguous] = cash_flow_determine_section($row);
-                    if ($ambiguous) {
-                        $warnings[] = 'Jurnal ' . (string) $row['journal_no'] . ' memiliki lawan akun campuran sehingga klasifikasi arus kas memakai prioritas sederhana.';
-                    }
-
-                    $entry = [
-                        'journal_date' => (string) $row['journal_date'],
-                        'journal_no' => (string) $row['journal_no'],
-                        'description' => (string) $row['description'],
-                        'counterpart_accounts' => (string) ($row['counterpart_accounts'] ?? ''),
-                        'classification_note' => $classificationNote,
-                        'cash_in' => $netAmount > 0 ? $netAmount : 0.0,
-                        'cash_out' => $netAmount < 0 ? abs($netAmount) : 0.0,
-                        'net_amount' => $netAmount,
-                        'unit_label' => trim((string) ($row['unit_code'] ?? '')) !== '' ? ((string) $row['unit_code'] . ' - ' . (string) ($row['unit_name'] ?? '')) : 'Pusat / umum',
-                    ];
-
-                    if ($section === 'OPERATING') {
-                        $report['operating_rows'][] = $entry;
-                        $report['total_operating'] += $netAmount;
-                    } elseif ($section === 'INVESTING') {
-                        $report['investing_rows'][] = $entry;
-                        $report['total_investing'] += $netAmount;
-                    } else {
-                        $report['financing_rows'][] = $entry;
-                        $report['total_financing'] += $netAmount;
-                    }
-                }
-            }
-
-            $report['net_cash_change'] = $report['total_operating'] + $report['total_investing'] + $report['total_financing'];
-            $report['closing_cash'] = $report['opening_cash'] + $report['net_cash_change'];
-            $report['row_count'] = count($report['operating_rows']) + count($report['investing_rows']) + count($report['financing_rows']);
-        }
-
-        return [[
-            'title' => 'Laporan Arus Kas Sederhana',
-            'filters' => $filters,
-            'reportYears' => accounting_report_year_options(),
-            'periods' => $periods,
-            'units' => business_unit_options(),
-            'selectedPeriod' => $selectedPeriod,
-            'selectedUnit' => $selectedUnit,
-            'selectedUnitLabel' => business_unit_label($selectedUnit),
-            'cashAccounts' => $cashAccounts,
-            'warnings' => array_values(array_unique($warnings)),
-            'report' => $report,
-            'assumptions' => cash_flow_assumptions(),
-            'limitations' => cash_flow_limitations(),
-        ], $selectedPeriod, $selectedUnit];
     }
 
     private function resolveFilters(array $filters): array
@@ -277,7 +350,6 @@ final class CashFlowController extends Controller
 
     private function isValidDate(string $date): bool
     {
-        $dt = DateTimeImmutable::createFromFormat('Y-m-d', $date);
-        return $dt instanceof DateTimeImmutable && $dt->format('Y-m-d') === $date;
+        return report_is_valid_date($date);
     }
 }

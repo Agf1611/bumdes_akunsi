@@ -6,6 +6,12 @@ $files = $listing['items'] ?? ($files ?? []);
 $listingPath = '/backups';
 $restoreAnalysis = is_array($restoreAnalysis ?? null) ? $restoreAnalysis : [];
 $restorePayload = is_array($restorePayload ?? null) ? $restorePayload : [];
+$recoveryReadiness = is_array($recoveryReadiness ?? null) ? $recoveryReadiness : [];
+$dataAudit = is_array($dataAudit ?? null) ? $dataAudit : [];
+$recoveryState = is_array($recoveryState ?? null) ? $recoveryState : [];
+$latestBackup = is_array($summary['latest_file'] ?? null) ? $summary['latest_file'] : [];
+$staleLevel = (string) ($summary['latest_stale_level'] ?? 'critical');
+$staleAlertClass = $staleLevel === 'ok' ? 'success' : ($staleLevel === 'warning' ? 'warning' : 'danger');
 ?>
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
     <div>
@@ -19,13 +25,41 @@ $restorePayload = is_array($restorePayload ?? null) ? $restorePayload : [];
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-md-3"><div class="card dashboard-card h-100"><div class="card-body p-4"><div class="text-secondary small mb-1">Jumlah File</div><div class="display-6 fw-bold mb-0"><?= e((string) ($summary['count'] ?? 0)) ?></div></div></div></div>
-    <div class="col-md-3"><div class="card dashboard-card h-100"><div class="card-body p-4"><div class="text-secondary small mb-1">Total Ukuran</div><div class="display-6 fw-bold mb-0"><?= e(format_bytes((int) ($summary['total_size'] ?? 0))) ?></div></div></div></div>
-    <div class="col-md-3"><div class="card dashboard-card h-100"><div class="card-body p-4"><div class="text-secondary small mb-1">Backup Terakhir</div><div class="fw-semibold mb-0"><?= e((string) (($summary['latest'] ?? '') !== '' ? audit_datetime((string) $summary['latest']) : '-')) ?></div></div></div></div>
+    <div class="col-md-3"><div class="card dashboard-card h-100"><div class="card-body p-4"><div class="text-secondary small mb-1">Jumlah File</div><div class="display-6 fw-bold mb-0"><?= e((string) ($summary['count'] ?? 0)) ?></div><div class="small text-secondary mt-1">Retention menjaga file lama tetap rapi.</div></div></div></div>
+    <div class="col-md-3"><div class="card dashboard-card h-100"><div class="card-body p-4"><div class="text-secondary small mb-1">Total Ukuran</div><div class="display-6 fw-bold mb-0"><?= e(format_bytes((int) ($summary['total_size'] ?? 0))) ?></div><div class="small text-secondary mt-1">Checksum SHA1 tetap tersedia per file.</div></div></div></div>
+    <div class="col-md-3"><div class="card dashboard-card h-100"><div class="card-body p-4"><div class="text-secondary small mb-1">Backup Terakhir</div><div class="fw-semibold mb-0"><?= e((string) (($summary['latest'] ?? '') !== '' ? audit_datetime((string) $summary['latest']) : '-')) ?></div><div class="small text-secondary mt-1"><?= e((string) ($summary['latest_age_label'] ?? 'Belum ada backup')) ?></div></div></div></div>
     <div class="col-md-3"><div class="card dashboard-card h-100"><div class="card-body p-4"><div class="text-secondary small mb-1">Status Sistem</div><div class="fw-semibold mb-1 <?= !empty($summary['db_connected']) && !empty($summary['directory_writable']) ? 'text-success' : 'text-warning' ?>"><?= !empty($summary['db_connected']) && !empty($summary['directory_writable']) ? 'Siap Backup' : 'Perlu Cek' ?></div><div class="small text-secondary">DB <?= !empty($summary['db_connected']) ? 'terhubung' : 'belum terhubung' ?> &middot; folder <?= !empty($summary['directory_writable']) ? 'writable' : 'belum writable' ?></div></div></div></div>
 </div>
 
-<div class="alert alert-warning"><strong>Perhatian:</strong> Restore akan mengganti isi database saat ini dengan isi file backup yang dipilih. Sistem sekarang akan menganalisis file dulu, membuat backup pengaman otomatis, lalu mengaktifkan mode maintenance selama restore berjalan.</div>
+<div class="alert alert-<?= e($staleAlertClass) ?>"><strong>Recovery Readiness:</strong> <?= e((string) ($summary['latest_stale_note'] ?? 'Status backup belum tersedia.')) ?> Backup lokal tunggal belum cukup aman, jadi simpan juga salinan di lokasi terpisah.</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <h2 class="h5 mb-2">Ringkasan Recovery</h2>
+                <p class="text-secondary small mb-3">Panel ini membantu memastikan kondisi sistem benar-benar siap sebelum restore berikutnya atau sesudah recovery insiden.</p>
+                <div class="row g-3">
+                    <div class="col-md-4"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Backup terakhir</div><div class="fw-semibold"><?= e((string) (($latestBackup['name'] ?? '') ?: 'Belum ada')) ?></div><div class="small text-secondary"><?= e((string) (($latestBackup['age_label'] ?? '') ?: '')) ?></div></div></div>
+                    <div class="col-md-4"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Migration pending</div><div class="fw-semibold"><?= e((string) ($recoveryReadiness['pending_migrations_count'] ?? 0)) ?></div></div></div>
+                    <div class="col-md-4"><div class="rounded-4 border p-3 h-100"><div class="small text-secondary">Restore metadata</div><div class="fw-semibold"><?= e((string) (($recoveryState['source_file_name'] ?? '') ?: 'Belum tercatat')) ?></div></div></div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <h2 class="h5 mb-2">Checklist Pasca-Restore</h2>
+                <div class="small text-secondary mb-3">Saran singkat agar baseline baru cepat diamankan.</div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0">Buat backup baru segera setelah sistem bisa diakses.</div>
+                    <div class="list-group-item px-0">Cek login admin, periode aktif, dan profil BUMDes.</div>
+                    <div class="list-group-item px-0">Buka dashboard, jurnal, dan laporan utama sebagai verifikasi cepat.</div>
+                    <div class="list-group-item px-0">Unduh satu salinan backup ke media terpisah.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-warning"><strong>Perhatian:</strong> Restore akan mengganti isi database saat ini dengan isi file backup yang dipilih. Sistem akan menganalisis file dulu, membuat backup pengaman otomatis, lalu mengaktifkan mode maintenance selama restore berjalan.</div>
 
 <?php if ($restoreAnalysis !== []): ?>
     <div class="card shadow-sm mb-4 border-warning">
@@ -132,6 +166,22 @@ $restorePayload = is_array($restorePayload ?? null) ? $restorePayload : [];
     </div>
 </div></div>
 
+<div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+        <h2 class="h5 mb-3">Audit Data Inti</h2>
+        <div class="row g-3">
+            <?php foreach ((array) ($dataAudit['counts'] ?? []) as $label => $value): ?>
+                <div class="col-6 col-md-3">
+                    <div class="rounded-4 border p-3 h-100">
+                        <div class="small text-secondary mb-1"><?= e(ucwords(str_replace('_', ' ', (string) $label))) ?></div>
+                        <div class="fw-semibold"><?= e(number_format((int) $value, 0, ',', '.')) ?></div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+
 <div class="card shadow-sm"><div class="card-body p-0">
     <?php if ($files === []): ?>
         <div class="p-5 text-center text-secondary">Belum ada file backup. Klik <strong class="text-light">Buat Backup Sekarang</strong> untuk membuat file SQL pertama.</div>
@@ -151,11 +201,17 @@ $restorePayload = is_array($restorePayload ?? null) ? $restorePayload : [];
                 <?php foreach ($files as $file): ?>
                     <tr>
                         <td>
-                            <div class="fw-semibold"><?= e((string) $file['name']) ?></div>
-                            <div class="small text-secondary">Salinan database siap diunduh atau dipindahkan ke media lain.</div>
+                            <div class="fw-semibold d-flex flex-wrap align-items-center gap-2">
+                                <span><?= e((string) $file['name']) ?></span>
+                                <?php if (!empty($file['is_latest'])): ?><span class="badge text-bg-success">Terbaru</span><?php endif; ?>
+                            </div>
+                            <div class="small text-secondary">Salinan database siap diunduh atau dipindahkan ke media lain. Umur file: <?= e((string) ($file['age_label'] ?? '-')) ?>.</div>
                         </td>
                         <td><?= e(audit_datetime((string) $file['modified_at'])) ?></td>
-                        <td><?= e(format_bytes((int) $file['size'])) ?></td>
+                        <td>
+                            <div><?= e(format_bytes((int) $file['size'])) ?></div>
+                            <div class="small text-secondary"><?= e((string) ($file['age_label'] ?? '-')) ?></div>
+                        </td>
                         <td><code><?= e((string) $file['sha1']) ?></code></td>
                         <td class="text-end">
                             <div class="d-flex justify-content-end gap-2 flex-wrap">

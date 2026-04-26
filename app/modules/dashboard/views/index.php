@@ -192,6 +192,14 @@ foreach ($trendSeries as $index => $point) {
                 <span class="dashboard-inline-icon"><?= $icon('settings') ?></span>
                 Atur Dashboard
             </a>
+            <?php if ((string) ($user['role_code'] ?? '') === 'admin'): ?>
+                <form method="post" action="<?= e(base_url('/backups/create')) ?>" class="m-0">
+                    <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="redirect_to" value="/dashboard">
+                    <input type="hidden" name="backup_reason" value="dashboard_quick_safety_backup">
+                    <button type="submit" class="btn btn-outline-light">Amankan Data</button>
+                </form>
+            <?php endif; ?>
             <a href="<?= e(base_url('/journals/quick')) ?>" class="btn btn-primary">Transaksi Cepat</a>
         </div>
     </section>

@@ -669,6 +669,72 @@ final class JournalController extends Controller
         $this->redirect($redirectTo);
     }
 
+    public function workflowAction(): void
+    {
+        if (!verify_csrf((string) post('_token'))) {
+            http_response_code(419);
+            render_error_page(419, 'Sesi keamanan formulir telah berakhir. Silakan muat ulang halaman lalu coba lagi.');
+            return;
+        }
+
+        $redirectTo = $this->sanitizeJournalRedirect((string) post('redirect_to', '/journals'));
+        $journalId = (int) post('journal_id', 0);
+        $action = strtolower(trim((string) post('workflow_action', '')));
+        $reason = trim((string) post('workflow_reason', ''));
+        if ($journalId <= 0) {
+            flash('error', 'ID jurnal tidak valid.');
+            $this->redirect($redirectTo);
+        }
+
+        try {
+            $header = $this->model()->findHeaderById($journalId);
+            if (!$header) {
+                flash('error', 'Jurnal tidak ditemukan.');
+                $this->redirect($redirectTo);
+            }
+            $allowed = journal_workflow_allowed_actions((string) ($header['workflow_status'] ?? 'POSTED'), (string) (Auth::user()['role_code'] ?? ''));
+            if (!in_array($action, $allowed, true)) {
+                flash('error', 'Role Anda tidak punya akses untuk aksi workflow ini.');
+                $this->redirect($redirectTo);
+            }
+
+            $this->ensurePeriodOpenForModification($header);
+            $beforeSnapshot = $this->journalAuditSnapshot($journalId);
+            $userId = (int) (Auth::user()['id'] ?? 0);
+            if ($action === 'reverse') {
+                $reversalId = $this->model()->createReversal($journalId, $userId, $reason);
+                audit_log('Jurnal Umum', 'workflow_reverse', 'Jurnal direversal dengan jurnal pembalik.', [
+                    'entity_type' => 'journal',
+                    'entity_id' => (string) $journalId,
+                    'before' => $beforeSnapshot,
+                    'after' => [
+                        'source' => $this->journalAuditSnapshot($journalId),
+                        'reversal' => $this->journalAuditSnapshot($reversalId),
+                    ],
+                    'severity' => 'warning',
+                    'context' => ['reason' => $reason, 'reversal_journal_id' => $reversalId],
+                ]);
+                flash('success', 'Reversal berhasil dibuat. Jurnal pembalik #' . (string) $reversalId . ' sudah diposting.');
+            } else {
+                $result = $this->model()->applyWorkflowAction($journalId, $action, $userId, $reason);
+                audit_log('Jurnal Umum', 'workflow_' . $action, 'Status workflow jurnal diperbarui.', [
+                    'entity_type' => 'journal',
+                    'entity_id' => (string) $journalId,
+                    'before' => $beforeSnapshot,
+                    'after' => $this->journalAuditSnapshot($journalId),
+                    'context' => $result + ['reason' => $reason],
+                    'severity' => in_array($action, ['void'], true) ? 'warning' : 'info',
+                ]);
+                flash('success', 'Status jurnal berhasil diubah menjadi ' . journal_workflow_label((string) ($result['after_status'] ?? '')) . '.');
+            }
+        } catch (Throwable $e) {
+            log_error($e);
+            flash('error', 'Aksi workflow gagal. ' . $e->getMessage());
+        }
+
+        $this->redirect($redirectTo);
+    }
+
     private function save(?int $id): void
     {
         if (!verify_csrf((string) post('_token'))) {

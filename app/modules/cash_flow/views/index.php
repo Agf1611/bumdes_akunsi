@@ -1,409 +1,301 @@
-<?php declare(strict_types=1);
-
-$cashFlowTitle = 'Laporan Arus Kas';
-$cashFlowSubtitle = 'Disusun dengan metode langsung, menampilkan arus kas operasi, investasi, dan pendanaan secara ringkas.';
-
-$currency = static function (float $amount): string {
-    return ledger_currency($amount);
-};
-
-$sectionCodes = ['OPERATING', 'INVESTING', 'FINANCING'];
+<?php declare(strict_types=1); ?>
+<?php
+$periodLabel = report_period_label($filters, $selectedPeriod);
+$selectedUnitDisplay = $selectedUnitLabel ?? 'Semua Unit';
 $sectionOrder = [
     'OPERATING' => 'Aktivitas Operasi',
     'INVESTING' => 'Aktivitas Investasi',
     'FINANCING' => 'Aktivitas Pendanaan',
 ];
-
-$deriveRows = static function (array $rows, string $flowKey, string $fallbackLabel): array {
-    $bucket = [];
-    foreach ($rows as $row) {
-        $amount = (float) ($row[$flowKey] ?? 0.0);
-        if (abs($amount) < 0.005) {
-            continue;
-        }
-        $label = trim((string) ($row['label'] ?? $row['description'] ?? ''));
-        if ($label === '') {
-            $label = $fallbackLabel;
-        }
-        if (!isset($bucket[$label])) {
-            $bucket[$label] = 0.0;
-        }
-        $bucket[$label] += $amount;
-    }
-    $out = [];
-    foreach ($bucket as $label => $amount) {
-        $out[] = ['label' => (string) $label, 'amount' => (float) $amount];
-    }
-    return $out;
-};
-
-$buildSectionData = static function (string $section) use ($report, $sectionOrder, $deriveRows): array {
-    $data = (array) ($report['sections'][$section] ?? []);
-    if ($data !== []) {
-        $data['title'] = (string) ($data['title'] ?? ('Arus Kas dari ' . ($sectionOrder[$section] ?? $section)));
-        $data['in_rows'] = array_values((array) ($data['in_rows'] ?? []));
-        $data['out_rows'] = array_values((array) ($data['out_rows'] ?? []));
-        $data['total_in'] = (float) ($data['total_in'] ?? 0.0);
-        $data['total_out'] = (float) ($data['total_out'] ?? 0.0);
-        $data['net'] = (float) ($data['net'] ?? 0.0);
-        $data['net_label'] = (string) ($data['net_label'] ?? 'Arus kas bersih');
-        return $data;
-    }
-
-    $flatRows = match ($section) {
-        'OPERATING' => (array) ($report['operating_rows'] ?? []),
-        'INVESTING' => (array) ($report['investing_rows'] ?? []),
-        default => (array) ($report['financing_rows'] ?? []),
-    };
-
-    $inRows = $deriveRows($flatRows, 'cash_in', 'Penerimaan kas lainnya');
-    $outRows = $deriveRows($flatRows, 'cash_out', 'Pengeluaran kas lainnya');
-    $totalIn = 0.0;
-    foreach ($inRows as $row) {
-        $totalIn += (float) ($row['amount'] ?? 0.0);
-    }
-    $totalOut = 0.0;
-    foreach ($outRows as $row) {
-        $totalOut += (float) ($row['amount'] ?? 0.0);
-    }
-
-    return [
-        'title' => 'Arus Kas dari ' . ($sectionOrder[$section] ?? $section),
-        'in_rows' => $inRows,
-        'out_rows' => $outRows,
-        'total_in' => $totalIn,
-        'total_out' => $totalOut,
-        'net' => $totalIn - $totalOut,
-        'net_label' => 'Arus kas bersih dari ' . strtolower($sectionOrder[$section] ?? $section),
-    ];
-};
-
-$sections = [];
-foreach ($sectionCodes as $sectionCode) {
-    $sections[$sectionCode] = $buildSectionData($sectionCode);
+$currentMetrics = [
+    'opening_cash' => ['label' => 'Kas Awal', 'desc' => 'Saldo kas pada awal periode.'],
+    'total_operating' => ['label' => 'Kas Bersih Operasi', 'desc' => 'Dari aktivitas operasional.'],
+    'total_investing' => ['label' => 'Kas Bersih Investasi', 'desc' => 'Dari aktivitas investasi.'],
+    'total_financing' => ['label' => 'Kas Bersih Pendanaan', 'desc' => 'Dari aktivitas pendanaan.'],
+    'net_cash_change' => ['label' => 'Perubahan Kas Bersih', 'desc' => 'Kenaikan atau penurunan kas.'],
+    'closing_cash' => ['label' => 'Kas Akhir', 'desc' => 'Saldo kas pada akhir periode.'],
+];
+$visualBase = 1.0;
+foreach (['total_operating', 'total_investing', 'total_financing', 'net_cash_change'] as $visualKey) {
+    $visualBase = max($visualBase, abs((float) ($report[$visualKey] ?? 0)));
 }
-
-$periodLabel = report_period_label($filters, $selectedPeriod);
-$selectedUnitDisplay = $selectedUnitLabel ?? 'Semua Unit';
-$difference = (float) ($report['difference'] ?? 0.0);
-$actualClosing = (float) ($report['actual_closing_cash'] ?? ($report['closing_cash'] ?? 0.0));
 ?>
 
-<style>
-.cashflow-mekari-page .cashflow-hero {
-    border: 1px solid rgba(148,163,184,.28);
-    border-radius: 28px;
-    padding: 28px;
-    background: linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(248,250,252,.98) 100%);
-    box-shadow: 0 18px 40px rgba(15,23,42,.08);
-}
-.cashflow-mekari-page .cashflow-kicker {
-    font-size: .78rem;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    font-weight: 700;
-    color: #94a3b8;
-}
-.cashflow-mekari-page .cashflow-title {
-    font-size: clamp(1.9rem, 2.7vw, 2.8rem);
-    line-height: 1.06;
-    margin: .35rem 0 .6rem;
-    font-weight: 800;
-    color: #0f172a;
-}
-.cashflow-mekari-page .cashflow-subtitle {
-    color: #475569;
-    max-width: 760px;
-    font-size: 1rem;
-}
-.cashflow-mekari-page .cashflow-pillbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .75rem;
-    margin-top: 1.2rem;
-}
-.cashflow-mekari-page .cashflow-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: .45rem;
-    border: 1px solid rgba(148,163,184,.3);
-    background: #fff;
-    border-radius: 999px;
-    padding: .7rem 1rem;
-    font-size: .92rem;
-    color: #334155;
-}
-.cashflow-mekari-page .cashflow-filter-card,
-.cashflow-mekari-page .cashflow-summary-card,
-.cashflow-mekari-page .cashflow-section-card,
-.cashflow-mekari-page .cashflow-recon-card {
-    border: 1px solid rgba(148,163,184,.24);
-    border-radius: 24px;
-    background: rgba(255,255,255,.98);
-    box-shadow: 0 12px 30px rgba(15,23,42,.05);
-}
-.cashflow-mekari-page .cashflow-filter-card .form-label {
-    font-weight: 700;
-    color: #334155;
-    font-size: .9rem;
-}
-.cashflow-mekari-page .cashflow-summary-card {
-    padding: 1.1rem 1.25rem;
-    height: 100%;
-}
-.cashflow-mekari-page .cashflow-summary-label {
-    color: #64748b;
-    font-size: .86rem;
-    font-weight: 700;
-    letter-spacing: .02em;
-    margin-bottom: .35rem;
-}
-.cashflow-mekari-page .cashflow-summary-value {
-    font-weight: 800;
-    color: #0f172a;
-    font-size: clamp(1.15rem, 2vw, 1.5rem);
-}
-.cashflow-mekari-page .cashflow-summary-note {
-    margin-top: .35rem;
-    color: #64748b;
-    font-size: .82rem;
-}
-.cashflow-mekari-page .cashflow-section-card {
-    overflow: hidden;
-}
-.cashflow-mekari-page .cashflow-section-head {
-    padding: 1.1rem 1.35rem;
-    border-bottom: 1px solid rgba(148,163,184,.18);
-    background: linear-gradient(90deg, rgba(249,115,22,.08) 0%, rgba(255,255,255,.96) 65%);
-}
-.cashflow-mekari-page .cashflow-section-title {
-    margin: 0;
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: #ea580c;
-    text-transform: uppercase;
-    letter-spacing: .01em;
-}
-.cashflow-mekari-page .cashflow-section-grid {
-    display: grid;
-    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-    gap: 1rem;
-    padding: 1.25rem;
-}
-.cashflow-mekari-page .cashflow-flow-card {
-    border: 1px solid rgba(148,163,184,.18);
-    border-radius: 20px;
-    overflow: hidden;
-    background: #fff;
-}
-.cashflow-mekari-page .cashflow-flow-head {
-    padding: .95rem 1rem;
-    font-weight: 800;
-    color: #0369a1;
-    font-size: 1.05rem;
-    border-bottom: 1px solid rgba(148,163,184,.18);
-    background: linear-gradient(180deg, rgba(239,246,255,.95) 0%, rgba(255,255,255,.98) 100%);
-}
-.cashflow-mekari-page .cashflow-flow-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.cashflow-mekari-page .cashflow-flow-table td {
-    padding: .88rem 1rem;
-    border-top: 1px solid rgba(226,232,240,.85);
-    vertical-align: top;
-}
-.cashflow-mekari-page .cashflow-flow-table td:last-child {
-    width: 190px;
-    text-align: right;
-    white-space: nowrap;
-    font-weight: 700;
-    color: #0f172a;
-}
-.cashflow-mekari-page .cashflow-flow-empty {
-    padding: 1rem;
-    color: #64748b;
-    font-size: .93rem;
-}
-.cashflow-mekari-page .cashflow-total-row td {
-    font-weight: 800;
-    background: #f8fafc;
-}
-.cashflow-mekari-page .cashflow-net-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
-    padding: 1rem 1.25rem 1.15rem;
-    border-top: 1px solid rgba(148,163,184,.18);
-    font-weight: 800;
-    color: #0f172a;
-}
-.cashflow-mekari-page .cashflow-net-row .cashflow-net-label {
-    color: #ea580c;
-}
-.cashflow-mekari-page .cashflow-recon-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.cashflow-mekari-page .cashflow-recon-table th,
-.cashflow-mekari-page .cashflow-recon-table td {
-    padding: .95rem 1rem;
-    border-top: 1px solid rgba(226,232,240,.85);
-}
-.cashflow-mekari-page .cashflow-recon-table th {
-    font-weight: 700;
-    color: #334155;
-}
-.cashflow-mekari-page .cashflow-recon-table td {
-    text-align: right;
-    font-weight: 800;
-    color: #0f172a;
-}
-.cashflow-mekari-page .cashflow-recon-badge {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    padding: .4rem .8rem;
-    font-weight: 700;
-    font-size: .82rem;
-}
-.cashflow-mekari-page .cashflow-recon-badge.ok { background: #dcfce7; color: #166534; }
-.cashflow-mekari-page .cashflow-recon-badge.warn { background: #fee2e2; color: #b91c1c; }
-.cashflow-mekari-page .cashflow-empty-state {
-    border: 1px dashed rgba(148,163,184,.4);
-    border-radius: 24px;
-    padding: 3.2rem 1.5rem;
-    text-align: center;
-    color: #64748b;
-    background: rgba(255,255,255,.94);
-}
-@media (max-width: 991.98px) {
-    .cashflow-mekari-page .cashflow-section-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 575.98px) {
-    .cashflow-mekari-page .cashflow-hero,
-    .cashflow-mekari-page .cashflow-filter-card .card-body,
-    .cashflow-mekari-page .cashflow-section-head,
-    .cashflow-mekari-page .cashflow-section-grid,
-    .cashflow-mekari-page .cashflow-recon-card .card-body { padding: 1rem; }
-    .cashflow-mekari-page .cashflow-flow-table td:last-child { width: 120px; }
-    .cashflow-mekari-page .cashflow-title { font-size: 1.6rem; }
-}
-</style>
+<div class="module-page report-analytics-page">
+    <section class="module-hero">
+        <div class="module-hero__content">
+            <div>
+                <div class="module-hero__eyebrow">Laporan Analitis</div>
+                <h1 class="module-hero__title">Laporan Arus Kas</h1>
+                <p class="module-hero__text">Metode langsung yang kembali fokus ke angka utama, tetap dibantu visual layar dan drill-down jurnal saat dibutuhkan.</p>
+            </div>
+            <?php if (($filters['date_to'] ?? '') !== ''): ?>
+                <div class="module-hero__actions">
+                    <a href="<?= e(base_url('/reports/drilldown?' . http_build_query([
+                        'source_report' => 'cash_flow',
+                        'period_id' => $filters['period_id'] ?? null,
+                        'unit_id' => $filters['unit_id'] ?? null,
+                        'date_from' => $filters['date_from'] ?? null,
+                        'date_to' => $filters['date_to'] ?? null,
+                    ]))) ?>" class="btn btn-outline-light">Drill-down Jurnal</a>
+                    <a href="<?= e(base_url('/cash-flow/print?' . report_filters_query($filters))) ?>" target="_blank" class="btn btn-outline-light">Print</a>
+                    <a href="<?= e(base_url('/cash-flow/pdf?' . report_filters_query($filters))) ?>" target="_blank" class="btn btn-outline-light">Export PDF</a>
+                    <a href="<?= e(base_url('/cash-flow/xlsx?' . report_filters_query($filters))) ?>" class="btn btn-primary">Export XLSX</a>
+                </div>
+            <?php endif; ?>
+        </div>
+    </section>
 
-<div class="cashflow-mekari-page">
-    <div class="cashflow-hero mb-4">
-        <div class="cashflow-kicker">Laporan</div>
-        <h1 class="cashflow-title"><?= e($cashFlowTitle) ?></h1>
-        <p class="cashflow-subtitle"><?= e($cashFlowSubtitle) ?></p>
-        <div class="cashflow-pillbar">
-            <div class="cashflow-pill"><strong>Periode</strong> <?= e($periodLabel) ?></div>
-            <div class="cashflow-pill"><strong>Unit</strong> <?= e($selectedUnitDisplay) ?></div>
-            <div class="cashflow-pill"><strong>Metode</strong> Langsung</div>
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <form method="get" action="<?= e(base_url('/cash-flow')) ?>" class="row g-3 align-items-end">
+                <div class="col-xl-3 col-lg-4">
+                    <label for="period_id" class="form-label">Periode Referensi</label>
+                    <select name="period_id" id="period_id" class="form-select">
+                        <option value="">Opsional / bantu isi tanggal</option>
+                        <?php foreach ($periods as $period): ?>
+                            <option value="<?= e((string) $period['id']) ?>" <?= (string) ($filters['period_id'] ?? '') === (string) $period['id'] ? 'selected' : '' ?>>
+                                <?= e($period['period_name'] . ' (' . $period['period_code'] . ')') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-xl-2 col-lg-3">
+                    <label for="fiscal_year" class="form-label">Tahun</label>
+                    <select name="fiscal_year" id="fiscal_year" class="form-select">
+                        <option value="">Semua tahun</option>
+                        <?php foreach (($reportYears ?? []) as $year): ?>
+                            <option value="<?= e((string) $year) ?>" <?= (string) ($filters['fiscal_year'] ?? '') === (string) $year ? 'selected' : '' ?>><?= e((string) $year) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-xl-3 col-lg-4">
+                    <label for="unit_id" class="form-label">Unit Usaha</label>
+                    <select name="unit_id" id="unit_id" class="form-select">
+                        <option value="">Semua Unit</option>
+                        <?php foreach ($units as $unit): ?>
+                            <option value="<?= e((string) $unit['id']) ?>" <?= (string) ($filters['unit_id'] ?? '') === (string) $unit['id'] ? 'selected' : '' ?>>
+                                <?= e($unit['unit_code'] . ' - ' . $unit['unit_name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-xl-2 col-lg-3">
+                    <label for="date_from" class="form-label">Tanggal Mulai</label>
+                    <input type="date" name="date_from" id="date_from" class="form-control" value="<?= e((string) ($filters['date_from'] ?? '')) ?>">
+                </div>
+                <div class="col-xl-2 col-lg-3">
+                    <label for="date_to" class="form-label">Tanggal Akhir</label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" value="<?= e((string) ($filters['date_to'] ?? '')) ?>">
+                </div>
+                <div class="col-xl-2 col-lg-3">
+                    <div class="form-check pt-4">
+                        <input class="form-check-input" type="checkbox" name="show_visual" id="cf_show_visual" value="1" <?= !empty($filters['show_visual']) ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="cf_show_visual">Visual</label>
+                    </div>
+                </div>
+                <div class="col-xl-2 col-lg-3 d-grid">
+                    <button type="submit" class="btn btn-primary">Tampilkan</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <div class="card cashflow-filter-card mb-4"><div class="card-body p-4">
-        <form method="get" action="<?= e(base_url('/cash-flow')) ?>" class="row g-3 align-items-end">
-            <div class="col-xl-4 col-lg-5"><label for="period_id" class="form-label">Periode Referensi</label><select name="period_id" id="period_id" class="form-select"><option value="">Opsional / bantu isi tanggal</option><?php foreach ($periods as $period): ?><option value="<?= e((string) $period['id']) ?>" <?= (string) ($filters['period_id'] ?? '') === (string) $period['id'] ? 'selected' : '' ?>><?= e($period['period_name'] . ' (' . $period['period_code'] . ')') ?></option><?php endforeach; ?></select></div>
-            <div class="col-xl-2 col-lg-3"><label for="fiscal_year" class="form-label">Tahun</label><select name="fiscal_year" id="fiscal_year" class="form-select"><option value="">Semua tahun</option><?php foreach (($reportYears ?? []) as $year): ?><option value="<?= e((string) $year) ?>" <?= (string) ($filters['fiscal_year'] ?? '') === (string) $year ? 'selected' : '' ?>><?= e((string) $year) ?></option><?php endforeach; ?></select></div>
-            <div class="col-xl-3 col-lg-4"><label for="unit_id" class="form-label">Unit Usaha</label><select name="unit_id" id="unit_id" class="form-select"><option value="">Semua Unit</option><?php foreach ($units as $unit): ?><option value="<?= e((string) $unit['id']) ?>" <?= (string) ($filters['unit_id'] ?? '') === (string) $unit['id'] ? 'selected' : '' ?>><?= e($unit['unit_code'] . ' - ' . $unit['unit_name']) ?></option><?php endforeach; ?></select></div>
-            <div class="col-xl-3 col-lg-4"><label for="date_from" class="form-label">Tanggal Mulai</label><input type="date" name="date_from" id="date_from" class="form-control" value="<?= e((string) ($filters['date_from'] ?? '')) ?>"></div>
-            <div class="col-xl-3 col-lg-4"><label for="date_to" class="form-label">Tanggal Akhir</label><input type="date" name="date_to" id="date_to" class="form-control" value="<?= e((string) ($filters['date_to'] ?? '')) ?>"></div>
-            <div class="col-xl-2 col-lg-4 d-grid"><button type="submit" class="btn btn-primary">Tampilkan</button></div>
-            <?php if (($filters['date_to'] ?? '') !== ''): ?>
-                <div class="col-xl-2 col-lg-4 d-grid"><a href="<?= e(base_url('/cash-flow/print?' . report_filters_query($filters))) ?>" target="_blank" class="btn btn-outline-secondary">Print</a></div>
-                <div class="col-xl-2 col-lg-4 d-grid"><a href="<?= e(base_url('/cash-flow/pdf?' . report_filters_query($filters))) ?>" target="_blank" class="btn btn-primary">Export PDF</a></div>
-            <?php endif; ?>
-        </form>
-    </div></div>
-
     <?php if (($filters['date_to'] ?? '') !== ''): ?>
         <?php foreach ((array) ($warnings ?? []) as $warning): ?>
-            <div class="alert alert-warning mb-3"><?= e((string) $warning) ?></div>
+            <div class="alert alert-warning mb-0"><?= e((string) $warning) ?></div>
         <?php endforeach; ?>
 
-        <div class="row g-3 mb-4">
-            <div class="col-xl-3 col-md-6"><div class="cashflow-summary-card"><div class="cashflow-summary-label">Saldo Kas Awal</div><div class="cashflow-summary-value"><?= e($currency((float) ($report['opening_cash'] ?? 0))) ?></div><div class="cashflow-summary-note">Kas / bank pada awal periode laporan</div></div></div>
-            <div class="col-xl-3 col-md-6"><div class="cashflow-summary-card"><div class="cashflow-summary-label">Kas Bersih Operasi</div><div class="cashflow-summary-value"><?= e($currency((float) ($report['total_operating'] ?? 0))) ?></div><div class="cashflow-summary-note">Dari aktivitas operasional</div></div></div>
-            <div class="col-xl-3 col-md-6"><div class="cashflow-summary-card"><div class="cashflow-summary-label">Kas Bersih Investasi</div><div class="cashflow-summary-value"><?= e($currency((float) ($report['total_investing'] ?? 0))) ?></div><div class="cashflow-summary-note">Dari aktivitas investasi</div></div></div>
-            <div class="col-xl-3 col-md-6"><div class="cashflow-summary-card"><div class="cashflow-summary-label">Kas Bersih Pendanaan</div><div class="cashflow-summary-value"><?= e($currency((float) ($report['total_financing'] ?? 0))) ?></div><div class="cashflow-summary-note">Dari aktivitas pendanaan</div></div></div>
-            <div class="col-xl-6 col-md-6"><div class="cashflow-summary-card"><div class="cashflow-summary-label">Kenaikan (Penurunan) Kas</div><div class="cashflow-summary-value"><?= e($currency((float) ($report['net_cash_change'] ?? 0))) ?></div><div class="cashflow-summary-note">Perubahan bersih kas dalam periode</div></div></div>
-            <div class="col-xl-6 col-md-6"><div class="cashflow-summary-card"><div class="cashflow-summary-label">Saldo Kas Akhir</div><div class="cashflow-summary-value"><?= e($currency((float) ($report['closing_cash'] ?? 0))) ?></div><div class="cashflow-summary-note">Saldo kas menurut laporan arus kas</div></div></div>
-        </div>
+        <section class="report-kpi-grid">
+            <article class="report-kpi-card">
+                <div class="report-kpi-card__label">Periode Aktif</div>
+                <div class="report-kpi-card__value report-kpi-card__value--sm"><?= e($periodLabel) ?></div>
+                <div class="report-kpi-card__meta">Unit: <?= e($selectedUnitDisplay) ?></div>
+            </article>
+            <article class="report-kpi-card">
+                <div class="report-kpi-card__label">Jumlah Mutasi</div>
+                <div class="report-kpi-card__value"><?= e(number_format((float) ($report['row_count'] ?? 0), 0, ',', '.')) ?></div>
+                <div class="report-kpi-card__meta">Baris jurnal kas yang terbaca</div>
+            </article>
+            <article class="report-kpi-card">
+                <div class="report-kpi-card__label">Perubahan Kas Bersih</div>
+                <div class="report-kpi-card__value"><?= e(ledger_currency((float) ($report['net_cash_change'] ?? 0))) ?></div>
+                <div class="report-kpi-card__meta">Perubahan kas dalam periode aktif</div>
+            </article>
+            <article class="report-kpi-card">
+                <div class="report-kpi-card__label">Kas Akhir</div>
+                <div class="report-kpi-card__value"><?= e(ledger_currency((float) ($report['closing_cash'] ?? 0))) ?></div>
+                <div class="report-kpi-card__meta">Saldo akhir menurut laporan arus kas</div>
+            </article>
+        </section>
 
-        <?php foreach ($sectionCodes as $sectionCode): $sectionData = $sections[$sectionCode]; ?>
-            <section class="cashflow-section-card mb-4">
-                <div class="cashflow-section-head">
-                    <h2 class="cashflow-section-title"><?= e((string) ($sectionData['title'] ?? ('Arus Kas dari ' . ($sectionOrder[$sectionCode] ?? $sectionCode)))) ?></h2>
+        <section class="card shadow-sm report-table-card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 report-analytics-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Komponen</th>
+                                <th class="text-end">Aktual</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php $metricNo = 1; ?>
+                            <?php foreach ($currentMetrics as $metricKey => $metric): ?>
+                                <tr>
+                                    <td><?= $metricNo++ ?></td>
+                                    <td>
+                                        <div class="fw-semibold"><?= e((string) $metric['label']) ?></div>
+                                        <div class="text-secondary small"><?= e((string) $metric['desc']) ?></div>
+                                    </td>
+                                    <td class="text-end fw-semibold">
+                                        <a href="<?= e(report_drilldown_url(null, $filters, 'cash_flow')) ?>" class="report-value-link"><?= e(ledger_currency((float) ($report[$metricKey] ?? 0))) ?></a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="cashflow-section-grid">
-                    <div class="cashflow-flow-card">
-                        <div class="cashflow-flow-head">Arus Kas Masuk</div>
-                        <?php if (($sectionData['in_rows'] ?? []) === []): ?>
-                            <div class="cashflow-flow-empty">Tidak ada penerimaan kas pada bagian ini.</div>
-                        <?php else: ?>
-                            <table class="cashflow-flow-table">
-                                <tbody>
-                                <?php foreach ((array) $sectionData['in_rows'] as $row): ?>
-                                    <tr>
-                                        <td><?= e((string) ($row['label'] ?? '-')) ?></td>
-                                        <td><?= e($currency((float) ($row['amount'] ?? 0))) ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                                <tr class="cashflow-total-row"><td>Jumlah arus kas masuk</td><td><?= e($currency((float) ($sectionData['total_in'] ?? 0))) ?></td></tr>
-                                </tbody>
-                            </table>
-                        <?php endif; ?>
+            </div>
+        </section>
+
+        <?php if (!empty($filters['show_visual'])): ?>
+            <section class="card shadow-sm report-chart-card">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between flex-wrap gap-3 mb-4">
+                        <div>
+                            <div class="module-hero__eyebrow mb-2">Visual Ringkas</div>
+                            <h2 class="h4 mb-1">Struktur Arus Kas</h2>
+                            <p class="text-secondary mb-0">Visual batang sederhana tetap dipertahankan agar pola kas masuk dan keluar cepat terbaca.</p>
+                        </div>
                     </div>
-                    <div class="cashflow-flow-card">
-                        <div class="cashflow-flow-head">Arus Kas Keluar</div>
-                        <?php if (($sectionData['out_rows'] ?? []) === []): ?>
-                            <div class="cashflow-flow-empty">Tidak ada pengeluaran kas pada bagian ini.</div>
-                        <?php else: ?>
-                            <table class="cashflow-flow-table">
-                                <tbody>
-                                <?php foreach ((array) $sectionData['out_rows'] as $row): ?>
-                                    <tr>
-                                        <td><?= e((string) ($row['label'] ?? '-')) ?></td>
-                                        <td><?= e($currency((float) ($row['amount'] ?? 0))) ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                                <tr class="cashflow-total-row"><td>Jumlah arus kas keluar</td><td><?= e($currency((float) ($sectionData['total_out'] ?? 0))) ?></td></tr>
-                                </tbody>
-                            </table>
-                        <?php endif; ?>
+                    <div class="report-mini-chart report-mini-chart--bars">
+                        <?php foreach (['total_operating' => 'Operasi', 'total_investing' => 'Investasi', 'total_financing' => 'Pendanaan', 'net_cash_change' => 'Kas Bersih'] as $metricKey => $metricLabel): ?>
+                            <?php
+                            $currentAmount = (float) ($report[$metricKey] ?? 0);
+                            $currentWidth = min(100, max(8, (abs($currentAmount) / $visualBase) * 100));
+                            ?>
+                            <div class="report-bar-group">
+                                <div class="report-bar-group__label"><?= e($metricLabel) ?></div>
+                                <div class="report-bar-group__row">
+                                    <span class="report-bar-group__legend report-bar-group__legend--income">Aktual</span>
+                                    <div class="report-bar-group__track">
+                                        <span class="report-bar-group__bar <?= $currentAmount >= 0 ? 'report-bar-group__bar--income' : 'report-bar-group__bar--expense' ?>" style="width: <?= e((string) round($currentWidth, 2)) ?>%"></span>
+                                    </div>
+                                    <span class="report-bar-group__value"><?= e(ledger_currency($currentAmount)) ?></span>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
-                <div class="cashflow-net-row">
-                    <span class="cashflow-net-label"><?= e((string) ($sectionData['net_label'] ?? 'Arus kas bersih')) ?></span>
-                    <span><?= e($currency((float) ($sectionData['net'] ?? 0))) ?></span>
+            </section>
+        <?php endif; ?>
+
+        <?php foreach (['OPERATING', 'INVESTING', 'FINANCING'] as $sectionCode): ?>
+            <?php
+            $rows = match ($sectionCode) {
+                'OPERATING' => (array) ($report['operating_rows'] ?? []),
+                'INVESTING' => (array) ($report['investing_rows'] ?? []),
+                default => (array) ($report['financing_rows'] ?? []),
+            };
+            $sectionTotal = match ($sectionCode) {
+                'OPERATING' => (float) ($report['total_operating'] ?? 0),
+                'INVESTING' => (float) ($report['total_investing'] ?? 0),
+                default => (float) ($report['total_financing'] ?? 0),
+            };
+            ?>
+            <section class="card shadow-sm report-table-card">
+                <div class="card-body p-0">
+                    <div class="report-table-head">
+                        <div>
+                            <div class="module-hero__eyebrow mb-2"><?= e($sectionCode) ?></div>
+                            <h2 class="h4 mb-1">Arus Kas dari <?= e($sectionOrder[$sectionCode]) ?></h2>
+                            <p class="text-secondary mb-0">Daftar transaksi kas yang diklasifikasikan ke bagian ini.</p>
+                        </div>
+                        <div class="report-table-head__meta">
+                            <div class="report-table-head__stat">
+                                <span>Total Aktual</span>
+                                <strong><?= e(ledger_currency($sectionTotal)) ?></strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0 report-analytics-table">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>No. Jurnal</th>
+                                    <th>Uraian</th>
+                                    <th>Unit</th>
+                                    <th class="text-end">Kas Masuk</th>
+                                    <th class="text-end">Kas Keluar</th>
+                                    <th class="text-end">Neto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($rows === []): ?>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-secondary py-4">Belum ada mutasi kas pada bagian ini untuk filter yang dipilih.</td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($rows as $row): ?>
+                                        <tr>
+                                            <td><?= e(format_id_date((string) ($row['journal_date'] ?? ''))) ?></td>
+                                            <td><?= e((string) ($row['journal_no'] ?? '-')) ?></td>
+                                            <td>
+                                                <div class="fw-semibold"><?= e((string) ($row['label'] ?? $row['description'] ?? '-')) ?></div>
+                                                <?php if (trim((string) ($row['classification_note'] ?? '')) !== ''): ?>
+                                                    <div class="text-secondary small"><?= e((string) $row['classification_note']) ?></div>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td><?= e((string) ($row['unit_label'] ?? '-')) ?></td>
+                                            <td class="text-end"><?= e(ledger_currency((float) ($row['cash_in'] ?? 0))) ?></td>
+                                            <td class="text-end"><?= e(ledger_currency((float) ($row['cash_out'] ?? 0))) ?></td>
+                                            <td class="text-end fw-semibold report-direction report-direction--<?= ((float) ($row['net_amount'] ?? 0)) >= 0 ? 'up' : 'down' ?>"><?= e(ledger_currency((float) ($row['net_amount'] ?? 0))) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
         <?php endforeach; ?>
 
-        <div class="card cashflow-recon-card mb-4"><div class="card-body p-4">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
-                <div>
-                    <h2 class="h5 mb-1">Rekonsiliasi Kas</h2>
-                    <div class="text-secondary small">Disusun agar saldo akhir laporan arus kas selaras dengan saldo kas / bank riil.</div>
+        <?php $difference = (float) ($report['difference'] ?? 0); ?>
+        <section class="card shadow-sm report-table-card">
+            <div class="card-body p-0">
+                <div class="report-table-head">
+                    <div>
+                        <div class="module-hero__eyebrow mb-2">Rekonsiliasi</div>
+                        <h2 class="h4 mb-1">Sinkronisasi Saldo Kas</h2>
+                        <p class="text-secondary mb-0">Memastikan saldo akhir laporan arus kas sama dengan saldo kas atau bank yang terbaca sistem.</p>
+                    </div>
+                    <span class="report-status-badge <?= abs($difference) < 0.005 ? 'report-status-badge--ok' : 'report-status-badge--warn' ?>">
+                        <?= abs($difference) < 0.005 ? 'Sinkron' : 'Perlu Tinjau' ?>
+                    </span>
                 </div>
-                <span class="cashflow-recon-badge <?= abs($difference) < 0.005 ? 'ok' : 'warn' ?>"><?= abs($difference) < 0.005 ? 'Sinkron' : 'Perlu ditinjau' ?></span>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 report-analytics-table">
+                        <tbody>
+                            <tr><td>Saldo kas awal</td><td class="text-end fw-semibold"><?= e(ledger_currency((float) ($report['opening_cash'] ?? 0))) ?></td></tr>
+                            <tr><td>Kenaikan atau penurunan kas</td><td class="text-end fw-semibold"><?= e(ledger_currency((float) ($report['net_cash_change'] ?? 0))) ?></td></tr>
+                            <tr><td>Saldo kas akhir menurut arus kas</td><td class="text-end fw-semibold"><?= e(ledger_currency((float) ($report['closing_cash'] ?? 0))) ?></td></tr>
+                            <tr><td>Saldo kas atau bank riil</td><td class="text-end fw-semibold"><?= e(ledger_currency((float) ($report['actual_closing_cash'] ?? $report['closing_cash'] ?? 0))) ?></td></tr>
+                            <tr>
+                                <td>Selisih rekonsiliasi</td>
+                                <td class="text-end fw-semibold report-direction report-direction--<?= abs($difference) < 0.005 ? 'stable' : 'down' ?>"><?= e(ledger_currency($difference)) ?></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <table class="cashflow-recon-table">
-                <tbody>
-                    <tr><th>Saldo kas awal</th><td><?= e($currency((float) ($report['opening_cash'] ?? 0))) ?></td></tr>
-                    <tr><th>Kenaikan (penurunan) kas</th><td><?= e($currency((float) ($report['net_cash_change'] ?? 0))) ?></td></tr>
-                    <tr><th>Saldo kas akhir menurut arus kas</th><td><?= e($currency((float) ($report['closing_cash'] ?? 0))) ?></td></tr>
-                    <tr><th>Saldo kas / bank riil</th><td><?= e($currency($actualClosing)) ?></td></tr>
-                    <tr><th>Selisih rekonsiliasi</th><td class="<?= abs($difference) < 0.005 ? 'text-success' : 'text-danger' ?>"><?= e($currency($difference)) ?></td></tr>
-                </tbody>
-            </table>
-        </div></div>
+        </section>
     <?php else: ?>
-        <div class="cashflow-empty-state">
-            Pilih tanggal mulai dan tanggal akhir, lalu klik <strong>Tampilkan</strong> untuk melihat laporan arus kas.
-        </div>
+        <section class="empty-state-panel">
+            <div class="empty-state-panel__title">Belum ada laporan arus kas yang ditampilkan</div>
+            <div class="empty-state-panel__text">Pilih periode atau rentang tanggal lalu klik <strong>Tampilkan</strong> untuk melihat arus kas operasi, investasi, dan pendanaan.</div>
+        </section>
     <?php endif; ?>
 </div>

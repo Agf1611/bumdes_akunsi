@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 final class AuditLogModel
 {
+    private const MAX_ACTIVITY_ROWS = 100;
+
     public function __construct(private PDO $db)
     {
     }
@@ -38,7 +40,7 @@ final class AuditLogModel
             $params[':date_to'] = (string) $filters['date_to'];
         }
 
-        $sql .= ' ORDER BY created_at DESC, id DESC LIMIT 500';
+        $sql .= ' ORDER BY created_at DESC, id DESC LIMIT ' . self::MAX_ACTIVITY_ROWS;
         $stmt = $this->db->prepare($sql);
         foreach ($params as $key => $value) {
             $stmt->bindValue($key, $value, PDO::PARAM_STR);
@@ -83,5 +85,10 @@ final class AuditLogModel
         }
 
         return $summary;
+    }
+
+    public function maxRows(): int
+    {
+        return self::MAX_ACTIVITY_ROWS;
     }
 }

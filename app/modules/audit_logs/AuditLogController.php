@@ -41,6 +41,7 @@ final class AuditLogController extends Controller
                 'moduleOptions' => $this->model()->getModuleOptions(),
                 'actionOptions' => $this->model()->getActionOptions(),
                 'summary' => $this->model()->getSummary($filters),
+                'maxRows' => $this->model()->maxRows(),
             ]);
         } catch (Throwable $e) {
             log_error($e);

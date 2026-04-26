@@ -93,6 +93,53 @@ final class LedgerController extends Controller
         }
     }
 
+    public function xlsx(): void
+    {
+        try {
+            [$viewData, $selectedPeriod, $selectedUnit] = $this->buildReportData();
+            if (($viewData['errors'] ?? []) !== []) {
+                flash('error', implode(' ', (array) $viewData['errors']));
+                $this->redirect('/ledger');
+            }
+            if (!$viewData['selectedAccount']) {
+                flash('error', 'Silakan pilih akun terlebih dahulu untuk export buku besar.');
+                $this->redirect('/ledger');
+            }
+
+            $rows = [];
+            foreach ($viewData['rows'] as $row) {
+                $rows[] = [
+                    format_id_date((string) $row['journal_date']),
+                    (string) $row['journal_no'],
+                    (string) ($row['unit_label'] ?? '-'),
+                    (string) $row['description'],
+                    ledger_currency((float) $row['debit']),
+                    ledger_currency((float) $row['credit']),
+                    ledger_currency((float) $row['balance']),
+                ];
+            }
+            $rows[] = ['', '', '', 'Total Mutasi', ledger_currency((float) $viewData['summary']['total_debit']), ledger_currency((float) $viewData['summary']['total_credit']), ledger_currency((float) $viewData['summary']['closing_balance'])];
+
+            report_download_xlsx(
+                'ledger_' . date('Ymd_His') . '.xlsx',
+                'Buku Besar',
+                'Buku Besar',
+                $viewData['filters'],
+                ['Tanggal', 'No. Jurnal', 'Unit', 'Keterangan', 'Debit', 'Kredit', 'Saldo'],
+                $rows,
+                [
+                    'Akun' => (string) ($viewData['selectedAccount']['account_code'] ?? '') . ' - ' . (string) ($viewData['selectedAccount']['account_name'] ?? ''),
+                    'Saldo Awal' => ledger_currency((float) $viewData['summary']['opening_balance']),
+                    'Saldo Akhir' => ledger_currency((float) $viewData['summary']['closing_balance']),
+                ]
+            );
+        } catch (Throwable $e) {
+            log_error($e);
+            flash('error', 'Export XLSX buku besar belum dapat diproses.');
+            $this->redirect('/ledger');
+        }
+    }
+
     private function buildReportData(): array
     {
         $filters = [

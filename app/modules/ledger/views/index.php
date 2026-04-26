@@ -18,6 +18,7 @@
         <div class="d-flex flex-wrap gap-2">
             <a href="<?= e(base_url('/ledger/print?' . report_filters_query($filters))) ?>" target="_blank" class="btn btn-outline-primary">Cetak</a>
             <a href="<?= e(base_url('/ledger/pdf?' . report_filters_query($filters))) ?>" target="_blank" class="btn btn-primary">Export PDF</a>
+            <a href="<?= e(base_url('/ledger/xlsx?' . report_filters_query($filters))) ?>" class="btn btn-outline-light">Export XLSX</a>
         </div>
     <?php endif; ?>
 </div>

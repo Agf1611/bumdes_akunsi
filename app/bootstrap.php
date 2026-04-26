@@ -70,6 +70,7 @@ require APP_PATH . '/helpers/financial_notes_helper.php';
 require APP_PATH . '/helpers/lpj_package_helper.php';
 require APP_PATH . '/helpers/cash_flow_helper.php';
 require APP_PATH . '/helpers/report_pdf_helper.php';
+require APP_PATH . '/helpers/report_analytics_helper.php';
 require APP_PATH . '/helpers/equity_changes_helper.php';
 require APP_PATH . '/helpers/coa_helper.php';
 require APP_PATH . '/helpers/journal_helper.php';

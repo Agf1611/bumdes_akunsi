@@ -36,6 +36,11 @@ final class JournalModel
         ];
     }
 
+    public function supportsWorkflow(): bool
+    {
+        return $this->hasWorkflowStatusColumn();
+    }
+
     public function getList(array $filters = [], ?array $pagination = null): array
     {
         [$sql, $params] = $this->buildListSql($filters, false, $pagination);
@@ -700,6 +705,169 @@ final class JournalModel
         }
     }
 
+    public function applyWorkflowAction(int $id, string $action, int $userId, string $reason = ''): array
+    {
+        if (!$this->supportsWorkflow()) {
+            throw new RuntimeException('Kolom workflow jurnal belum tersedia. Jalankan migration jurnal workflow terlebih dahulu.');
+        }
+
+        $header = $this->findHeaderById($id);
+        if (!$header) {
+            throw new RuntimeException('Jurnal tidak ditemukan.');
+        }
+
+        $currentStatus = strtoupper((string) ($header['workflow_status'] ?? 'POSTED'));
+        $action = strtolower(trim($action));
+        $nextStatus = match ($action) {
+            'submit' => 'SUBMITTED',
+            'approve' => 'APPROVED',
+            'post' => 'POSTED',
+            'void' => 'VOIDED',
+            default => '',
+        };
+
+        if ($nextStatus === '') {
+            throw new RuntimeException('Aksi workflow tidak valid.');
+        }
+        if (!$this->isWorkflowTransitionAllowed($currentStatus, $action)) {
+            throw new RuntimeException('Aksi workflow tidak sesuai dengan status jurnal saat ini.');
+        }
+        if ($action === 'void' && trim($reason) === '') {
+            throw new RuntimeException('Alasan void wajib diisi.');
+        }
+
+        $sets = ['workflow_status = :status', 'workflow_reason = :reason', 'updated_by = :user_id', 'updated_at = NOW()'];
+        if ($action === 'submit') {
+            $sets[] = 'submitted_at = NOW()';
+            $sets[] = 'submitted_by = :user_id';
+        } elseif ($action === 'approve') {
+            $sets[] = 'approved_at = NOW()';
+            $sets[] = 'approved_by = :user_id';
+        } elseif ($action === 'post') {
+            $sets[] = 'posted_at = NOW()';
+            $sets[] = 'posted_by = :user_id';
+        } elseif ($action === 'void') {
+            $sets[] = 'voided_at = NOW()';
+            $sets[] = 'voided_by = :user_id';
+        }
+
+        $stmt = $this->db->prepare('UPDATE journal_headers SET ' . implode(', ', $sets) . ' WHERE id = :id');
+        $stmt->bindValue(':status', $nextStatus, PDO::PARAM_STR);
+        $stmt->bindValue(':reason', trim($reason), PDO::PARAM_STR);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return [
+            'before_status' => $currentStatus,
+            'after_status' => $nextStatus,
+            'journal_id' => $id,
+        ];
+    }
+
+    public function createReversal(int $sourceId, int $userId, string $reason): int
+    {
+        if (!$this->supportsWorkflow()) {
+            throw new RuntimeException('Kolom workflow jurnal belum tersedia. Jalankan migration jurnal workflow terlebih dahulu.');
+        }
+        $reason = trim($reason);
+        if ($reason === '') {
+            throw new RuntimeException('Alasan reversal wajib diisi.');
+        }
+
+        $source = $this->findHeaderById($sourceId);
+        if (!$source) {
+            throw new RuntimeException('Jurnal sumber tidak ditemukan.');
+        }
+        if (strtoupper((string) ($source['workflow_status'] ?? 'POSTED')) !== 'POSTED') {
+            throw new RuntimeException('Hanya jurnal POSTED yang dapat dibuat reversal.');
+        }
+
+        $sourceLines = $this->getDetailsByJournalId($sourceId);
+        if ($sourceLines === []) {
+            throw new RuntimeException('Jurnal sumber tidak memiliki detail baris.');
+        }
+
+        $header = [
+            'journal_date' => (string) $source['journal_date'],
+            'description' => 'Reversal ' . (string) $source['journal_no'] . ' - ' . mb_substr($reason, 0, 180),
+            'period_id' => (int) $source['period_id'],
+            'business_unit_id' => !empty($source['business_unit_id']) ? (int) $source['business_unit_id'] : null,
+            'print_template' => 'standard',
+            'total_debit' => (float) $source['total_credit'],
+            'total_credit' => (float) $source['total_debit'],
+            'created_by' => $userId,
+            'updated_by' => $userId,
+        ];
+        $lines = [];
+        foreach ($sourceLines as $line) {
+            $lines[] = [
+                'coa_id' => (int) $line['coa_id'],
+                'line_description' => 'Reversal: ' . (string) ($line['line_description'] ?? $source['journal_no']),
+                'debit' => (float) $line['credit'],
+                'credit' => (float) $line['debit'],
+                'partner_id' => $line['partner_id'] ?? null,
+                'inventory_item_id' => $line['inventory_item_id'] ?? null,
+                'raw_material_id' => $line['raw_material_id'] ?? null,
+                'asset_id' => $line['asset_id'] ?? null,
+                'saving_account_id' => $line['saving_account_id'] ?? null,
+                'cashflow_component_id' => $line['cashflow_component_id'] ?? null,
+                'entry_tag' => (string) ($line['entry_tag'] ?? 'reversal'),
+            ];
+        }
+
+        $ownTransaction = !$this->db->inTransaction();
+        if ($ownTransaction) {
+            $this->db->beginTransaction();
+        }
+
+        try {
+            $reversalId = $this->create($header, $lines, null);
+            $stmt = $this->db->prepare(
+                "UPDATE journal_headers
+                 SET workflow_status = 'REVERSED',
+                     workflow_reason = :reason,
+                     reversed_at = NOW(),
+                     reversed_by = :user_id,
+                     reversal_journal_id = :reversal_id,
+                     updated_by = :user_id,
+                     updated_at = NOW()
+                 WHERE id = :source_id"
+            );
+            $stmt->execute([
+                ':reason' => $reason,
+                ':user_id' => $userId,
+                ':reversal_id' => $reversalId,
+                ':source_id' => $sourceId,
+            ]);
+
+            $markReversal = $this->db->prepare(
+                'UPDATE journal_headers
+                 SET workflow_reason = :reason,
+                     reversed_from_journal_id = :source_id,
+                     updated_by = :user_id,
+                     updated_at = NOW()
+                 WHERE id = :reversal_id'
+            );
+            $markReversal->execute([
+                ':reason' => $reason,
+                ':source_id' => $sourceId,
+                ':user_id' => $userId,
+                ':reversal_id' => $reversalId,
+            ]);
+
+            if ($ownTransaction && $this->db->inTransaction()) {
+                $this->db->commit();
+            }
+            return $reversalId;
+        } catch (Throwable $e) {
+            if ($ownTransaction && $this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
     private function performUpdate(int $id, string $journalNo, array $header): void
     {
         if ($this->hasPrintTemplateColumn()) {
@@ -929,6 +1097,17 @@ final class JournalModel
 
         $this->hasWorkflowStatusColumn = $this->columnExists('journal_headers', 'workflow_status');
         return $this->hasWorkflowStatusColumn;
+    }
+
+    private function isWorkflowTransitionAllowed(string $currentStatus, string $action): bool
+    {
+        return match ($currentStatus) {
+            'DRAFT' => in_array($action, ['submit', 'post'], true),
+            'SUBMITTED' => in_array($action, ['approve', 'post'], true),
+            'APPROVED' => $action === 'post',
+            'POSTED' => $action === 'void',
+            default => false,
+        };
     }
 
 

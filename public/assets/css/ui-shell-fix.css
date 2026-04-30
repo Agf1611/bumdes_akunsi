@@ -105,9 +105,27 @@ body.app-shell .brand-mark__image {
         overflow: hidden;
     }
 
+    body.app-shell:not(.sidebar-open) {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.app-shell .app-frame {
+        height: auto !important;
+        min-height: 100vh;
+        min-height: 100dvh;
+        overflow: visible !important;
+    }
+
     body.app-shell .app-main {
         margin-left: 0 !important;
-        height: 100vh;
+        height: auto !important;
+        min-height: 100vh;
+        min-height: 100dvh;
+        overflow: visible !important;
+        overscroll-behavior: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     body.app-shell .app-sidebar {

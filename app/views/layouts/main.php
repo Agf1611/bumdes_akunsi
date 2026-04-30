@@ -120,7 +120,16 @@ $isMobileNavActive = static function (array $needles) use ($currentPath): string
             return;
         }
 
+        event.preventDefault();
+
+        var sidebarToggle = document.getElementById('sidebarToggle');
+        if (sidebarToggle) {
+            sidebarToggle.click();
+            return;
+        }
+
         document.body.classList.add('sidebar-open');
+        document.body.style.overflow = 'hidden';
     });
 </script>
 </body>

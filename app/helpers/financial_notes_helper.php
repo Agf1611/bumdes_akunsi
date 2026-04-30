@@ -60,11 +60,20 @@ function financial_notes_profile_legal(array $profile): string
 function financial_notes_policy_points(): array
 {
     return [
-        'Laporan disusun menggunakan dasar akrual sederhana berdasarkan transaksi yang tercatat pada aplikasi.',
-        'Kas dan bank diakui sebesar saldo nominal yang tersedia pada akhir periode.',
-        'Aset, liabilitas, pendapatan, dan beban disajikan berdasarkan saldo akun pada Chart of Accounts yang aktif.',
-        'Penyajian Catatan atas Laporan Keuangan ini dimaksudkan sebagai penjelasan tambahan atas laporan laba rugi, perubahan ekuitas, neraca, dan arus kas.',
+        'Laporan keuangan disusun dengan dasar akrual untuk laporan posisi keuangan, laba rugi, dan perubahan ekuitas; laporan arus kas disajikan berdasarkan arus kas masuk dan keluar.',
+        'Mata uang pelaporan adalah Rupiah penuh. Nilai disajikan berdasarkan saldo akun dan jurnal yang tercatat di aplikasi sampai tanggal laporan.',
+        'Aset dan kewajiban/liabilitas disajikan menurut klasifikasi lancar dan tidak lancar sepanjang data akun mendukung pemisahan tersebut.',
+        'Pendapatan diakui pada saat hak atas pendapatan timbul dan beban diakui pada periode terjadinya sesuai pembukuan BUM Desa.',
+        'Catatan atas Laporan Keuangan ini menjadi bagian tidak terpisahkan dari Laporan Laba Rugi, Laporan Perubahan Ekuitas, Laporan Posisi Keuangan, dan Laporan Arus Kas.',
     ];
+}
+
+function financial_notes_kepmendes_statement(array $profile): string
+{
+    $name = trim((string) ($profile['bumdes_name'] ?? 'BUM Desa'));
+    $name = $name !== '' ? $name : 'BUM Desa';
+
+    return 'Manajemen ' . $name . ' menyatakan bahwa laporan keuangan disusun dengan mengacu pada KepmenDesa PDTT Nomor 136 Tahun 2022 tentang Panduan Penyusunan Laporan Keuangan BUM Desa.';
 }
 
 function financial_notes_net_result_label(float $netIncome): string

@@ -337,12 +337,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                 <div class="col-lg-3">
                     <label class="form-label">Periode</label>
                     <select name="period_id" class="form-select">
-                        <option value="">Semua Periode</option>
-                        <?php foreach (($periods ?? []) as $period): ?>
-                            <option value="<?= e((string) $period['id']) ?>" <?= (string) ($filters['period_id'] ?? '') === (string) $period['id'] ? 'selected' : '' ?>>
-                                <?= e($period['period_name'] . ' (' . $period['period_code'] . ')') ?>
-                            </option>
-                        <?php endforeach; ?>
+                        <?= report_period_select_options($periods ?? [], (int) ($filters['period_id'] ?? 0), 'Semua periode') ?>
                     </select>
                 </div>
                 <div class="col-lg-3">

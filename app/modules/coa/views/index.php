@@ -34,7 +34,7 @@
                 <div class="text-secondary small mb-2">Filter Tipe</div>
                 <div class="fs-5 fw-semibold"><?= e($filters['type'] !== '' ? coa_type_label($filters['type']) : 'Semua Tipe') ?></div>
                 <div class="text-secondary small mt-2">Gunakan filter untuk memeriksa struktur akun per tipe.</div>
-                <div class="text-secondary small mt-1">Paket COA global siap dimuat: <strong><?= e((string) ($globalCoaCount ?? 0)) ?></strong> akun umum BUMDes.</div>
+                <div class="text-secondary small mt-1">Paket COA standar siap dimuat: <strong><?= e((string) ($globalCoaCount ?? 0)) ?></strong> akun BUMDes.</div>
             </div>
         </div>
     </div>
@@ -69,9 +69,9 @@
                 <a href="<?= e(base_url('/imports/template?type=coa')) ?>" class="btn btn-outline-light">Unduh Template COA</a>
                 <a href="<?= e(base_url('/coa/export?' . http_build_query($filters))) ?>" class="btn btn-outline-info">Export COA</a>
                 <?php if (Auth::hasRole('admin')): ?>
-                    <form method="post" action="<?= e(base_url('/coa/seed-global')) ?>" class="d-inline" onsubmit="return confirm('Tambahkan paket COA global BUMDes yang umum dipakai? Akun yang sudah ada tidak akan ditimpa.');">
+                    <form method="post" action="<?= e(base_url('/coa/seed-global')) ?>" class="d-inline" onsubmit="return confirm('Tambahkan paket COA standar KepmenDesa 136/2022? Akun yang sudah ada tidak akan ditimpa.');">
                         <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
-                        <button type="submit" class="btn btn-outline-success">Tambahkan COA Global BUMDes</button>
+                        <button type="submit" class="btn btn-outline-success">Tambahkan COA KepmenDesa 136</button>
                     </form>
                 <?php endif; ?>
             </div>
@@ -95,8 +95,8 @@
         <?php endif; ?>
 
         <div class="alert alert-info border-0 mb-3">
-            <div class="fw-semibold mb-1">COA Global BUMDes</div>
-            <div class="small">Tombol <strong>Tambahkan COA Global BUMDes</strong> akan mengisi akun umum yang sering dipakai lintas unit usaha, seperti kas, bank, piutang, persediaan, utang, modal, pendapatan, dan beban operasional. Akun yang sudah ada berdasarkan kode akun yang sama tidak akan ditimpa.</div>
+            <div class="fw-semibold mb-1">COA Standar KepmenDesa PDTT 136/2022</div>
+            <div class="small">Tombol <strong>Tambahkan COA KepmenDesa 136</strong> akan mengisi bagan akun BUM Desa sesuai struktur dokumen: aset, kewajiban, ekuitas, pendapatan usaha, harga pokok, beban usaha, serta pendapatan dan beban lain-lain. Akun yang sudah ada berdasarkan kode akun yang sama tidak akan ditimpa.</div>
         </div>
 
         <?php if (Auth::hasRole('admin')): ?>

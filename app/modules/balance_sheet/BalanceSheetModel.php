@@ -77,17 +77,20 @@ final class BalanceSheetModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getOpeningSnapshotRows(string $openingDate, int $unitId = 0): array
+    public function getOpeningSnapshotRows(string $dateTo, int $unitId = 0): array
     {
-        $rows = $this->fetchOpeningSnapshotRows($openingDate, $unitId, true);
+        $year = substr($dateTo, 0, 4);
+        $openingStart = preg_match('/^\d{4}$/', $year) === 1 ? $year . '-01-01' : $dateTo;
+
+        $rows = $this->fetchOpeningSnapshotRows($openingStart, $dateTo, $unitId, true);
         if ($rows === [] && $unitId > 0) {
-            $rows = $this->fetchOpeningSnapshotRows($openingDate, 0, true);
+            $rows = $this->fetchOpeningSnapshotRows($openingStart, $dateTo, 0, true);
         }
 
         return $rows;
     }
 
-    private function fetchOpeningSnapshotRows(string $openingDate, int $unitId = 0, bool $useSignals = true): array
+    private function fetchOpeningSnapshotRows(string $dateFrom, string $dateTo, int $unitId = 0, bool $useSignals = true): array
     {
         $entryTagExists = $this->hasJournalEntryTagColumn();
 
@@ -105,7 +108,8 @@ final class BalanceSheetModel
                 WHERE a.is_active = 1
                   AND a.is_header = 0
                   AND a.account_type IN ('ASSET', 'LIABILITY', 'EQUITY')
-                  AND h.journal_date = :opening_date";
+                  AND h.journal_date >= :date_from
+                  AND h.journal_date <= :date_to";
 
         if ($unitId > 0) {
             $sql .= ' AND h.business_unit_id = :unit_id';
@@ -113,9 +117,9 @@ final class BalanceSheetModel
 
         if ($useSignals) {
             if ($entryTagExists) {
-                $sql .= " AND (l.entry_tag = 'SALDO_AWAL' OR h.description LIKE :desc_like OR l.line_description LIKE :line_like)";
+                $sql .= " AND (l.entry_tag = 'SALDO_AWAL' OR h.description LIKE :desc_like OR h.description LIKE :desc_tag_like OR l.line_description LIKE :line_like OR l.line_description LIKE :line_tag_like)";
             } else {
-                $sql .= " AND (h.description LIKE :desc_like OR l.line_description LIKE :line_like)";
+                $sql .= " AND (h.description LIKE :desc_like OR h.description LIKE :desc_tag_like OR l.line_description LIKE :line_like OR l.line_description LIKE :line_tag_like)";
             }
         }
 
@@ -124,13 +128,16 @@ final class BalanceSheetModel
                   ORDER BY FIELD(a.account_type, 'ASSET', 'LIABILITY', 'EQUITY'), a.account_code ASC, a.id ASC";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':opening_date', $openingDate, PDO::PARAM_STR);
+        $stmt->bindValue(':date_from', $dateFrom, PDO::PARAM_STR);
+        $stmt->bindValue(':date_to', $dateTo, PDO::PARAM_STR);
         if ($unitId > 0) {
             $stmt->bindValue(':unit_id', $unitId, PDO::PARAM_INT);
         }
         if ($useSignals) {
             $stmt->bindValue(':desc_like', '%saldo awal%', PDO::PARAM_STR);
-            $stmt->bindValue(':line_like', '%SALDO_AWAL%', PDO::PARAM_STR);
+            $stmt->bindValue(':desc_tag_like', '%SALDO_AWAL%', PDO::PARAM_STR);
+            $stmt->bindValue(':line_like', '%saldo awal%', PDO::PARAM_STR);
+            $stmt->bindValue(':line_tag_like', '%SALDO_AWAL%', PDO::PARAM_STR);
         }
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

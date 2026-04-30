@@ -13,15 +13,17 @@
     <div class="card-body p-4">
         <form method="get" action="<?= e(base_url('/reports/drilldown')) ?>" class="row g-3 align-items-end">
             <input type="hidden" name="source_report" value="<?= e((string) ($filters['source_report'] ?? 'laporan')) ?>">
-            <div class="col-lg-3">
-                <label class="form-label">Periode</label>
+            <input type="hidden" name="filter_scope" value="<?= e(report_filter_scope($filters)) ?>">
+            <div class="col-lg-2">
+                <label class="form-label">Periode Awal</label>
                 <select name="period_id" class="form-select">
-                    <option value="">Semua Periode</option>
-                    <?php foreach (($periods ?? []) as $period): ?>
-                        <option value="<?= e((string) $period['id']) ?>" <?= (string) ($filters['period_id'] ?? '') === (string) $period['id'] ? 'selected' : '' ?>>
-                            <?= e((string) $period['period_name']) ?>
-                        </option>
-                    <?php endforeach; ?>
+                    <?= report_period_select_options($periods ?? [], (int) ($filters['period_id'] ?? 0), 'Manual tanggal') ?>
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label">Sampai Periode</label>
+                <select name="period_to_id" class="form-select">
+                    <?= report_period_select_options($periods ?? [], (int) ($filters['period_to_id'] ?? 0), 'Sama dengan periode awal') ?>
                 </select>
             </div>
             <div class="col-lg-3">

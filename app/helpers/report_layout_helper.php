@@ -6,6 +6,8 @@ function report_filters_query(array $filters, array $extra = []): string
 {
     $query = array_merge([
         'period_id' => $filters['period_id'] ?? '',
+        'period_to_id' => $filters['period_to_id'] ?? '',
+        'filter_scope' => $filters['filter_scope'] ?? '',
         'date_from' => $filters['date_from'] ?? '',
         'date_to' => $filters['date_to'] ?? '',
         'unit_id' => $filters['unit_id'] ?? '',
@@ -21,6 +23,94 @@ function report_filters_query(array $filters, array $extra = []): string
 
     $query = array_filter($query, static fn ($value): bool => $value !== null && $value !== '' && $value !== 0 && $value !== '0');
     return http_build_query($query);
+}
+
+function report_normalize_filter_scope(string $scope): string
+{
+    $scope = trim($scope);
+    return in_array($scope, ['period', 'period_range', 'manual'], true) ? $scope : 'period';
+}
+
+function report_filter_scope(array $filters): string
+{
+    $scope = report_normalize_filter_scope((string) ($filters['filter_scope'] ?? ''));
+    if ($scope !== 'period') {
+        return $scope;
+    }
+
+    if ((int) ($filters['period_to_id'] ?? 0) > 0) {
+        return 'period_range';
+    }
+
+    return $scope;
+}
+
+function report_period_select_options(array $periods, int|string $selectedId = 0, string $emptyLabel = 'Manual tanggal'): string
+{
+    $selectedId = (string) $selectedId;
+    $html = '<option value="">' . e($emptyLabel) . '</option>';
+    foreach ($periods as $period) {
+        $id = (string) ($period['id'] ?? '');
+        $label = trim((string) ($period['period_name'] ?? 'Periode') . ' (' . (string) ($period['period_code'] ?? '') . ')');
+        $selected = $selectedId !== '' && $selectedId === $id ? ' selected' : '';
+        $start = e((string) ($period['start_date'] ?? ''));
+        $end = e((string) ($period['end_date'] ?? ''));
+        $year = e((string) ($period['fiscal_year'] ?? substr((string) ($period['start_date'] ?? ''), 0, 4)));
+        $html .= '<option value="' . e($id) . '" data-start-date="' . $start . '" data-end-date="' . $end . '" data-fiscal-year="' . $year . '"' . $selected . '>' . e($label) . '</option>';
+    }
+
+    return $html;
+}
+
+function report_resolve_period_filter(array $filters, callable $findPeriodById): array
+{
+    $errors = [];
+    $period = null;
+    $endPeriod = null;
+
+    $filters['period_id'] = (int) ($filters['period_id'] ?? 0);
+    $filters['period_to_id'] = (int) ($filters['period_to_id'] ?? 0);
+    $filters['filter_scope'] = report_filter_scope($filters);
+    $filters['date_from'] = trim((string) ($filters['date_from'] ?? ''));
+    $filters['date_to'] = trim((string) ($filters['date_to'] ?? ''));
+
+    if ($filters['period_to_id'] > 0 && $filters['period_id'] <= 0) {
+        $filters['period_id'] = $filters['period_to_id'];
+    }
+
+    if ($filters['period_id'] > 0) {
+        $period = $findPeriodById($filters['period_id']);
+        if (!$period) {
+            $errors[] = 'Periode awal yang dipilih tidak ditemukan.';
+        }
+    }
+
+    if ($filters['period_to_id'] > 0) {
+        $endPeriod = $findPeriodById($filters['period_to_id']);
+        if (!$endPeriod) {
+            $errors[] = 'Periode akhir yang dipilih tidak ditemukan.';
+        }
+    }
+
+    if ($period && $endPeriod && (string) ($endPeriod['end_date'] ?? '') < (string) ($period['start_date'] ?? '')) {
+        $errors[] = 'Periode akhir laporan tidak boleh lebih awal dari periode awal.';
+    }
+
+    if ($period && $filters['filter_scope'] !== 'manual') {
+        $filters['date_from'] = (string) ($period['start_date'] ?? $filters['date_from']);
+        $filters['date_to'] = $endPeriod
+            ? (string) ($endPeriod['end_date'] ?? $filters['date_to'])
+            : (string) ($period['end_date'] ?? $filters['date_to']);
+    } elseif ($period) {
+        if ($filters['date_from'] === '') {
+            $filters['date_from'] = (string) ($period['start_date'] ?? '');
+        }
+        if ($filters['date_to'] === '') {
+            $filters['date_to'] = (string) (($endPeriod['end_date'] ?? null) ?: ($period['end_date'] ?? ''));
+        }
+    }
+
+    return [$filters, $period, $endPeriod, $errors];
 }
 
 function report_period_label(array $filters, ?array $selectedPeriod = null, bool $asOf = false): string
@@ -100,6 +190,54 @@ function report_header_data(array $profile, string $title, string $periodLabel, 
         'report_title' => $title,
         'period_label' => $periodLabel,
         'unit_label' => $unitLabel,
+    ];
+}
+
+function report_kepmendes_136_reference(): string
+{
+    return 'Acuan: KepmenDesa PDTT Nomor 136 Tahun 2022 tentang Panduan Penyusunan Laporan Keuangan BUM Desa';
+}
+
+function report_kepmendes_136_components(string $query = ''): array
+{
+    $suffix = $query !== '' ? '?' . ltrim($query, '?') : '';
+
+    return [
+        [
+            'key' => 'profit_loss',
+            'label' => 'Laporan Laba Rugi',
+            'path' => '/profit-loss' . $suffix,
+            'print_path' => '/profit-loss/print' . $suffix,
+            'note' => 'Pendapatan, harga pokok/biaya, beban usaha, serta laba atau rugi periode berjalan.',
+        ],
+        [
+            'key' => 'equity_changes',
+            'label' => 'Laporan Perubahan Ekuitas',
+            'path' => '/equity-changes' . $suffix,
+            'print_path' => '/equity-changes/print' . $suffix,
+            'note' => 'Perubahan penyertaan modal, saldo laba, dan ekuitas akhir.',
+        ],
+        [
+            'key' => 'balance_sheet',
+            'label' => 'Laporan Posisi Keuangan (Neraca)',
+            'path' => '/balance-sheet' . $suffix,
+            'print_path' => '/balance-sheet/print' . $suffix,
+            'note' => 'Aset, kewajiban/liabilitas, dan ekuitas pada akhir periode.',
+        ],
+        [
+            'key' => 'cash_flow',
+            'label' => 'Laporan Arus Kas',
+            'path' => '/cash-flow' . $suffix,
+            'print_path' => '/cash-flow/print' . $suffix,
+            'note' => 'Arus kas operasi, investasi, dan pendanaan.',
+        ],
+        [
+            'key' => 'financial_notes',
+            'label' => 'Catatan atas Laporan Keuangan (CaLK)',
+            'path' => '/financial-notes' . $suffix,
+            'print_path' => '/financial-notes/print' . $suffix,
+            'note' => 'Pernyataan acuan, dasar penyusunan, kebijakan akuntansi, rincian pos, dan pengungkapan lain.',
+        ],
     ];
 }
 
@@ -228,6 +366,7 @@ function render_print_header(array $profile, string $title, string $periodLabel,
             <div class="report-title"><?= e($data['report_title']) ?></div>
             <div class="report-subtitle">Periode: <?= e($data['period_label']) ?></div>
             <div class="report-subtitle">Unit Usaha: <?= e($data['unit_label']) ?></div>
+            <div class="report-subtitle"><?= e(report_kepmendes_136_reference()) ?></div>
             <div class="report-subtitle"><?= e(report_print_generated_meta()) ?></div>
         </div>
     </div>

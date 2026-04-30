@@ -110,6 +110,8 @@ final class DashboardController extends Controller
         $errors = [];
 
         $periodId = (int) get_query('period_id', 0);
+        $periodToId = (int) get_query('period_to_id', 0);
+        $filterScope = report_normalize_filter_scope((string) get_query('filter_scope', 'period'));
         $unitId = (int) get_query('unit_id', 0);
         $dateFromInput = trim((string) get_query('date_from', ''));
         $dateToInput = trim((string) get_query('date_to', ''));
@@ -121,11 +123,19 @@ final class DashboardController extends Controller
         }
 
         $selectedPeriod = null;
+        $selectedEndPeriod = null;
         if ($periodId > 0) {
             $selectedPeriod = $model->findPeriodById($periodId);
             if (!$selectedPeriod) {
                 $errors[] = 'Periode yang dipilih tidak ditemukan. Filter dikembalikan ke periode default.';
                 $periodId = 0;
+            }
+        }
+        if ($periodToId > 0) {
+            $selectedEndPeriod = $model->findPeriodById($periodToId);
+            if (!$selectedEndPeriod) {
+                $errors[] = 'Periode akhir yang dipilih tidak ditemukan. Sistem memakai periode awal saja.';
+                $periodToId = 0;
             }
         }
         if ($supportsUnits && $unitId > 0) {
@@ -144,7 +154,7 @@ final class DashboardController extends Controller
         }
 
         $defaultStart = (string) ($selectedPeriod['start_date'] ?? '');
-        $defaultEnd = (string) ($selectedPeriod['end_date'] ?? '');
+        $defaultEnd = (string) (($selectedEndPeriod['end_date'] ?? null) ?: ($selectedPeriod['end_date'] ?? ''));
 
         if ($defaultStart === '' || $defaultEnd === '') {
             $workingRange = working_year_date_range();
@@ -152,8 +162,13 @@ final class DashboardController extends Controller
             $defaultEnd = (string) ($workingRange['date_to'] ?? (new DateTimeImmutable('last day of this month'))->format('Y-m-d'));
         }
 
-        $dateFrom = $dateFromInput !== '' ? $dateFromInput : (string) $defaultStart;
-        $dateTo = $dateToInput !== '' ? $dateToInput : (string) $defaultEnd;
+        $rangeMode = $filterScope === 'period_range' && $periodToId > 0 ? 'period_range' : 'period_default';
+        if ($dateFromInput !== '' || $dateToInput !== '') {
+            $rangeMode = $filterScope === 'manual' ? 'manual' : $rangeMode;
+        }
+
+        $dateFrom = $rangeMode === 'manual' && $dateFromInput !== '' ? $dateFromInput : (string) $defaultStart;
+        $dateTo = $rangeMode === 'manual' && $dateToInput !== '' ? $dateToInput : (string) $defaultEnd;
 
         if (!$this->isValidDate($dateFrom)) {
             $errors[] = 'Tanggal mulai filter tidak valid. Sistem memakai tanggal default.';
@@ -169,11 +184,6 @@ final class DashboardController extends Controller
             $dateTo = (string) $defaultEnd;
         }
 
-        $rangeMode = 'period_default';
-        if ($dateFromInput !== '' || $dateToInput !== '') {
-            $rangeMode = 'manual';
-        }
-
         if ($selectedPeriod && $rangeMode === 'manual') {
             $periodStart = (string) ($selectedPeriod['start_date'] ?? '');
             $periodEnd = (string) ($selectedPeriod['end_date'] ?? '');
@@ -184,6 +194,8 @@ final class DashboardController extends Controller
 
         return [
             'period_id' => $periodId,
+            'period_to_id' => $periodToId,
+            'filter_scope' => $filterScope,
             'unit_id' => $unitId,
             'period' => $selectedPeriod,
             'date_from' => $dateFrom,

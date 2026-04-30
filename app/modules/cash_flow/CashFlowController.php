@@ -111,6 +111,8 @@ final class CashFlowController extends Controller
 
         $filters = [
             'period_id' => (int) get_query('period_id', $defaultPeriodId),
+            'period_to_id' => (int) get_query('period_to_id', 0),
+            'filter_scope' => report_normalize_filter_scope((string) get_query('filter_scope', 'period')),
             'fiscal_year' => (int) get_query('fiscal_year', 0),
             'date_from' => trim((string) get_query('date_from', '')),
             'date_to' => trim((string) get_query('date_to', '')),
@@ -204,9 +206,11 @@ final class CashFlowController extends Controller
                 'journal_date' => (string) $row['journal_date'],
                 'journal_no' => (string) $row['journal_no'],
                 'description' => (string) $row['description'],
-                'label' => trim((string) ($row['description'] ?? '')) !== '' ? (string) $row['description'] : 'Mutasi kas',
+                'label' => $this->resolveStatementLabel($row),
                 'counterpart_accounts' => (string) ($row['counterpart_accounts'] ?? ''),
                 'classification_note' => $classificationNote,
+                'cashflow_component_codes' => (string) ($row['explicit_cashflow_codes'] ?? ''),
+                'cashflow_component_names' => (string) ($row['explicit_cashflow_names'] ?? ''),
                 'cash_in' => $netAmount > 0 ? $netAmount : 0.0,
                 'cash_out' => $netAmount < 0 ? abs($netAmount) : 0.0,
                 'net_amount' => $netAmount,
@@ -235,6 +239,46 @@ final class CashFlowController extends Controller
         return $report;
     }
 
+    private function resolveStatementLabel(array $row): string
+    {
+        $counterpartLabel = $this->formatCounterpartAccounts((string) ($row['counterpart_accounts'] ?? ''));
+        if ($counterpartLabel !== '') {
+            return $counterpartLabel;
+        }
+
+        $componentLabel = trim((string) ($row['explicit_cashflow_names'] ?? ''));
+        if ($componentLabel !== '') {
+            return $componentLabel;
+        }
+
+        $description = trim((string) ($row['description'] ?? ''));
+        return $description !== '' ? $description : 'Mutasi kas';
+    }
+
+    private function formatCounterpartAccounts(string $counterpartAccounts): string
+    {
+        $counterpartAccounts = trim($counterpartAccounts);
+        if ($counterpartAccounts === '') {
+            return '';
+        }
+
+        $labels = [];
+        foreach (preg_split('/\s*\|\s*/', $counterpartAccounts) ?: [] as $part) {
+            $part = trim((string) $part);
+            if ($part === '') {
+                continue;
+            }
+
+            $label = preg_replace('/^[0-9][0-9.\-]*\s*-\s*/', '', $part) ?? $part;
+            $label = trim($label);
+            if ($label !== '') {
+                $labels[mb_strtolower($label)] = $label;
+            }
+        }
+
+        return implode(' / ', array_values($labels));
+    }
+
     private function buildSectionSummaries(array $report): array
     {
         $summaries = [];
@@ -249,10 +293,10 @@ final class CashFlowController extends Controller
             $outRows = [];
             foreach ($config['rows'] as $row) {
                 if ((float) ($row['cash_in'] ?? 0) > 0) {
-                    $inRows[] = ['label' => (string) ($row['label'] ?? ''), 'amount' => (float) ($row['cash_in'] ?? 0)];
+                    $this->addStatementRow($inRows, (string) ($row['label'] ?? ''), (float) ($row['cash_in'] ?? 0));
                 }
                 if ((float) ($row['cash_out'] ?? 0) > 0) {
-                    $outRows[] = ['label' => (string) ($row['label'] ?? ''), 'amount' => (float) ($row['cash_out'] ?? 0)];
+                    $this->addStatementRow($outRows, (string) ($row['label'] ?? ''), (float) ($row['cash_out'] ?? 0));
                 }
             }
             $summaries[$section] = [
@@ -267,6 +311,21 @@ final class CashFlowController extends Controller
         }
 
         return $summaries;
+    }
+
+    private function addStatementRow(array &$rows, string $label, float $amount): void
+    {
+        $label = trim($label) !== '' ? trim($label) : 'Mutasi kas';
+        $key = mb_strtolower($label);
+
+        if (!isset($rows[$key])) {
+            $rows[$key] = [
+                'label' => $label,
+                'amount' => 0.0,
+            ];
+        }
+
+        $rows[$key]['amount'] += $amount;
     }
 
     private function emptyReport(): array
@@ -300,19 +359,8 @@ final class CashFlowController extends Controller
         $filters['fiscal_year'] = (int) ($filters['fiscal_year'] ?? 0);
         $filters = apply_fiscal_year_filter($filters);
 
-        if ($filters['period_id'] > 0) {
-            $period = $this->model()->findPeriodById($filters['period_id']);
-            if (!$period) {
-                $errors[] = 'Periode yang dipilih tidak ditemukan.';
-            } else {
-                if ($filters['date_from'] === '') {
-                    $filters['date_from'] = (string) $period['start_date'];
-                }
-                if ($filters['date_to'] === '') {
-                    $filters['date_to'] = (string) $period['end_date'];
-                }
-            }
-        }
+        [$filters, $period, , $periodErrors] = report_resolve_period_filter($filters, fn (int $id): ?array => $this->model()->findPeriodById($id));
+        $errors = array_merge($errors, $periodErrors);
 
         if ($filters['unit_id'] > 0) {
             $unit = find_business_unit($filters['unit_id']);

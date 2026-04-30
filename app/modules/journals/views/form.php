@@ -403,7 +403,7 @@ $referenceJs = [
       <div class="jf-card-head">
         <div>
           <h2 class="h5 mb-1">Baris Jurnal</h2>
-          <div class="jf-inline">Minimal 2 baris. Setiap baris cukup isi debit atau kredit. Klik <strong>Referensi</strong> bila jurnal perlu dihubungkan ke persediaan, aset, simpanan, atau komponen arus kas.</div>
+          <div class="jf-inline">Minimal 2 baris. Setiap baris cukup isi debit atau kredit. Klik <strong>Referensi &amp; Arus Kas</strong> bila jurnal perlu dihubungkan ke persediaan, aset, simpanan, atau Komponen Laporan Arus Kas.</div>
         </div>
         <div class="jf-toolbar">
           <button type="button" class="btn btn-sm btn-outline-secondary" id="add-line-btn">Tambah Baris</button>
@@ -417,7 +417,7 @@ $referenceJs = [
               <div class="jf-line-top">
                 <div class="fw-semibold">Baris <span class="line-number"><?= $index + 1 ?></span></div>
                 <div class="jf-toolbar">
-                  <button type="button" class="btn btn-sm btn-outline-info toggle-meta-btn">Referensi</button>
+                  <button type="button" class="btn btn-sm btn-outline-info toggle-meta-btn">Referensi &amp; Arus Kas</button>
                   <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn">Hapus</button>
                 </div>
               </div>
@@ -496,13 +496,14 @@ $referenceJs = [
                   </select>
                 </div>
                 <div>
-                  <label class="form-label small jf-muted">Komponen Arus Kas</label>
+                  <label class="form-label small jf-muted">Komponen Laporan Arus Kas</label>
                   <select name="cashflow_component_id[]" class="form-select form-select-sm cashflow-select">
                     <option value="">Tidak dipilih</option>
                     <?php foreach (($referenceOptions['cashflow_components'] ?? []) as $item): ?>
                       <option value="<?= e((string) $item['id']) ?>" <?= (string) ($row['cashflow_component_id'] ?? '') === (string) $item['id'] ? 'selected' : '' ?>><?= e((string) $item['label']) ?></option>
                     <?php endforeach; ?>
                   </select>
+                  <div class="form-text small">Jika diisi, Laporan Arus Kas mengikuti pilihan ini.</div>
                 </div>
                 <div>
                   <label class="form-label small jf-muted">Tag Entri</label>
@@ -609,7 +610,7 @@ $referenceJs = [
       <div><label class="form-label small jf-muted">Bahan Baku</label><select name="raw_material_id[]" class="form-select form-select-sm raw-material-select"></select></div>
       <div><label class="form-label small jf-muted">Aset</label><select name="asset_id[]" class="form-select form-select-sm asset-select"></select></div>
       <div><label class="form-label small jf-muted">Simpanan</label><select name="saving_account_id[]" class="form-select form-select-sm saving-select"></select></div>
-      <div><label class="form-label small jf-muted">Komponen Arus Kas</label><select name="cashflow_component_id[]" class="form-select form-select-sm cashflow-select"></select></div>
+      <div><label class="form-label small jf-muted">Komponen Laporan Arus Kas</label><select name="cashflow_component_id[]" class="form-select form-select-sm cashflow-select"></select></div>
       <div><label class="form-label small jf-muted">Tag Entri</label><select name="entry_tag[]" class="form-select form-select-sm entry-tag-select"></select></div>
     </div>
   </div>

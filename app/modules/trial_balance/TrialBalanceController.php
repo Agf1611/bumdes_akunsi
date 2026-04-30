@@ -122,6 +122,8 @@ final class TrialBalanceController extends Controller
         $defaultPeriodId = $activePeriod ? (int) ($activePeriod['id'] ?? 0) : 0;
         $filters = [
             'period_id' => (int) get_query('period_id', $defaultPeriodId),
+            'period_to_id' => (int) get_query('period_to_id', 0),
+            'filter_scope' => report_normalize_filter_scope((string) get_query('filter_scope', 'period')),
             'fiscal_year' => (int) get_query('fiscal_year', 0),
             'unit_id' => (int) get_query('unit_id', 0),
             'date_from' => trim((string) get_query('date_from', '')),
@@ -279,19 +281,8 @@ final class TrialBalanceController extends Controller
                 $errors[] = 'Unit usaha yang dipilih tidak ditemukan.';
             }
         }
-        if ($filters['period_id'] > 0) {
-            $period = $this->model()->findPeriodById((int) $filters['period_id']);
-            if (!$period) {
-                $errors[] = 'Periode yang dipilih tidak ditemukan.';
-            } else {
-                if ($filters['date_from'] === '') {
-                    $filters['date_from'] = (string) $period['start_date'];
-                }
-                if ($filters['date_to'] === '') {
-                    $filters['date_to'] = (string) $period['end_date'];
-                }
-            }
-        }
+        [$filters, $period, , $periodErrors] = report_resolve_period_filter($filters, fn (int $id): ?array => $this->model()->findPeriodById($id));
+        $errors = array_merge($errors, $periodErrors);
         if ($filters['date_from'] === '' && $filters['date_to'] === '') {
             $errors[] = 'Silakan pilih periode atau isi tanggal filter terlebih dahulu.';
         }
@@ -310,10 +301,10 @@ final class TrialBalanceController extends Controller
         if ($filters['date_from'] !== '' && $filters['date_to'] !== '' && $filters['date_to'] < $filters['date_from']) {
             $errors[] = 'Tanggal akhir tidak boleh lebih kecil dari tanggal mulai.';
         }
-        if ($period && $filters['date_from'] < (string) $period['start_date']) {
+        if ($period && $filters['filter_scope'] !== 'manual' && $filters['date_from'] < (string) $period['start_date']) {
             $errors[] = 'Tanggal mulai filter tidak boleh lebih kecil dari tanggal mulai periode yang dipilih.';
         }
-        if ($period && $filters['date_to'] > (string) $period['end_date']) {
+        if ($period && $filters['filter_scope'] !== 'manual' && (int) ($filters['period_to_id'] ?? 0) <= 0 && $filters['date_to'] > (string) $period['end_date']) {
             $errors[] = 'Tanggal akhir filter tidak boleh lebih besar dari tanggal akhir periode yang dipilih.';
         }
         if ($errors !== []) {

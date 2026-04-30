@@ -1,11 +1,9 @@
 <?php declare(strict_types=1); ?>
 <?php
 $ready = (bool) ($checklist['is_ready_to_close'] ?? false);
-$reports = [
+$officialReports = report_kepmendes_136_components($reportQuery);
+$supportingReports = [
     ['label' => 'Dashboard Ringkas', 'path' => '/dashboard?' . $reportQuery, 'type' => 'view'],
-    ['label' => 'Laba Rugi', 'path' => '/profit-loss?' . $reportQuery, 'type' => 'view'],
-    ['label' => 'Neraca', 'path' => '/balance-sheet?' . $reportQuery, 'type' => 'view'],
-    ['label' => 'Arus Kas', 'path' => '/cash-flow?' . $reportQuery, 'type' => 'view'],
     ['label' => 'Neraca Saldo', 'path' => '/trial-balance?' . $reportQuery, 'type' => 'view'],
     ['label' => 'Daftar Jurnal', 'path' => '/journals/print-list?' . $reportQuery, 'type' => 'print'],
 ];
@@ -15,7 +13,7 @@ $reports = [
     <div>
         <div class="text-uppercase text-primary fw-semibold small mb-2">Monthly closing pack</div>
         <h1 class="h3 mb-1">Paket Tutup Bulan</h1>
-        <p class="text-secondary mb-0">Satu tempat untuk mengecek blocker, backup, dan membuka laporan utama periode aktif.</p>
+        <p class="text-secondary mb-0">Satu tempat untuk mengecek blocker, backup, dan membuka komponen laporan lengkap sesuai KepmenDesa PDTT Nomor 136 Tahun 2022.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
         <a href="<?= e(base_url('/periods/checklist?period_id=' . (int) ($period['id'] ?? 0))) ?>" class="btn btn-outline-primary">Checklist Detail</a>
@@ -84,9 +82,22 @@ $reports = [
     <div class="col-lg-5">
         <div class="card shadow-sm h-100">
             <div class="card-body p-4">
-                <h2 class="h5 mb-3">Laporan Dalam Paket</h2>
+                <h2 class="h5 mb-1">Komponen Laporan Keuangan Lengkap</h2>
+                <p class="text-secondary small mb-3"><?= e(report_kepmendes_136_reference()) ?></p>
                 <div class="vstack gap-2">
-                    <?php foreach ($reports as $report): ?>
+                    <?php foreach ($officialReports as $index => $report): ?>
+                        <a href="<?= e(base_url((string) $report['path'])) ?>" class="d-flex justify-content-between align-items-start gap-3 text-decoration-none border rounded-4 p-3">
+                            <span>
+                                <span class="d-block fw-semibold text-dark"><?= e((string) ($index + 1) . '. ' . $report['label']) ?></span>
+                                <span class="d-block text-secondary small"><?= e((string) $report['note']) ?></span>
+                            </span>
+                            <span class="text-primary small text-nowrap">Buka</span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+                <h3 class="h6 mt-4 mb-2">Lampiran pendukung</h3>
+                <div class="vstack gap-2">
+                    <?php foreach ($supportingReports as $report): ?>
                         <a href="<?= e(base_url((string) $report['path'])) ?>" class="d-flex justify-content-between align-items-center text-decoration-none border rounded-4 p-3" <?= $report['type'] === 'print' ? 'target="_blank" rel="noopener"' : '' ?>>
                             <span class="fw-semibold text-dark"><?= e((string) $report['label']) ?></span>
                             <span class="text-primary small"><?= $report['type'] === 'print' ? 'Cetak' : 'Buka' ?></span>

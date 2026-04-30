@@ -2,6 +2,7 @@
 <?php
 $reportMode = (string) ($filters['mode'] ?? 'period');
 $periodNet = (float) ($report['net_income'] ?? 0);
+$accumulatedNet = (float) ($report['comparison_net_income'] ?? 0);
 $trendPoints = is_array($trend ?? null) ? $trend : [];
 $trendMax = 1.0;
 foreach ($trendPoints as $point) {
@@ -13,9 +14,9 @@ foreach ($trendPoints as $point) {
     <section class="module-hero">
         <div class="module-hero__content">
             <div>
-                <div class="module-hero__eyebrow">Laporan Analitis</div>
+                <div class="module-hero__eyebrow">Laporan Keuangan</div>
                 <h1 class="module-hero__title">Laporan Laba Rugi</h1>
-                <p class="module-hero__text">Laporan kinerja usaha yang kembali sederhana, fokus pada angka utama, tetap dibantu visual tren agar cepat dibaca.</p>
+                <p class="module-hero__text">Disusun sederhana agar pemeriksa mudah membaca hasil bulan berjalan dan akumulasi tahun berjalan dalam satu tabel.</p>
             </div>
             <?php if (($filters['date_to'] ?? '') !== ''): ?>
                 <div class="module-hero__actions">
@@ -27,18 +28,26 @@ foreach ($trendPoints as $point) {
         </div>
     </section>
 
-    <div class="card shadow-sm">
+    <div class="card shadow-sm report-filter-card">
         <div class="card-body p-4">
-            <form method="get" action="<?= e(base_url('/profit-loss')) ?>" class="row g-3 align-items-end">
-                <div class="col-xl-3 col-lg-4">
-                    <label for="period_id" class="form-label">Periode Referensi</label>
+            <div class="report-filter-head">
+                <div>
+                    <h2 class="report-filter-head__title">Filter Laporan</h2>
+                    <p class="report-filter-head__text">Pilih periode dan unit usaha. Laporan otomatis menampilkan nilai bulan/periode ini dan akumulasi sampai tanggal akhir.</p>
+                </div>
+            </div>
+            <form method="get" action="<?= e(base_url('/profit-loss')) ?>" class="row g-3 align-items-end report-filter-grid">
+                <input type="hidden" name="filter_scope" value="<?= e(report_filter_scope($filters)) ?>">
+                <div class="col-xl-2 col-lg-4">
+                    <label for="period_id" class="form-label">Periode Awal</label>
                     <select name="period_id" id="period_id" class="form-select">
-                        <option value="">Manual tanggal / semua periode</option>
-                        <?php foreach ($periods as $period): ?>
-                            <option value="<?= e((string) $period['id']) ?>" <?= (string) $filters['period_id'] === (string) $period['id'] ? 'selected' : '' ?>>
-                                <?= e($period['period_name'] . ' (' . $period['period_code'] . ')') ?>
-                            </option>
-                        <?php endforeach; ?>
+                        <?= report_period_select_options($periods, (int) ($filters['period_id'] ?? 0), 'Manual tanggal') ?>
+                    </select>
+                </div>
+                <div class="col-xl-2 col-lg-4">
+                    <label for="period_to_id" class="form-label">Sampai Periode</label>
+                    <select name="period_to_id" id="period_to_id" class="form-select">
+                        <?= report_period_select_options($periods, (int) ($filters['period_to_id'] ?? 0), 'Sama dengan periode awal') ?>
                     </select>
                 </div>
                 <div class="col-xl-2 col-lg-3">
@@ -75,12 +84,6 @@ foreach ($trendPoints as $point) {
                     <label for="date_from" class="form-label">Tanggal Awal Manual</label>
                     <input type="date" name="date_from" id="date_from" class="form-control" value="<?= e((string) $filters['date_from']) ?>">
                 </div>
-                <div class="col-xl-2 col-lg-3">
-                    <div class="form-check pt-4">
-                        <input class="form-check-input" type="checkbox" name="show_visual" id="show_visual" value="1" <?= !empty($filters['show_visual']) ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="show_visual">Visual</label>
-                    </div>
-                </div>
                 <div class="col-xl-2 col-lg-3 d-grid">
                     <button type="submit" class="btn btn-primary">Tampil</button>
                 </div>
@@ -89,67 +92,50 @@ foreach ($trendPoints as $point) {
     </div>
 
     <?php if (($filters['date_to'] ?? '') !== ''): ?>
-        <section class="report-kpi-grid">
-            <article class="report-kpi-card">
-                <div class="report-kpi-card__label"><?= e((string) ($report['current_label'] ?? 'Laba Periode')) ?></div>
-                <div class="report-kpi-card__value"><?= e(profit_loss_currency($periodNet)) ?></div>
-                <div class="report-kpi-card__meta"><?= e((string) ($report['current_range_label'] ?? '-')) ?></div>
+        <section class="report-summary-strip">
+            <article class="report-summary-strip__item">
+                <span class="report-summary-strip__label"><?= e((string) ($report['current_label'] ?? 'Laba Periode')) ?></span>
+                <span class="report-summary-strip__value"><?= e(profit_loss_currency($periodNet)) ?></span>
+                <span class="report-summary-strip__meta"><?= e((string) ($report['current_range_label'] ?? '-')) ?></span>
             </article>
-            <article class="report-kpi-card">
-                <div class="report-kpi-card__label">Total Pendapatan</div>
-                <div class="report-kpi-card__value"><?= e(profit_loss_currency((float) ($report['total_revenue'] ?? 0))) ?></div>
-                <div class="report-kpi-card__meta">Pendapatan usaha pada periode aktif</div>
+            <article class="report-summary-strip__item">
+                <span class="report-summary-strip__label">Laba Akumulasi</span>
+                <span class="report-summary-strip__value"><?= e(profit_loss_currency($accumulatedNet)) ?></span>
+                <span class="report-summary-strip__meta"><?= e((string) ($report['comparison_column_label'] ?? 'Akumulasi tahun berjalan')) ?></span>
             </article>
-            <article class="report-kpi-card">
-                <div class="report-kpi-card__label">Total Beban</div>
-                <div class="report-kpi-card__value"><?= e(profit_loss_currency((float) ($report['total_expense'] ?? 0))) ?></div>
-                <div class="report-kpi-card__meta">Beban usaha pada periode aktif</div>
+            <article class="report-summary-strip__item">
+                <span class="report-summary-strip__label">Total Pendapatan</span>
+                <span class="report-summary-strip__value"><?= e(profit_loss_currency((float) ($report['total_revenue'] ?? 0))) ?></span>
+                <span class="report-summary-strip__meta">Pendapatan usaha pada periode aktif</span>
             </article>
-            <article class="report-kpi-card">
-                <div class="report-kpi-card__label">Unit Usaha</div>
-                <div class="report-kpi-card__value report-kpi-card__value--sm"><?= e((string) ($selectedUnitLabel ?? 'Semua Unit')) ?></div>
-                <div class="report-kpi-card__meta"><?= e((string) ($report['mode_label'] ?? 'Mode laporan')) ?></div>
+            <article class="report-summary-strip__item">
+                <span class="report-summary-strip__label">Total Beban</span>
+                <span class="report-summary-strip__value"><?= e(profit_loss_currency((float) ($report['total_expense'] ?? 0))) ?></span>
+                <span class="report-summary-strip__meta">Beban usaha pada periode aktif</span>
+            </article>
+            <article class="report-summary-strip__item">
+                <span class="report-summary-strip__label">Unit Usaha</span>
+                <span class="report-summary-strip__value"><?= e((string) ($selectedUnitLabel ?? 'Semua Unit')) ?></span>
+                <span class="report-summary-strip__meta"><?= e((string) ($report['mode_label'] ?? 'Mode laporan')) ?></span>
             </article>
         </section>
 
-        <?php if (!empty($filters['show_visual']) && $trendPoints !== []): ?>
-            <section class="card shadow-sm report-chart-card">
-                <div class="card-body p-4">
-                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
-                        <div>
-                            <div class="module-hero__eyebrow mb-2">Visual Ringkas</div>
-                            <h2 class="h4 mb-1">Tren Pendapatan, Beban, dan Laba Bersih</h2>
-                            <p class="text-secondary mb-0">Visual layar tetap dipertahankan agar arah kinerja bisa dibaca lebih cepat.</p>
-                        </div>
-                    </div>
-                    <div class="report-mini-chart">
-                        <?php foreach ($trendPoints as $point): ?>
-                            <?php
-                            $revenueHeight = max(6, ((float) ($point['revenue'] ?? 0) / $trendMax) * 160);
-                            $expenseHeight = max(6, ((float) ($point['expense'] ?? 0) / $trendMax) * 160);
-                            $netHeight = max(6, (abs((float) ($point['net'] ?? 0)) / $trendMax) * 160);
-                            ?>
-                            <div class="report-mini-chart__group">
-                                <div class="report-mini-chart__bars">
-                                    <span class="report-mini-chart__bar report-mini-chart__bar--revenue" style="height: <?= e((string) round($revenueHeight, 2)) ?>px" title="Pendapatan"></span>
-                                    <span class="report-mini-chart__bar report-mini-chart__bar--expense" style="height: <?= e((string) round($expenseHeight, 2)) ?>px" title="Beban"></span>
-                                    <span class="report-mini-chart__bar report-mini-chart__bar--net" style="height: <?= e((string) round($netHeight, 2)) ?>px" title="Laba Bersih"></span>
-                                </div>
-                                <div class="report-mini-chart__label"><?= e(dashboard_month_label((string) ($point['label'] ?? ''))) ?></div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <div class="report-legend">
-                        <span><i class="report-legend__dot report-legend__dot--revenue"></i>Pendapatan</span>
-                        <span><i class="report-legend__dot report-legend__dot--expense"></i>Beban</span>
-                        <span><i class="report-legend__dot report-legend__dot--net"></i>Laba Bersih</span>
-                    </div>
-                </div>
-            </section>
-        <?php endif; ?>
+        <div class="report-chip-bar">
+            <div class="report-chip"><strong>Periode</strong> <?= e(report_period_label($filters, $selectedPeriod)) ?></div>
+            <div class="report-chip"><strong>Mode</strong> <?= e((string) ($report['mode_label'] ?? 'Periode')) ?></div>
+            <div class="report-chip"><strong>Akumulasi</strong> <?= e((string) ($report['comparison_column_label'] ?? '-')) ?></div>
+            <div class="report-chip"><strong>Unit</strong> <?= e((string) ($selectedUnitLabel ?? 'Semua Unit')) ?></div>
+        </div>
 
         <section class="card shadow-sm report-table-card">
             <div class="card-body p-0">
+                <div class="report-table-head">
+                    <div>
+                        <div class="module-hero__eyebrow mb-2">Tabel Utama</div>
+                        <h2 class="h4 mb-1">Struktur Laba Rugi</h2>
+                        <p class="report-help-note mb-0">Baris berwarna menandai kelompok dan subtotal. Nilai akun dapat diklik untuk membuka jurnal sumber.</p>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0 report-analytics-table">
                         <thead>
@@ -157,23 +143,31 @@ foreach ($trendPoints as $point) {
                             <th style="width:6rem" class="text-center">No</th>
                             <th>Uraian</th>
                             <th class="text-end"><?= e((string) ($report['current_column_label'] ?? 'Periode')) ?></th>
+                            <th class="text-end"><?= e((string) ($report['comparison_column_label'] ?? 'Akumulasi')) ?></th>
                         </tr>
                         </thead>
                         <tbody>
                         <?php if ($statement_rows === []): ?>
                             <tr>
-                                <td colspan="3" class="text-center text-secondary py-5">Tidak ada data laba rugi untuk filter yang dipilih.</td>
+                                <td colspan="4" class="text-center text-secondary py-5">Tidak ada data laba rugi untuk filter yang dipilih.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($statement_rows as $row): ?>
                                 <?php
                                 $rowType = (string) $row['row_type'];
                                 $drilldownCurrent = (int) ($row['account_id'] ?? 0) > 0 ? report_drilldown_url((int) $row['account_id'], $filters, 'profit_loss') : '';
+                                $drilldownAccumulated = '';
+                                if ((int) ($row['account_id'] ?? 0) > 0 && (string) ($report['comparison_date_from'] ?? '') !== '' && (string) ($report['comparison_date_to'] ?? '') !== '') {
+                                    $drilldownAccumulated = report_drilldown_url((int) $row['account_id'], $filters, 'profit_loss', [
+                                        'date_from' => (string) $report['comparison_date_from'],
+                                        'date_to' => (string) $report['comparison_date_to'],
+                                    ]);
+                                }
                                 ?>
                                 <tr class="report-row report-row--<?= e($rowType) ?>">
                                     <td class="text-center"><?= e((string) $row['order']) ?></td>
                                     <td class="report-row__label"><?= e((string) $row['label']) ?></td>
-                                    <td class="text-end fw-semibold">
+                                    <td class="text-end fw-semibold report-numeric">
                                         <?php if ($row['current_amount'] === null): ?>
                                             -
                                         <?php elseif ($drilldownCurrent !== ''): ?>
@@ -182,8 +176,23 @@ foreach ($trendPoints as $point) {
                                             <?= e(profit_loss_currency((float) $row['current_amount'])) ?>
                                         <?php endif; ?>
                                     </td>
+                                    <td class="text-end fw-semibold report-numeric">
+                                        <?php if ($row['comparison_amount'] === null): ?>
+                                            -
+                                        <?php elseif ($drilldownAccumulated !== ''): ?>
+                                            <a href="<?= e($drilldownAccumulated) ?>" class="report-value-link"><?= e(profit_loss_currency((float) $row['comparison_amount'])) ?></a>
+                                        <?php else: ?>
+                                            <?= e(profit_loss_currency((float) $row['comparison_amount'])) ?>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
+                            <tr class="report-row report-row--grand-total">
+                                <td></td>
+                                <td class="report-row__label"><?= e(strtoupper(profit_loss_display_label())) ?></td>
+                                <td class="text-end fw-bold report-numeric"><?= e(profit_loss_currency($periodNet)) ?></td>
+                                <td class="text-end fw-bold report-numeric"><?= e(profit_loss_currency($accumulatedNet)) ?></td>
+                            </tr>
                         <?php endif; ?>
                         </tbody>
                     </table>

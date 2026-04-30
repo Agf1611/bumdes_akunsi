@@ -15,6 +15,8 @@ final class LpjPackageService
 
         $filters = [
             'period_id' => (int) ($input['period_id'] ?? $defaultPeriodId),
+            'period_to_id' => (int) ($input['period_to_id'] ?? 0),
+            'filter_scope' => report_normalize_filter_scope((string) ($input['filter_scope'] ?? 'period')),
             'fiscal_year' => (int) ($input['fiscal_year'] ?? 0),
             'date_from' => trim((string) ($input['date_from'] ?? '')),
             'date_to' => trim((string) ($input['date_to'] ?? '')),
@@ -31,7 +33,7 @@ final class LpjPackageService
         $packageType = lpj_detect_package_type($filters);
         $report = $this->emptyPackage($narratives);
 
-        $hasRequestedFilters = $filters['period_id'] > 0 || $filters['date_from'] !== '' || $filters['date_to'] !== '';
+        $hasRequestedFilters = $filters['period_id'] > 0 || $filters['period_to_id'] > 0 || $filters['date_from'] !== '' || $filters['date_to'] !== '';
         if ($hasRequestedFilters) {
             [$filters, $selectedPeriod, $selectedUnit] = $this->resolveFilters($filters);
             $packageType = lpj_detect_package_type($filters, $selectedPeriod);
@@ -82,19 +84,8 @@ final class LpjPackageService
         $filters['fiscal_year'] = (int) ($filters['fiscal_year'] ?? 0);
         $filters = apply_fiscal_year_filter($filters);
 
-        if ((int) $filters['period_id'] > 0) {
-            $period = $this->profitLossModel()->findPeriodById((int) $filters['period_id']);
-            if (!$period) {
-                $errors[] = 'Periode yang dipilih tidak ditemukan.';
-            } else {
-                if ($filters['date_from'] === '') {
-                    $filters['date_from'] = (string) $period['start_date'];
-                }
-                if ($filters['date_to'] === '') {
-                    $filters['date_to'] = (string) $period['end_date'];
-                }
-            }
-        }
+        [$filters, $period, , $periodErrors] = report_resolve_period_filter($filters, fn (int $id): ?array => $this->profitLossModel()->findPeriodById($id));
+        $errors = array_merge($errors, $periodErrors);
 
         if ((int) $filters['unit_id'] > 0) {
             $unit = find_business_unit((int) $filters['unit_id']);
@@ -121,10 +112,10 @@ final class LpjPackageService
         if ($filters['date_from'] !== '' && $filters['date_to'] !== '' && $filters['date_to'] < $filters['date_from']) {
             $errors[] = 'Tanggal akhir tidak boleh lebih kecil dari tanggal mulai.';
         }
-        if ($period && $filters['date_from'] < (string) $period['start_date']) {
+        if ($period && $filters['filter_scope'] !== 'manual' && $filters['date_from'] < (string) $period['start_date']) {
             $errors[] = 'Tanggal mulai filter tidak boleh lebih kecil dari tanggal mulai periode yang dipilih.';
         }
-        if ($period && $filters['date_to'] > (string) $period['end_date']) {
+        if ($period && $filters['filter_scope'] !== 'manual' && (int) ($filters['period_to_id'] ?? 0) <= 0 && $filters['date_to'] > (string) $period['end_date']) {
             $errors[] = 'Tanggal akhir filter tidak boleh lebih besar dari tanggal akhir periode yang dipilih.';
         }
 

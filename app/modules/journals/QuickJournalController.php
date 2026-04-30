@@ -155,6 +155,7 @@ final class QuickJournalController extends Controller
             'party_name' => trim((string) post('party_name', '')),
             'reference_no' => trim((string) post('reference_no', '')),
             'attachment_title' => trim((string) post('attachment_title', '')),
+            'cashflow_component_id' => trim((string) post('cashflow_component_id', '')),
         ];
     }
 
@@ -162,6 +163,9 @@ final class QuickJournalController extends Controller
     {
         $template = journal_quick_template_data($templateKey) ?? journal_quick_template_data('cash_in');
         $accounts = $this->model()->getAccountOptions((int) (Auth::user()['id'] ?? 0));
+        $referenceOptions = $this->model()->getReferenceOptions();
+        $cashflowOptions = is_array($referenceOptions['cashflow_components'] ?? null) ? $referenceOptions['cashflow_components'] : [];
+        $defaultCashflowComponentId = $this->defaultCashflowComponentId((string) ($template['template_key'] ?? $templateKey), $cashflowOptions);
         $favorites = workspace_preference_get('favorite_quick_transaction_templates', []);
 
         $formData = [
@@ -176,6 +180,7 @@ final class QuickJournalController extends Controller
             'party_name' => old('party_name', (string) ($oldInput['party_name'] ?? '')),
             'reference_no' => old('reference_no', (string) ($oldInput['reference_no'] ?? '')),
             'attachment_title' => old('attachment_title', (string) ($oldInput['attachment_title'] ?? '')),
+            'cashflow_component_id' => old('cashflow_component_id', (string) ($oldInput['cashflow_component_id'] ?? $defaultCashflowComponentId)),
         ];
 
         $this->view('journals/views/quick_form', [
@@ -188,6 +193,7 @@ final class QuickJournalController extends Controller
             'periodOptions' => $this->model()->getOpenPeriods(),
             'unitOptions' => business_unit_options(),
             'accountOptions' => $accounts,
+            'cashflowComponentOptions' => $cashflowOptions,
             'attachmentFeatureStatus' => $this->model()->getAttachmentFeatureStatus(),
         ]);
     }
@@ -220,6 +226,9 @@ final class QuickJournalController extends Controller
         if ((int) $input['debit_account_id'] > 0 && (int) $input['debit_account_id'] === (int) $input['credit_account_id']) {
             $errors[] = 'Akun debit dan kredit tidak boleh sama.';
         }
+        if ((int) $input['cashflow_component_id'] > 0 && !$this->referenceExists('cashflow_components', (int) $input['cashflow_component_id'])) {
+            $errors[] = 'Komponen laporan arus kas yang dipilih tidak ditemukan.';
+        }
 
         if ($input['journal_date'] === '' || DateTimeImmutable::createFromFormat('Y-m-d', $input['journal_date']) === false) {
             $errors[] = 'Tanggal transaksi tidak valid.';
@@ -237,6 +246,7 @@ final class QuickJournalController extends Controller
         }
 
         $money = number_format($amount, 2, '.', '');
+        $cashflowComponentId = (int) ($input['cashflow_component_id'] ?? 0);
         $lines = [
             [
                 'coa_id' => (int) $input['debit_account_id'],
@@ -248,7 +258,7 @@ final class QuickJournalController extends Controller
                 'raw_material_id' => 0,
                 'asset_id' => 0,
                 'saving_account_id' => 0,
-                'cashflow_component_id' => 0,
+                'cashflow_component_id' => $cashflowComponentId,
                 'entry_tag' => '',
             ],
             [
@@ -261,7 +271,7 @@ final class QuickJournalController extends Controller
                 'raw_material_id' => 0,
                 'asset_id' => 0,
                 'saving_account_id' => 0,
-                'cashflow_component_id' => 0,
+                'cashflow_component_id' => $cashflowComponentId,
                 'entry_tag' => '',
             ],
         ];
@@ -288,6 +298,44 @@ final class QuickJournalController extends Controller
             'debit_account' => $debitAccount,
             'credit_account' => $creditAccount,
         ];
+    }
+
+    private function defaultCashflowComponentId(string $templateKey, array $options): string
+    {
+        $code = match ($templateKey) {
+            'cash_in', 'revenue' => 'OP-IN-SALES',
+            'cash_out', 'expense' => 'OP-OUT-OPEX',
+            'asset' => 'INV-OUT-ASSET',
+            default => '',
+        };
+        if ($code === '') {
+            return '';
+        }
+
+        foreach ($options as $option) {
+            if ((string) ($option['code'] ?? '') === $code) {
+                return (string) ($option['id'] ?? '');
+            }
+        }
+
+        return '';
+    }
+
+    private function referenceExists(string $table, int $id): bool
+    {
+        if ($id <= 0) {
+            return true;
+        }
+
+        try {
+            $db = Database::getInstance(db_config());
+            $stmt = $db->prepare('SELECT 1 FROM ' . $table . ' WHERE id = :id LIMIT 1');
+            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+            return (bool) $stmt->fetchColumn();
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     private function parseMoney(string $value): float

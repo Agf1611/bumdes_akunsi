@@ -25,6 +25,23 @@ body.print-layout {
     line-height: 1.45;
 }
 
+.print-sheet .report-heading-block {
+    margin-bottom: 12px !important;
+}
+
+.print-sheet .report-heading-main {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #111827;
+}
+
+.print-sheet .report-heading-meta {
+    font-size: 11px;
+    color: var(--print-muted) !important;
+    line-height: 1.4;
+}
+
 .print-sheet .alert {
     border-radius: 10px;
     border: 1px solid var(--print-border);
@@ -122,6 +139,38 @@ body.print-layout {
     font-weight: 800;
     letter-spacing: 0.04em;
     white-space: normal;
+}
+
+.print-table thead {
+    display: table-header-group;
+}
+
+.print-table tbody tr,
+.print-sheet table.table tbody tr {
+    page-break-inside: avoid;
+}
+
+.print-sheet .summary-grid,
+.print-sheet .print-summary-table,
+.print-sheet .print-variance-table {
+    margin-bottom: 10px !important;
+}
+
+.print-sheet .summary-grid th,
+.print-sheet .summary-grid td,
+.print-sheet .print-summary-table th,
+.print-sheet .print-summary-table td,
+.print-sheet .print-variance-table th,
+.print-sheet .print-variance-table td {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+}
+
+.print-sheet .print-footnote {
+    margin-top: 9px;
+    font-size: 10px;
+    color: var(--print-muted);
+    line-height: 1.45;
 }
 
 .print-table tfoot th,
@@ -500,6 +549,15 @@ body.print-layout {
     letter-spacing: 0;
 }
 
+.classic-report .report-heading-main {
+    font-size: 16px;
+    letter-spacing: 0.03em;
+}
+
+.classic-report .report-heading-meta {
+    color: #374151 !important;
+}
+
 .classic-report .section-row > td,
 .classic-report .section-row > th {
     background: #eef1f4 !important;
@@ -550,4 +608,324 @@ body.print-layout {
 .section-heading {
     font-size: 13px;
     font-weight: 700;
+}
+
+.formal-summary-grid th {
+    width: 22%;
+    background: #f8fafc !important;
+}
+
+.formal-summary-grid td {
+    width: 28%;
+}
+
+.print-meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+    font-size: 10.6px;
+}
+
+.print-meta-table th,
+.print-meta-table td {
+    border: 1px solid var(--print-border) !important;
+    padding: 5px 7px !important;
+    background: #fff !important;
+    color: #111 !important;
+}
+
+.print-meta-table th {
+    width: 22%;
+    background: #f8fafc !important;
+    font-weight: 700;
+    text-align: left;
+}
+
+.print-meta-table td {
+    width: 28%;
+}
+
+.formal-table-title {
+    font-size: 12px;
+    font-weight: 700;
+    margin: 10px 0 6px;
+    color: #0f172a;
+}
+
+.kemendesa-statement-print {
+    font-size: 10.8px;
+}
+
+.kemendesa-statement-table th,
+.kemendesa-statement-table td,
+.kemendesa-check-table th,
+.kemendesa-check-table td {
+    padding: 4.5px 6px !important;
+}
+
+.kemendesa-statement-table .section-row > td,
+.kemendesa-statement-table .section-row > th {
+    background: #e9edf3 !important;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.kemendesa-statement-table .subtotal-row > td,
+.kemendesa-statement-table .subtotal-row > th,
+.kemendesa-check-table .subtotal-row > td,
+.kemendesa-check-table .subtotal-row > th {
+    background: #f8fafc !important;
+    font-weight: 800;
+}
+
+/* Final print pagination fix: long report tables must continue on the same page. */
+@media print {
+    @page {
+        margin: 8mm 8mm 10mm;
+    }
+
+    .print-page-wrap {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .print-sheet,
+    .classic-report {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 9.8px !important;
+        line-height: 1.22 !important;
+    }
+
+    .report-letterhead {
+        margin-bottom: 5px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .report-logo-wrap {
+        width: 56px !important;
+        min-width: 56px !important;
+    }
+
+    .report-logo-img {
+        max-width: 52px !important;
+        max-height: 40px !important;
+    }
+
+    .report-logo-fallback {
+        width: 48px !important;
+        height: 38px !important;
+        border-radius: 8px !important;
+    }
+
+    .report-org-top {
+        font-size: 8.5px !important;
+        line-height: 1.05 !important;
+    }
+
+    .report-org-name {
+        font-size: 14px !important;
+        line-height: 1.05 !important;
+        margin: 0 !important;
+    }
+
+    .report-org-meta,
+    .report-subtitle {
+        font-size: 7.8px !important;
+        line-height: 1.12 !important;
+    }
+
+    .report-divider {
+        height: 1px !important;
+        margin: 4px 0 6px !important;
+    }
+
+    .report-heading-block {
+        margin-bottom: 5px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .report-heading-main,
+    .print-sheet .report-heading-main,
+    .classic-report .report-heading-main {
+        font-size: 13px !important;
+        line-height: 1.1 !important;
+        margin: 0 !important;
+    }
+
+    .report-heading-meta,
+    .report-note,
+    .print-footnote {
+        font-size: 8.4px !important;
+        line-height: 1.2 !important;
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .print-meta-table {
+        margin-bottom: 5px !important;
+        font-size: 8.7px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .print-meta-table th,
+    .print-meta-table td {
+        padding: 2.4px 4px !important;
+    }
+
+    .formal-table-title {
+        margin: 5px 0 3px !important;
+        font-size: 9px !important;
+        line-height: 1.15 !important;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+    }
+
+    .table-responsive,
+    .print-layout .table-responsive {
+        overflow: visible !important;
+        max-width: none !important;
+    }
+
+    .print-table,
+    .print-sheet table.table,
+    .classic-report .print-table,
+    .classic-report table.table,
+    .kemendesa-statement-table,
+    .kemendesa-check-table {
+        width: 100% !important;
+        max-width: none !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+    }
+
+    .print-table thead,
+    .print-sheet table.table thead,
+    .classic-report .print-table thead,
+    .classic-report table.table thead {
+        display: table-header-group !important;
+    }
+
+    .print-table tbody,
+    .print-sheet table.table tbody,
+    .classic-report .print-table tbody,
+    .classic-report table.table tbody {
+        display: table-row-group !important;
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+    }
+
+    .print-table tfoot,
+    .print-sheet table.table tfoot,
+    .classic-report .print-table tfoot,
+    .classic-report table.table tfoot {
+        display: table-row-group !important;
+    }
+
+    .print-table tr,
+    .print-sheet table.table tr,
+    .classic-report .print-table tr,
+    .classic-report table.table tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .print-table th,
+    .print-table td,
+    .print-sheet table.table th,
+    .print-sheet table.table td,
+    .classic-report .print-table th,
+    .classic-report .print-table td,
+    .classic-report table.table th,
+    .classic-report table.table td {
+        padding: 2.2px 3.4px !important;
+        font-size: 8.2px !important;
+        line-height: 1.12 !important;
+        vertical-align: top !important;
+    }
+
+    .print-table thead th,
+    .print-sheet table.table thead th,
+    .classic-report .print-table thead th,
+    .classic-report table.table thead th {
+        font-size: 7.8px !important;
+        line-height: 1.1 !important;
+        padding-top: 2.5px !important;
+        padding-bottom: 2.5px !important;
+    }
+
+    .report-table-compact th,
+    .report-table-compact td,
+    .trial-balance-report .print-table th,
+    .trial-balance-report .print-table td,
+    .cash-flow-report .print-table th,
+    .cash-flow-report .print-table td {
+        font-size: 7.8px !important;
+        padding: 2px 3px !important;
+    }
+
+    .report-signature-block {
+        margin-top: 10px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .signature-image-wrap,
+    .signature-spacer {
+        min-height: 42px !important;
+        height: 42px !important;
+    }
+
+    .print-generated-meta {
+        margin-top: 5px !important;
+        font-size: 7.5px !important;
+    }
+}
+
+@page report-landscape {
+    size: A4 landscape;
+    margin: 8mm 8mm 10mm;
+}
+
+.kemendesa-statement-table .total-row > td,
+.kemendesa-statement-table .total-row > th {
+    background: #eef2f7 !important;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.kemendesa-check-table {
+    width: 54%;
+    margin-left: auto;
+}
+
+.kemendesa-check-table td:first-child {
+    width: 58%;
+    font-weight: 700;
+}
+
+.report-muted-inline {
+    color: #4b5563;
+    font-size: 9.8px;
+}
+
+@media print {
+    .kemendesa-statement-print .report-letterhead {
+        margin-bottom: 10px !important;
+    }
+
+    .kemendesa-check-table {
+        width: 58%;
+    }
 }

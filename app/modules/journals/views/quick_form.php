@@ -7,6 +7,7 @@ $formData = is_array($formData ?? null) ? $formData : [];
 $periodOptions = is_array($periodOptions ?? null) ? $periodOptions : [];
 $unitOptions = is_array($unitOptions ?? null) ? $unitOptions : [];
 $accountOptions = is_array($accountOptions ?? null) ? $accountOptions : [];
+$cashflowComponentOptions = is_array($cashflowComponentOptions ?? null) ? $cashflowComponentOptions : [];
 $preview = is_array($preview ?? null) ? $preview : null;
 $attachmentFeatureStatus = is_array($attachmentFeatureStatus ?? null) ? $attachmentFeatureStatus : ['enabled' => false];
 $favoriteMap = [];
@@ -167,6 +168,16 @@ $suggestionText = match ($selectedTemplateKey) {
                 <div class="col-md-6">
                     <label class="form-label">Nomor Referensi</label>
                     <input type="text" name="reference_no" class="form-control" value="<?= e((string) ($formData['reference_no'] ?? '')) ?>" placeholder="Opsional">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Komponen Laporan Arus Kas</label>
+                    <select name="cashflow_component_id" class="form-select">
+                        <option value="">Tidak masuk / klasifikasi otomatis</option>
+                        <?php foreach ($cashflowComponentOptions as $component): ?>
+                            <option value="<?= e((string) ($component['id'] ?? '')) ?>" <?= (string) ($formData['cashflow_component_id'] ?? '') === (string) ($component['id'] ?? '') ? 'selected' : '' ?>><?= e((string) (($component['code'] ?? '') . ' - ' . ($component['name'] ?? ''))) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="form-text">Pilih ini agar Laporan Arus Kas mengikuti komponen Kemendesa, bukan hanya tebakan dari akun lawan.</div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Judul Lampiran</label>

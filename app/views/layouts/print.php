@@ -1,4 +1,9 @@
-<?php declare(strict_types=1); ?>
+<?php declare(strict_types=1);
+$assetVersion = static function (string $relativePath): string {
+    $file = public_path('assets/' . ltrim($relativePath, '/'));
+    return is_file($file) ? (string) filemtime($file) : '1';
+};
+?>
 <!doctype html>
 <html lang="id" data-theme="light">
 <head>
@@ -9,9 +14,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?= e(asset_url('css/app.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset_url('css/ui-final-layer.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset_url('css/print-professional.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset_url('css/app.css')) ?>?v=<?= e($assetVersion('css/app.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset_url('css/ui-final-layer.css')) ?>?v=<?= e($assetVersion('css/ui-final-layer.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset_url('css/print-professional.css')) ?>?v=<?= e($assetVersion('css/print-professional.css')) ?>">
 </head>
 <body class="print-layout ui-print">
     <main class="print-page-wrap container">

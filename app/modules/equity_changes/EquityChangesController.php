@@ -87,6 +87,8 @@ final class EquityChangesController extends Controller
 
         $filters = [
             'period_id' => (int) get_query('period_id', $defaultPeriodId),
+            'period_to_id' => (int) get_query('period_to_id', 0),
+            'filter_scope' => report_normalize_filter_scope((string) get_query('filter_scope', 'period')),
             'fiscal_year' => (int) get_query('fiscal_year', 0),
             'date_from' => trim((string) get_query('date_from', '')),
             'date_to' => trim((string) get_query('date_to', '')),
@@ -159,19 +161,8 @@ final class EquityChangesController extends Controller
         $filters['fiscal_year'] = (int) ($filters['fiscal_year'] ?? 0);
         $filters = apply_fiscal_year_filter($filters);
 
-        if ($filters['period_id'] > 0) {
-            $period = $this->model()->findPeriodById($filters['period_id']);
-            if (!$period) {
-                $errors[] = 'Periode yang dipilih tidak ditemukan.';
-            } else {
-                if ($filters['date_from'] === '') {
-                    $filters['date_from'] = (string) $period['start_date'];
-                }
-                if ($filters['date_to'] === '') {
-                    $filters['date_to'] = (string) $period['end_date'];
-                }
-            }
-        }
+        [$filters, $period, , $periodErrors] = report_resolve_period_filter($filters, fn (int $id): ?array => $this->model()->findPeriodById($id));
+        $errors = array_merge($errors, $periodErrors);
 
         if ($filters['unit_id'] > 0) {
             $unit = find_business_unit($filters['unit_id']);

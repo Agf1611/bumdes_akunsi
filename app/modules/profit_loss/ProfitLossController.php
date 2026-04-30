@@ -44,14 +44,15 @@ final class ProfitLossController extends Controller
             $pdf = new ReportPdf('L');
             report_pdf_init($pdf, $profile, 'Laporan Laba Rugi', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
 
-            $widths = [16, 112, 42];
+            $widths = [14, 96, 40, 40];
             $headerPrinter = static function (ReportPdf $pdfObj) use ($profile, $viewData, $selectedPeriod, $unitLabel, $widths): void {
                 report_pdf_init($pdfObj, $profile, 'Laporan Laba Rugi', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
                 $pdfObj->tableRow([
                     'No',
                     'Uraian',
                     (string) $viewData['report']['current_column_label'],
-                ], $widths, ['C', 'L', 'R'], 8.0, true);
+                    (string) $viewData['report']['comparison_column_label'],
+                ], $widths, ['C', 'L', 'R', 'R'], 8.0, true);
             };
             $headerPrinter($pdf);
 
@@ -60,14 +61,16 @@ final class ProfitLossController extends Controller
                     (string) $row['order'],
                     (string) $row['label'],
                     $row['current_amount'] === null ? '' : profit_loss_currency((float) $row['current_amount']),
-                ], $widths, ['C', 'L', 'R'], 8.0, $row['row_type'] !== 'account', $headerPrinter);
+                    $row['comparison_amount'] === null ? '' : profit_loss_currency((float) $row['comparison_amount']),
+                ], $widths, ['C', 'L', 'R', 'R'], 8.0, $row['row_type'] !== 'account', $headerPrinter);
             }
 
             $pdf->tableRow([
                 '',
                 profit_loss_display_label(),
                 profit_loss_currency((float) $viewData['report']['net_income']),
-            ], $widths, ['C', 'L', 'R'], 8.0, true, $headerPrinter);
+                profit_loss_currency((float) $viewData['report']['comparison_net_income']),
+            ], $widths, ['C', 'L', 'R', 'R'], 8.0, true, $headerPrinter);
 
             report_pdf_footer_note($pdf, $profile);
             $pdf->output('laporan-laba-rugi.pdf');
@@ -89,6 +92,7 @@ final class ProfitLossController extends Controller
                     (string) ($row['row_type'] ?? ''),
                     (string) ($row['label'] ?? ''),
                     $row['current_amount'] === null ? '' : profit_loss_currency((float) $row['current_amount']),
+                    $row['comparison_amount'] === null ? '' : profit_loss_currency((float) $row['comparison_amount']),
                 ];
             }
 
@@ -97,6 +101,7 @@ final class ProfitLossController extends Controller
                 'grand_total',
                 strtoupper(profit_loss_display_label()),
                 profit_loss_currency((float) $viewData['report']['net_income']),
+                profit_loss_currency((float) $viewData['report']['comparison_net_income']),
             ];
 
             report_download_xlsx(
@@ -104,10 +109,11 @@ final class ProfitLossController extends Controller
                 'Laba Rugi',
                 'Laporan Laba Rugi',
                 $viewData['filters'],
-                ['No', 'Tipe Baris', 'Uraian', (string) $viewData['report']['current_column_label']],
+                ['No', 'Tipe Baris', 'Uraian', (string) $viewData['report']['current_column_label'], (string) $viewData['report']['comparison_column_label']],
                 $rows,
                 [
                     'Mode Laporan' => (string) ($viewData['report']['mode_label'] ?? '-'),
+                    'Kolom Akumulasi' => (string) ($viewData['report']['comparison_column_label'] ?? '-'),
                 ]
             );
         } catch (Throwable $e) {
@@ -124,12 +130,14 @@ final class ProfitLossController extends Controller
 
         $filters = [
             'period_id' => (int) get_query('period_id', $defaultPeriodId),
+            'period_to_id' => (int) get_query('period_to_id', 0),
+            'filter_scope' => report_normalize_filter_scope((string) get_query('filter_scope', 'period')),
             'fiscal_year' => (int) get_query('fiscal_year', 0),
             'date_from' => trim((string) get_query('date_from', '')),
             'date_to' => trim((string) get_query('date_to', '')),
             'unit_id' => (int) get_query('unit_id', 0),
             'mode' => trim((string) get_query('mode', 'period')),
-            'comparison_mode' => report_normalize_comparison_mode((string) get_query('comparison_mode', 'none')),
+            'comparison_mode' => report_normalize_comparison_mode((string) get_query('comparison_mode', 'ytd')),
             'comparison_period_id' => (int) get_query('comparison_period_id', 0),
             'show_variance' => report_query_flag(get_query('show_variance', '0'), false),
             'show_visual' => report_query_flag(get_query('show_visual', '1')),
@@ -161,11 +169,11 @@ final class ProfitLossController extends Controller
             $current = $this->buildSectionReport($currentRawRows);
 
             $comparisonContext = report_resolve_comparison_range(
-                (string) $filters['comparison_mode'],
+                'ytd',
                 (string) $filters['date_from'],
                 (string) $filters['date_to'],
                 $selectedPeriod,
-                $selectedComparisonPeriod
+                null
             );
             $comparison = $this->emptyReport();
             if (($comparisonContext['enabled'] ?? false) === true) {
@@ -182,8 +190,8 @@ final class ProfitLossController extends Controller
             $report['period_total_label'] = $filters['mode'] === 'to_date'
                 ? 'Total ' . $this->monthYearLabel($filters['date_to']) . ' s.d. ' . format_id_date($filters['date_to'])
                 : 'Total ' . $this->resolveCurrentColumnLabel($filters, $selectedPeriod);
-            $report['comparison_label'] = (string) ($comparisonContext['label'] ?? 'Pembanding');
-            $report['comparison_column_label'] = (string) ($comparisonContext['column_label'] ?? 'Pembanding');
+            $report['comparison_label'] = 'Akumulasi Tahun Berjalan';
+            $report['comparison_column_label'] = 'Akumulasi s.d. ' . format_id_date((string) ($comparisonContext['date_to'] ?? $filters['date_to']));
             $report['comparison_date_from'] = (string) ($comparisonContext['date_from'] ?? '');
             $report['comparison_date_to'] = (string) ($comparisonContext['date_to'] ?? '');
             $report['comparison_revenue_rows'] = $comparison['revenue_rows'];
@@ -206,10 +214,7 @@ final class ProfitLossController extends Controller
                 'to_date' => 'Sampai tanggal akhir',
             ],
             'comparisonModes' => [
-                'ytd' => 'Aktual vs Akumulasi Tahun Berjalan',
-                'previous_period' => 'Aktual vs Periode Lalu',
-                'previous_year' => 'Aktual vs Tahun Lalu',
-                'none' => 'Tanpa Pembanding',
+                'ytd' => 'Akumulasi Tahun Berjalan',
             ],
             'reportYears' => accounting_report_year_options(),
             'periods' => $periods,
@@ -235,23 +240,12 @@ final class ProfitLossController extends Controller
         $filters['date_to'] = trim((string) ($filters['date_to'] ?? ''));
         $filters['fiscal_year'] = (int) ($filters['fiscal_year'] ?? 0);
         $filters['mode'] = $this->normalizeMode((string) ($filters['mode'] ?? 'period'));
-        $filters['comparison_mode'] = report_normalize_comparison_mode((string) ($filters['comparison_mode'] ?? 'ytd'));
+        $filters['comparison_mode'] = 'ytd';
         $filters['comparison_period_id'] = (int) ($filters['comparison_period_id'] ?? 0);
         $filters = apply_fiscal_year_filter($filters);
 
-        if ($filters['period_id'] > 0) {
-            $period = $this->model()->findPeriodById($filters['period_id']);
-            if (!$period) {
-                $errors[] = 'Periode yang dipilih tidak ditemukan.';
-            } else {
-                if ($filters['date_from'] === '') {
-                    $filters['date_from'] = (string) $period['start_date'];
-                }
-                if ($filters['date_to'] === '') {
-                    $filters['date_to'] = (string) $period['end_date'];
-                }
-            }
-        }
+        [$filters, $period, , $periodErrors] = report_resolve_period_filter($filters, fn (int $id): ?array => $this->model()->findPeriodById($id));
+        $errors = array_merge($errors, $periodErrors);
 
         if ($filters['unit_id'] > 0) {
             $unit = find_business_unit($filters['unit_id']);
@@ -333,6 +327,7 @@ final class ProfitLossController extends Controller
     {
         $combined = [];
         foreach (['REVENUE' => 'revenue_rows', 'EXPENSE' => 'expense_rows'] as $type => $key) {
+            $combined[$type] = [];
             foreach (($current[$key] ?? []) as $row) {
                 $code = (string) $row['account_code'];
                 $combined[$type][$code] = [
@@ -553,8 +548,9 @@ final class ProfitLossController extends Controller
         $mode = $this->normalizeMode((string) ($filters['mode'] ?? 'period'));
         $dateFrom = trim((string) ($filters['date_from'] ?? ''));
         $dateTo = trim((string) ($filters['date_to'] ?? ''));
+        $hasPeriodRange = (int) ($filters['period_to_id'] ?? 0) > 0;
 
-        if ($selectedPeriod) {
+        if ($selectedPeriod && !$hasPeriodRange) {
             $periodStart = (string) ($selectedPeriod['start_date'] ?? $dateFrom);
             $periodEnd = (string) ($selectedPeriod['end_date'] ?? $dateTo);
             if ($mode === 'period') {

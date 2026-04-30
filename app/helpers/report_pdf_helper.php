@@ -49,12 +49,13 @@ function report_pdf_init(ReportPdf $pdf, array $profile, string $title, string $
     $pdf->text(12, $titleY, $title, 'B', 12);
     $pdf->text(12, $titleY + 6, 'Periode: ' . $periodLabel, '', 9);
     $pdf->text(12, $titleY + 11, 'Unit Usaha: ' . $unitLabel, '', 9);
+    $pdf->text(12, $titleY + 16, report_kepmendes_136_reference(), '', 7.5);
     if ($asOf) {
-        $pdf->text(12, $titleY + 16, 'Laporan posisi per tanggal akhir filter.', '', 8.5);
-        $pdf->setCursorY($titleY + 22);
+        $pdf->text(12, $titleY + 21, 'Laporan posisi per tanggal akhir filter.', '', 8.5);
+        $pdf->setCursorY($titleY + 27);
         return;
     }
-    $pdf->setCursorY($titleY + 19);
+    $pdf->setCursorY($titleY + 24);
 }
 
 function report_pdf_note(ReportPdf $pdf, string $text): void

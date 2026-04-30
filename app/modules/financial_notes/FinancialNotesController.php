@@ -44,7 +44,7 @@ final class FinancialNotesController extends Controller
             $pdf = new ReportPdf('P');
             report_pdf_init($pdf, $profile, 'Catatan atas Laporan Keuangan', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel, false);
 
-            $introHeight = $pdf->paragraph(12, $pdf->getCursorY(), $pdf->getUsableWidth(), 'Catatan atas Laporan Keuangan ini disusun sebagai pelengkap laporan utama BUMDes dan menyajikan informasi tambahan mengenai posisi keuangan, kinerja usaha, dan penjelasan kebijakan akuntansi.', '', 8.8, 4.6);
+            $introHeight = $pdf->paragraph(12, $pdf->getCursorY(), $pdf->getUsableWidth(), 'Catatan atas Laporan Keuangan ini disusun sebagai pelengkap laporan utama BUMDes dan mengikuti struktur KepmenDesa PDTT Nomor 136 Tahun 2022: pernyataan acuan, dasar penyusunan, kebijakan akuntansi, rincian pos, dan pengungkapan lain.', '', 8.8, 4.6);
             $pdf->ln($introHeight + 3);
 
             foreach (array_values($viewData['notes']) as $section) {
@@ -89,6 +89,8 @@ final class FinancialNotesController extends Controller
 
         $filters = [
             'period_id' => (int) get_query('period_id', $defaultPeriodId),
+            'period_to_id' => (int) get_query('period_to_id', 0),
+            'filter_scope' => report_normalize_filter_scope((string) get_query('filter_scope', 'period')),
             'date_from' => trim((string) get_query('date_from', '')),
             'date_to' => trim((string) get_query('date_to', '')),
             'unit_id' => (int) get_query('unit_id', 0),
@@ -122,19 +124,8 @@ final class FinancialNotesController extends Controller
         $period = null;
         $unit = null;
 
-        if ((int) $filters['period_id'] > 0) {
-            $period = $this->model()->findPeriodById((int) $filters['period_id']);
-            if (!$period) {
-                $errors[] = 'Periode laporan tidak ditemukan.';
-            } else {
-                if ($filters['date_from'] === '') {
-                    $filters['date_from'] = (string) $period['start_date'];
-                }
-                if ($filters['date_to'] === '') {
-                    $filters['date_to'] = (string) $period['end_date'];
-                }
-            }
-        }
+        [$filters, $period, , $periodErrors] = report_resolve_period_filter($filters, fn (int $id): ?array => $this->model()->findPeriodById($id));
+        $errors = array_merge($errors, $periodErrors);
 
         if ($filters['date_from'] === '' || $filters['date_to'] === '') {
             $errors[] = 'Rentang tanggal laporan wajib dipilih.';
@@ -173,67 +164,104 @@ final class FinancialNotesController extends Controller
         $revenueRows = $this->model()->getProfitLossRows($dateFrom, $dateTo, 'REVENUE', $unitId);
         $expenseRows = $this->model()->getProfitLossRows($dateFrom, $dateTo, 'EXPENSE', $unitId);
         $netIncome = $this->model()->getNetIncome($dateFrom, $dateTo, $unitId);
+        $totalRevenue = financial_notes_table_total($revenueRows);
+        $totalExpense = financial_notes_table_total($expenseRows);
+        $totalLiability = financial_notes_table_total($liabilityRows);
+        $totalEquity = financial_notes_table_total($equityRows) + $netIncome;
 
         return [
-            'general' => [
-                'title' => '1. Informasi Umum BUMDes',
+            'statement' => [
+                'title' => 'A. Pernyataan Laporan Keuangan',
+                'paragraphs' => [
+                    financial_notes_kepmendes_statement($profile),
+                    'Catatan atas Laporan Keuangan ini merupakan bagian yang tidak terpisahkan dari laporan keuangan lengkap BUM Desa, yaitu Laporan Laba Rugi, Laporan Perubahan Ekuitas, Laporan Posisi Keuangan, dan Laporan Arus Kas.',
+                ],
+                'rows' => [],
+            ],
+            'basis' => [
+                'title' => 'B. Dasar Penyusunan Laporan Keuangan',
                 'paragraphs' => array_values(array_filter([
                     'BUMDes ' . ((string) ($profile['bumdes_name'] ?? 'BUMDes')) . ' menyusun laporan keuangan untuk periode ' . format_id_long_date($dateFrom) . ' sampai dengan ' . format_id_long_date($dateTo) . '.',
                     trim((string) ($profile['address'] ?? '')) !== '' ? 'Alamat entitas: ' . trim((string) $profile['address']) . '.' : '',
                     financial_notes_profile_location($profile) !== '' ? 'Wilayah administrasi: ' . financial_notes_profile_location($profile) . '.' : '',
                     financial_notes_profile_legal($profile) !== '' ? 'Identitas legal lembaga: ' . financial_notes_profile_legal($profile) . '.' : '',
+                    'Laporan disusun dari jurnal, buku besar, dan saldo akun yang tercatat dalam aplikasi untuk lingkup unit usaha yang dipilih.',
                 ])),
                 'rows' => [],
             ],
             'policies' => [
-                'title' => '2. Dasar Penyusunan dan Kebijakan Akuntansi',
+                'title' => 'C. Ringkasan Kebijakan Akuntansi Signifikan',
                 'paragraphs' => financial_notes_policy_points(),
                 'rows' => [],
             ],
             'cash' => [
-                'title' => '3. Kas dan Setara Kas',
+                'title' => 'D.1 Rincian Pos Aset - Kas dan Setara Kas',
                 'paragraphs' => [
                     'Kas dan setara kas merupakan saldo akun kas serta rekening bank yang digunakan untuk operasional BUMDes pada akhir periode laporan.',
                 ],
                 'rows' => $cashRows,
             ],
             'receivables' => [
-                'title' => '4. Piutang Usaha / Piutang Lainnya',
+                'title' => 'D.2 Rincian Pos Aset - Piutang Usaha / Piutang Lainnya',
                 'paragraphs' => [
                     'Piutang disajikan berdasarkan saldo akun piutang yang tercatat sampai akhir periode. Pengelola perlu meninjau piutang yang menunggak secara berkala.',
                 ],
                 'rows' => $receivableRows,
             ],
             'inventory' => [
-                'title' => '5. Persediaan',
+                'title' => 'D.3 Rincian Pos Aset - Persediaan',
                 'paragraphs' => [
                     'Persediaan menunjukkan nilai barang yang masih tersedia untuk kegiatan operasional atau penjualan BUMDes pada tanggal laporan.',
                 ],
                 'rows' => $inventoryRows,
             ],
             'fixed_assets' => [
-                'title' => '6. Aset Tetap dan Akumulasi Penyusutan',
+                'title' => 'D.4 Rincian Pos Aset - Aset Tetap dan Akumulasi Penyusutan',
                 'paragraphs' => [
                     'Aset tetap disajikan berdasarkan akun aset tetap yang tercatat pada Chart of Accounts. Akumulasi penyusutan atau akun kontra aset ditampilkan terpisah sebagai pengurang nilai buku.',
                     'Total aset tetap bruto sebesar ' . financial_notes_currency(financial_notes_table_total($fixedAssetRows)) . ' dan akumulasi penyusutan sebesar ' . financial_notes_currency(financial_notes_table_total($depreciationRows)) . '.',
                 ],
                 'rows' => array_merge($fixedAssetRows, $depreciationRows),
             ],
-            'liabilities_equity' => [
-                'title' => '7. Liabilitas dan Ekuitas',
+            'liabilities' => [
+                'title' => 'D.5 Rincian Pos Kewajiban / Liabilitas',
                 'paragraphs' => [
-                    'Liabilitas mencerminkan kewajiban BUMDes kepada pihak lain, sedangkan ekuitas merupakan hak residual atas aset setelah dikurangi liabilitas.',
-                    'Total liabilitas pada akhir periode adalah ' . financial_notes_currency(financial_notes_table_total($liabilityRows)) . ' dan total ekuitas tercatat sebesar ' . financial_notes_currency(financial_notes_table_total($equityRows) + $netIncome) . ' termasuk hasil usaha berjalan.',
+                    'Kewajiban/liabilitas mencerminkan utang atau kewajiban BUMDes kepada pihak lain yang masih tersisa pada akhir periode laporan.',
+                    'Total kewajiban/liabilitas pada akhir periode adalah ' . financial_notes_currency($totalLiability) . '.',
                 ],
-                'rows' => array_merge($liabilityRows, $equityRows),
+                'rows' => $liabilityRows,
             ],
-            'performance' => [
-                'title' => '8. Kinerja Pendapatan dan Beban',
+            'equity' => [
+                'title' => 'D.6 Rincian Pos Ekuitas',
                 'paragraphs' => [
-                    'Selama periode berjalan, BUMDes membukukan total pendapatan sebesar ' . financial_notes_currency(financial_notes_table_total($revenueRows)) . ' dan total beban sebesar ' . financial_notes_currency(financial_notes_table_total($expenseRows)) . '.',
-                    'Dengan demikian, BUMDes menghasilkan ' . financial_notes_net_result_label($netIncome) . ' sebesar ' . financial_notes_currency(abs($netIncome)) . '.',
+                    'Ekuitas merupakan hak residual pemilik atas aset BUMDes setelah dikurangi seluruh kewajiban/liabilitas.',
+                    'Total ekuitas tercatat sebesar ' . financial_notes_currency($totalEquity) . ' termasuk hasil usaha berjalan.',
                 ],
-                'rows' => array_merge($revenueRows, $expenseRows),
+                'rows' => $equityRows,
+            ],
+            'revenue' => [
+                'title' => 'D.7 Rincian Pos Pendapatan',
+                'paragraphs' => [
+                    'Pendapatan merupakan manfaat ekonomi yang timbul dari kegiatan usaha BUMDes selama periode laporan.',
+                    'Total pendapatan periode berjalan adalah ' . financial_notes_currency($totalRevenue) . '.',
+                ],
+                'rows' => $revenueRows,
+            ],
+            'expenses' => [
+                'title' => 'D.8 Rincian Pos Beban-Beban',
+                'paragraphs' => [
+                    'Beban merupakan penurunan manfaat ekonomi selama periode laporan yang berkaitan dengan kegiatan operasional dan pendukung BUMDes.',
+                    'Total beban periode berjalan adalah ' . financial_notes_currency($totalExpense) . ', sehingga BUMDes menghasilkan ' . financial_notes_net_result_label($netIncome) . ' sebesar ' . financial_notes_currency(abs($netIncome)) . '.',
+                ],
+                'rows' => $expenseRows,
+            ],
+            'other_disclosures' => [
+                'title' => 'E. Pengungkapan Lain',
+                'paragraphs' => [
+                    'Pengelola perlu melengkapi pengungkapan lain apabila terdapat kejadian penting setelah tanggal laporan, pembatasan penggunaan kas, komitmen, kontinjensi, sengketa, atau informasi material lain yang perlu diketahui pembaca laporan.',
+                    'Apabila tidak terdapat pengungkapan lain yang material, bagian ini dapat digunakan sebagai pernyataan bahwa tidak ada informasi tambahan yang mempengaruhi kewajaran laporan pada periode tersebut.',
+                ],
+                'rows' => [],
             ],
         ];
     }
@@ -241,14 +269,18 @@ final class FinancialNotesController extends Controller
     private function emptyNotes(): array
     {
         return [
-            'general' => ['title' => '1. Informasi Umum BUMDes', 'paragraphs' => [], 'rows' => []],
-            'policies' => ['title' => '2. Dasar Penyusunan dan Kebijakan Akuntansi', 'paragraphs' => [], 'rows' => []],
-            'cash' => ['title' => '3. Kas dan Setara Kas', 'paragraphs' => [], 'rows' => []],
-            'receivables' => ['title' => '4. Piutang Usaha / Piutang Lainnya', 'paragraphs' => [], 'rows' => []],
-            'inventory' => ['title' => '5. Persediaan', 'paragraphs' => [], 'rows' => []],
-            'fixed_assets' => ['title' => '6. Aset Tetap dan Akumulasi Penyusutan', 'paragraphs' => [], 'rows' => []],
-            'liabilities_equity' => ['title' => '7. Liabilitas dan Ekuitas', 'paragraphs' => [], 'rows' => []],
-            'performance' => ['title' => '8. Kinerja Pendapatan dan Beban', 'paragraphs' => [], 'rows' => []],
+            'statement' => ['title' => 'A. Pernyataan Laporan Keuangan', 'paragraphs' => [], 'rows' => []],
+            'basis' => ['title' => 'B. Dasar Penyusunan Laporan Keuangan', 'paragraphs' => [], 'rows' => []],
+            'policies' => ['title' => 'C. Ringkasan Kebijakan Akuntansi Signifikan', 'paragraphs' => [], 'rows' => []],
+            'cash' => ['title' => 'D.1 Rincian Pos Aset - Kas dan Setara Kas', 'paragraphs' => [], 'rows' => []],
+            'receivables' => ['title' => 'D.2 Rincian Pos Aset - Piutang Usaha / Piutang Lainnya', 'paragraphs' => [], 'rows' => []],
+            'inventory' => ['title' => 'D.3 Rincian Pos Aset - Persediaan', 'paragraphs' => [], 'rows' => []],
+            'fixed_assets' => ['title' => 'D.4 Rincian Pos Aset - Aset Tetap dan Akumulasi Penyusutan', 'paragraphs' => [], 'rows' => []],
+            'liabilities' => ['title' => 'D.5 Rincian Pos Kewajiban / Liabilitas', 'paragraphs' => [], 'rows' => []],
+            'equity' => ['title' => 'D.6 Rincian Pos Ekuitas', 'paragraphs' => [], 'rows' => []],
+            'revenue' => ['title' => 'D.7 Rincian Pos Pendapatan', 'paragraphs' => [], 'rows' => []],
+            'expenses' => ['title' => 'D.8 Rincian Pos Beban-Beban', 'paragraphs' => [], 'rows' => []],
+            'other_disclosures' => ['title' => 'E. Pengungkapan Lain', 'paragraphs' => [], 'rows' => []],
         ];
     }
 }

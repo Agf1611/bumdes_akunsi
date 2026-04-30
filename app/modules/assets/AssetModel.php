@@ -70,7 +70,24 @@ final class AssetModel
             $row['unit_cost'] = $qty > 0 ? round((float) ($row['acquisition_cost'] ?? 0) / $qty, 2) : (float) ($row['acquisition_cost'] ?? 0);
         }
 
+        $row['acquisition_sync_status'] = $this->resolveAcquisitionSyncStatus($row);
+
         return $row;
+    }
+
+    private function resolveAcquisitionSyncStatus(array $data): string
+    {
+        $linkedJournalId = (int) ($data['linked_journal_id'] ?? 0);
+        if ($linkedJournalId > 0) {
+            return 'POSTED';
+        }
+
+        $entryMode = strtoupper(trim((string) ($data['entry_mode'] ?? 'ACQUISITION')));
+        if ($entryMode === 'ACQUISITION') {
+            return 'READY';
+        }
+
+        return 'NONE';
     }
 
     public function getCategories(bool $includeInactive = true, string $group = ''): array
@@ -1328,6 +1345,107 @@ final class AssetModel
         ];
     }
 
+    public function getAuditSummary(): array
+    {
+        $summary = [
+            'asset_count' => 0,
+            'opening_count' => 0,
+            'acquisition_count' => 0,
+            'categories_missing_map' => 0,
+            'acquisition_without_journal' => 0,
+            'stored_status_mismatch' => 0,
+            'depreciation_calculated' => 0,
+            'depreciation_posted' => 0,
+            'unit_comparisons' => [],
+            'units_missing_register' => [],
+            'units_with_delta' => [],
+        ];
+
+        $totals = $this->db->query("SELECT
+                COUNT(*) AS asset_count,
+                SUM(CASE WHEN entry_mode = 'OPENING' THEN 1 ELSE 0 END) AS opening_count,
+                SUM(CASE WHEN entry_mode = 'ACQUISITION' THEN 1 ELSE 0 END) AS acquisition_count
+            FROM asset_items")->fetch(PDO::FETCH_ASSOC) ?: [];
+        $summary['asset_count'] = (int) ($totals['asset_count'] ?? 0);
+        $summary['opening_count'] = (int) ($totals['opening_count'] ?? 0);
+        $summary['acquisition_count'] = (int) ($totals['acquisition_count'] ?? 0);
+
+        $summary['categories_missing_map'] = (int) ($this->db->query("SELECT COUNT(*) FROM asset_categories
+            WHERE is_active = 1
+              AND (
+                    asset_coa_id IS NULL
+                    OR (
+                        depreciation_allowed = 1
+                        AND (
+                            accumulated_depreciation_coa_id IS NULL
+                            OR depreciation_expense_coa_id IS NULL
+                        )
+                    )
+                )")->fetchColumn() ?: 0);
+
+        $summary['acquisition_without_journal'] = (int) ($this->db->query("SELECT COUNT(*) FROM asset_items
+            WHERE entry_mode = 'ACQUISITION'
+              AND (linked_journal_id IS NULL OR linked_journal_id = 0)")->fetchColumn() ?: 0);
+
+        $summary['stored_status_mismatch'] = (int) ($this->db->query("SELECT COUNT(*) FROM asset_items
+            WHERE linked_journal_id IS NOT NULL
+              AND linked_journal_id > 0
+              AND acquisition_sync_status <> 'POSTED'")->fetchColumn() ?: 0);
+
+        $summary['depreciation_calculated'] = (int) ($this->db->query("SELECT COUNT(*) FROM asset_depreciations WHERE status = 'CALCULATED'")->fetchColumn() ?: 0);
+        $summary['depreciation_posted'] = (int) ($this->db->query("SELECT COUNT(*) FROM asset_depreciations WHERE status = 'POSTED'")->fetchColumn() ?: 0);
+
+        $registerRows = $this->db->query("SELECT
+                bu.id AS unit_id,
+                bu.unit_code,
+                bu.unit_name,
+                COUNT(a.id) AS register_count,
+                COALESCE(SUM(a.acquisition_cost), 0) AS register_total
+            FROM business_units bu
+            LEFT JOIN asset_items a ON a.business_unit_id = bu.id
+            GROUP BY bu.id, bu.unit_code, bu.unit_name
+            ORDER BY bu.unit_code ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $ledgerStmt = $this->db->query("SELECT
+                h.business_unit_id AS unit_id,
+                COALESCE(SUM(l.debit - l.credit), 0) AS ledger_total
+            FROM journal_headers h
+            INNER JOIN journal_lines l ON l.journal_id = h.id
+            INNER JOIN coa_accounts c ON c.id = l.coa_id
+            WHERE c.account_type = 'ASSET'
+              AND c.account_category = 'FIXED_ASSET'
+              AND c.account_name NOT LIKE 'Akumulasi%'
+            GROUP BY h.business_unit_id");
+        $ledgerByUnit = [];
+        foreach ($ledgerStmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $ledgerRow) {
+            $ledgerByUnit[(int) ($ledgerRow['unit_id'] ?? 0)] = (float) ($ledgerRow['ledger_total'] ?? 0);
+        }
+
+        foreach ($registerRows as $row) {
+            $unitId = (int) ($row['unit_id'] ?? 0);
+            $registerTotal = (float) ($row['register_total'] ?? 0);
+            $ledgerTotal = (float) ($ledgerByUnit[$unitId] ?? 0);
+            $comparison = [
+                'unit_id' => $unitId,
+                'unit_code' => (string) ($row['unit_code'] ?? ''),
+                'unit_name' => (string) ($row['unit_name'] ?? ''),
+                'register_count' => (int) ($row['register_count'] ?? 0),
+                'register_total' => $registerTotal,
+                'ledger_total' => $ledgerTotal,
+                'delta' => round($registerTotal - $ledgerTotal, 2),
+            ];
+            $summary['unit_comparisons'][] = $comparison;
+
+            if ($comparison['register_count'] === 0 && abs($ledgerTotal) >= 0.005) {
+                $summary['units_missing_register'][] = $comparison;
+            } elseif (abs($comparison['delta']) >= 0.005) {
+                $summary['units_with_delta'][] = $comparison;
+            }
+        }
+
+        return $summary;
+    }
+
     private function bindAssetData(PDOStatement $stmt, array $data, int $userId, bool $withId = false, int $id = 0): void
     {
         if ($withId) {
@@ -1373,7 +1491,7 @@ final class AssetModel
         $this->bindNullableInt($stmt, ':linked_journal_id', $data['linked_journal_id']);
         $stmt->bindValue(':condition_status', $data['condition_status'], PDO::PARAM_STR);
         $stmt->bindValue(':asset_status', $data['asset_status'], PDO::PARAM_STR);
-        $stmt->bindValue(':acquisition_sync_status', (string) ($data['acquisition_sync_status'] ?? (($data['entry_mode'] ?? 'ACQUISITION') === 'ACQUISITION' ? 'READY' : 'NONE')), PDO::PARAM_STR);
+        $stmt->bindValue(':acquisition_sync_status', (string) ($data['acquisition_sync_status'] ?? $this->resolveAcquisitionSyncStatus($data)), PDO::PARAM_STR);
         $stmt->bindValue(':is_active', $data['is_active'] ? 1 : 0, PDO::PARAM_INT);
         $stmt->bindValue(':description', $data['description'], PDO::PARAM_STR);
         $stmt->bindValue(':notes', $data['notes'], PDO::PARAM_STR);

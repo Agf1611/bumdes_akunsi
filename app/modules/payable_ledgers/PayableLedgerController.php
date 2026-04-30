@@ -44,6 +44,8 @@ final class PayableLedgerController extends Controller
             'partner_id' => (int) get_query('partner_id', 0),
             'account_id' => (int) get_query('account_id', 0),
             'period_id' => (int) get_query('period_id', 0),
+            'period_to_id' => (int) get_query('period_to_id', 0),
+            'filter_scope' => report_normalize_filter_scope((string) get_query('filter_scope', 'period')),
             'fiscal_year' => (int) get_query('fiscal_year', 0),
             'unit_id' => (int) get_query('unit_id', 0),
             'date_from' => trim((string) get_query('date_from', '')),
@@ -65,7 +67,7 @@ final class PayableLedgerController extends Controller
         $movementSummary = ['debit_total' => 0.0, 'credit_total' => 0.0, 'journal_count' => 0, 'partner_count' => 0, 'last_transaction_date' => null];
         $agingBuckets = [];
         $topPartners = [];
-        $hasFilters = $filters['partner_id'] > 0 || $filters['account_id'] > 0 || $filters['period_id'] > 0 || $filters['unit_id'] > 0 || $filters['date_from'] !== '' || $filters['date_to'] !== '';
+        $hasFilters = $filters['partner_id'] > 0 || $filters['account_id'] > 0 || $filters['period_id'] > 0 || $filters['period_to_id'] > 0 || $filters['unit_id'] > 0 || $filters['date_from'] !== '' || $filters['date_to'] !== '';
 
         if ($hasFilters) {
             [$filters, $selectedPartner, $selectedAccount, $selectedPeriod, $selectedUnit] = $this->resolveFilters($filters, $status);
@@ -162,19 +164,8 @@ final class PayableLedgerController extends Controller
                 }
             }
         }
-        if ($filters['period_id'] > 0) {
-            $period = $this->model()->findPeriodById((int) $filters['period_id']);
-            if (!$period) {
-                $errors[] = 'Periode yang dipilih tidak ditemukan.';
-            } else {
-                if ($filters['date_from'] === '') {
-                    $filters['date_from'] = (string) $period['start_date'];
-                }
-                if ($filters['date_to'] === '') {
-                    $filters['date_to'] = (string) $period['end_date'];
-                }
-            }
-        }
+        [$filters, $period, , $periodErrors] = report_resolve_period_filter($filters, fn (int $id): ?array => $this->model()->findPeriodById($id));
+        $errors = array_merge($errors, $periodErrors);
         if ($filters['date_from'] !== '' && !$this->isValidDate($filters['date_from'])) {
             $errors[] = 'Tanggal mulai tidak valid.';
         }

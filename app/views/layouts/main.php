@@ -13,6 +13,15 @@ $assetVersion = static function (string $relativePath): string {
     $file = public_path('assets/' . ltrim($relativePath, '/'));
     return is_file($file) ? (string) filemtime($file) : '1';
 };
+$isMobileNavActive = static function (array $needles) use ($currentPath): string {
+    foreach ($needles as $needle) {
+        if ($needle !== '' && str_contains($currentPath, $needle)) {
+            return ' is-active';
+        }
+    }
+
+    return '';
+};
 ?>
 <!doctype html>
 <html lang="id" data-theme="light">
@@ -43,6 +52,7 @@ $assetVersion = static function (string $relativePath): string {
     <link href="<?= e(asset_url('css/workspace-tools.css')) ?>?v=<?= e($assetVersion('css/workspace-tools.css')) ?>" rel="stylesheet">
     <link href="<?= e(asset_url('css/ui-redesign.css')) ?>?v=<?= e($assetVersion('css/ui-redesign.css')) ?>" rel="stylesheet">
     <link href="<?= e(asset_url('css/ui-module-pages.css')) ?>?v=<?= e($assetVersion('css/ui-module-pages.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset_url('css/ui-dashboard-reference.css')) ?>?v=<?= e($assetVersion('css/ui-dashboard-reference.css')) ?>" rel="stylesheet">
 </head>
 <body class="app-shell ui-ready <?= e($routeClass) ?>">
 <div class="app-frame">
@@ -77,8 +87,41 @@ $assetVersion = static function (string $relativePath): string {
         <?php require APP_PATH . '/views/layouts/footer.php'; ?>
     </div>
 </div>
+<nav class="mobile-bottom-nav" aria-label="Navigasi utama mobile">
+    <a class="mobile-bottom-nav__item<?= e($isMobileNavActive(['/dashboard'])) ?>" href="<?= e(base_url('/dashboard')) ?>">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 10.8 12 4l8 6.8V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.2Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Dashboard</span>
+    </a>
+    <a class="mobile-bottom-nav__item<?= e($isMobileNavActive(['/journals/quick'])) ?>" href="<?= e(base_url('/journals/quick')) ?>">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M12 5v14M6 20h12a2 2 0 0 0 2-2V8.5L15.5 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Transaksi</span>
+    </a>
+    <a class="mobile-bottom-nav__item<?= e($isMobileNavActive(['/profit-loss', '/balance-sheet', '/cash-flow', '/trial-balance', '/ledger'])) ?>" href="<?= e(base_url('/profit-loss')) ?>">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 20V9m6 11V4m6 16v-7M4 20h16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Laporan</span>
+    </a>
+    <a class="mobile-bottom-nav__item<?= e(str_contains($currentPath, '/journals') && !str_contains($currentPath, '/journals/quick') ? ' is-active' : '') ?>" href="<?= e(base_url('/journals')) ?>">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4h12a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm3 5h6M9 13h6M9 17h4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Jurnal</span>
+    </a>
+    <button class="mobile-bottom-nav__item" type="button" data-mobile-menu-toggle>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Menu</span>
+    </button>
+</nav>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= e(asset_url('js/theme.js')) ?>"></script>
+<script src="<?= e(asset_url('js/theme.js')) ?>?v=<?= e($assetVersion('js/theme.js')) ?>"></script>
 <script src="<?= e(asset_url('js/workspace-tools.js')) ?>?v=<?= e($assetVersion('js/workspace-tools.js')) ?>"></script>
+<script src="<?= e(asset_url('js/report-filters.js')) ?>?v=<?= e($assetVersion('js/report-filters.js')) ?>"></script>
+<script>
+    document.addEventListener('click', function (event) {
+        var trigger = event.target.closest('[data-mobile-menu-toggle]');
+        if (!trigger) {
+            return;
+        }
+
+        document.body.classList.add('sidebar-open');
+    });
+</script>
 </body>
 </html>

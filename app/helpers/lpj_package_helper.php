@@ -181,9 +181,10 @@ function lpj_section_outline(array $viewData): array
         ['title' => 'Daftar Isi', 'note' => 'Ringkasan susunan dokumen LPJ'],
         ['title' => 'Ringkasan Eksekutif', 'note' => 'Ikhtisar kinerja dan posisi keuangan'],
         ['title' => 'Laporan Laba Rugi', 'note' => 'Pendapatan, beban, dan hasil usaha periode berjalan'],
-        ['title' => 'Laporan Posisi Keuangan (Neraca)', 'note' => 'Aset, liabilitas, ekuitas, dan pembanding'],
-        ['title' => 'Laporan Arus Kas dan Perubahan Ekuitas', 'note' => 'Pergerakan kas serta perubahan modal'],
-        ['title' => 'Catatan atas Laporan Keuangan', 'note' => 'Informasi umum, kebijakan, dan rincian akun penting'],
+        ['title' => 'Laporan Perubahan Ekuitas', 'note' => 'Perubahan penyertaan modal, saldo laba, dan ekuitas akhir'],
+        ['title' => 'Laporan Posisi Keuangan (Neraca)', 'note' => 'Aset, kewajiban/liabilitas, dan ekuitas akhir periode'],
+        ['title' => 'Laporan Arus Kas', 'note' => 'Arus kas operasi, investasi, dan pendanaan'],
+        ['title' => 'Catatan atas Laporan Keuangan', 'note' => 'Pernyataan acuan, dasar penyusunan, kebijakan, rincian pos, dan pengungkapan lain'],
         ['title' => 'Keadaan, Masalah, dan Tindak Lanjut', 'note' => 'Narasi operasional dan perbaikan berikutnya'],
     ];
 
@@ -220,7 +221,7 @@ function lpj_formal_statement(array $profile, array $viewData): string
     $bumdesName = trim((string) ($profile['bumdes_name'] ?? 'BUM Desa'));
 
     return sprintf(
-        'Dokumen %s ini disusun sebagai laporan pertanggungjawaban resmi %s untuk periode %s dengan lingkup %s. Setelah diperiksa dan ditelaah seperlunya, laporan ini dinyatakan layak digunakan sebagai bahan pembahasan internal, penyampaian kepada Pemerintah Desa, serta dokumentasi pembinaan sesuai kebutuhan administrasi BUM Desa.',
+        'Dokumen %s ini disusun sebagai laporan pertanggungjawaban resmi %s untuk periode %s dengan lingkup %s. Susunan laporan keuangan mengacu pada KepmenDesa PDTT Nomor 136 Tahun 2022, meliputi Laporan Laba Rugi, Laporan Perubahan Ekuitas, Laporan Posisi Keuangan, Laporan Arus Kas, dan Catatan atas Laporan Keuangan. Setelah diperiksa dan ditelaah seperlunya, laporan ini dinyatakan layak digunakan sebagai bahan pembahasan internal, penyampaian kepada Pemerintah Desa, serta dokumentasi pembinaan sesuai kebutuhan administrasi BUM Desa.',
         $packageTitle,
         $bumdesName,
         $periodLabel,

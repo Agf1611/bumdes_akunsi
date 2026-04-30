@@ -47,6 +47,7 @@ $lastTransactionLabel = trim((string) ($movementSummary['last_transaction_date']
 <div class="card dashboard-card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
         <form method="get" class="row g-3 align-items-end">
+            <input type="hidden" name="filter_scope" value="<?= e(report_filter_scope($filters)) ?>">
             <div class="col-md-4">
                 <label class="form-label">Mitra / Debitur</label>
                 <select name="partner_id" class="form-select">
@@ -66,13 +67,16 @@ $lastTransactionLabel = trim((string) ($movementSummary['last_transaction_date']
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label">Periode</label>
+            <div class="col-md-2">
+                <label class="form-label">Periode Awal</label>
                 <select name="period_id" class="form-select">
-                    <option value="">Semua periode</option>
-                    <?php foreach ($periods as $period): ?>
-                        <option value="<?= e((string) $period['id']) ?>" <?= (int) ($filters['period_id'] ?? 0) === (int) $period['id'] ? 'selected' : '' ?>><?= e($period['period_code'] . ' - ' . $period['period_name']) ?></option>
-                    <?php endforeach; ?>
+                    <?= report_period_select_options($periods, (int) ($filters['period_id'] ?? 0), 'Manual tanggal') ?>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Sampai Periode</label>
+                <select name="period_to_id" class="form-select">
+                    <?= report_period_select_options($periods, (int) ($filters['period_to_id'] ?? 0), 'Sama dengan periode awal') ?>
                 </select>
             </div>
             <div class="col-md-3">

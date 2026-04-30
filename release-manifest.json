@@ -7,6 +7,7 @@
     "20260424_000001_schema_versions.sql",
     "20260424_000002_user_security_fields.sql",
     "20260424_000003_journal_workflow_fields.sql",
-    "20260424_000004_user_preferences.sql"
+    "20260424_000004_user_preferences.sql",
+    "20260427_000001_cashflow_components.sql"
   ]
 }

@@ -94,7 +94,6 @@ $reportItems = array_merge($reportItems, [
     ['title' => 'Arus Kas', 'note' => 'Pergerakan kas dan bank', 'path' => '/cash-flow', 'icon' => 'cash', 'needles' => ['/cash-flow']],
     ['title' => 'Perubahan Ekuitas', 'note' => 'Mutasi modal dan saldo akhir', 'path' => '/equity-changes', 'icon' => 'equity', 'needles' => ['/equity-changes']],
     ['title' => 'CaLK', 'note' => 'Catatan atas laporan keuangan', 'path' => '/financial-notes', 'icon' => 'notes', 'needles' => ['/financial-notes']],
-    ['title' => 'Drill-down Laporan', 'note' => 'Telusuri angka ke jurnal sumber', 'path' => '/reports/drilldown', 'icon' => 'journals', 'needles' => ['/reports/drilldown']],
     ['title' => 'Paket Tutup Bulan', 'note' => 'Checklist dan bundel laporan closing', 'path' => '/closing-pack', 'icon' => 'lpj', 'needles' => ['/closing-pack']],
     ['title' => 'Paket LPJ', 'note' => 'Bundel laporan pertanggungjawaban', 'path' => '/lpj', 'icon' => 'lpj', 'needles' => ['/lpj']],
 ]);
@@ -152,7 +151,7 @@ $hasActiveItem = static function (array $section) use ($active): bool {
                     <?php endif; ?>
                 </div>
                 <div class="brand-copy min-w-0">
-                    <div class="brand-copy__label">BUMDes Finance Suite</div>
+                    <div class="brand-copy__label">Akuntansi BUMDes</div>
                     <div class="brand-copy__title"><?= e($profile['bumdes_name'] ?: 'BUMDes') ?></div>
                     <div class="brand-copy__meta"><?= e(current_accounting_period_label()) ?></div>
                 </div>

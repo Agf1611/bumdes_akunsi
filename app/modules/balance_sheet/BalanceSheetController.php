@@ -128,11 +128,13 @@ final class BalanceSheetController extends Controller
 
         $filters = [
             'period_id' => (int) get_query('period_id', $defaultPeriodId),
+            'period_to_id' => (int) get_query('period_to_id', 0),
+            'filter_scope' => report_normalize_filter_scope((string) get_query('filter_scope', 'period')),
             'fiscal_year' => (int) get_query('fiscal_year', 0),
             'date_from' => trim((string) get_query('date_from', '')),
             'date_to' => trim((string) get_query('date_to', '')),
             'unit_id' => (int) get_query('unit_id', 0),
-            'comparison_mode' => report_normalize_comparison_mode((string) get_query('comparison_mode', 'none'), ['previous_period', 'previous_year', 'none']),
+            'comparison_mode' => report_normalize_comparison_mode((string) get_query('comparison_mode', 'previous_year'), ['previous_period', 'previous_year', 'none']),
             'comparison_period_id' => (int) get_query('comparison_period_id', 0),
             'show_variance' => report_query_flag(get_query('show_variance', '0'), false),
             'show_visual' => report_query_flag(get_query('show_visual', '1')),
@@ -153,21 +155,14 @@ final class BalanceSheetController extends Controller
             }
 
             $report = $this->buildSnapshot((string) $filters['date_to'], (int) $filters['unit_id']);
-            $comparison = report_resolve_comparison_range(
-                (string) $filters['comparison_mode'],
-                (string) $filters['date_from'],
-                (string) $filters['date_to'],
-                $selectedPeriod,
-                $selectedComparisonPeriod
-            );
-            if (($comparison['enabled'] ?? false) === true) {
-                $comparisonSnapshot = $this->buildSnapshot((string) $comparison['date_to'], (int) $filters['unit_id']);
+            if ((string) $filters['comparison_mode'] === 'previous_year') {
+                $comparisonSnapshot = $this->buildOpeningSnapshot((string) $filters['date_to'], (int) $filters['unit_id']);
                 $report['asset_rows'] = $this->mergeComparisonRows($report['asset_rows'], $comparisonSnapshot['asset_rows']);
                 $report['liability_rows'] = $this->mergeComparisonRows($report['liability_rows'], $comparisonSnapshot['liability_rows']);
                 $report['equity_rows'] = $this->mergeComparisonRows($report['equity_rows'], $comparisonSnapshot['equity_rows']);
                 $report['comparison_enabled'] = true;
-                $report['comparison_label'] = (string) ($comparison['label'] ?? 'Pembanding');
-                $report['comparison_column_label'] = (string) ($comparison['column_label'] ?? 'Pembanding');
+                $report['comparison_label'] = 'Tahun sebelumnya dari jurnal saldo awal';
+                $report['comparison_column_label'] = 'Tahun Sebelumnya';
                 $report['comparison_total_assets'] = (float) ($comparisonSnapshot['total_assets'] ?? 0.0);
                 $report['comparison_total_liabilities'] = (float) ($comparisonSnapshot['total_liabilities'] ?? 0.0);
                 $report['comparison_total_equity'] = (float) ($comparisonSnapshot['total_equity'] ?? 0.0);
@@ -175,11 +170,36 @@ final class BalanceSheetController extends Controller
                 $report['comparison_current_earnings'] = (float) ($comparisonSnapshot['current_earnings'] ?? 0.0);
                 $report['comparison_difference'] = (float) ($comparisonSnapshot['difference'] ?? 0.0);
                 $report['comparison_is_balanced'] = (bool) ($comparisonSnapshot['is_balanced'] ?? true);
-                $report['comparison_as_of_date'] = (string) ($comparison['as_of_date'] ?? '');
+                $report['comparison_as_of_date'] = (string) $filters['date_to'];
                 $report['row_count'] = count($report['asset_rows']) + count($report['liability_rows']) + count($report['equity_rows']);
+            } else {
+                $comparison = report_resolve_comparison_range(
+                    (string) $filters['comparison_mode'],
+                    (string) $filters['date_from'],
+                    (string) $filters['date_to'],
+                    $selectedPeriod,
+                    $selectedComparisonPeriod
+                );
+                if (($comparison['enabled'] ?? false) === true) {
+                    $comparisonSnapshot = $this->buildSnapshot((string) $comparison['date_to'], (int) $filters['unit_id']);
+                    $report['asset_rows'] = $this->mergeComparisonRows($report['asset_rows'], $comparisonSnapshot['asset_rows']);
+                    $report['liability_rows'] = $this->mergeComparisonRows($report['liability_rows'], $comparisonSnapshot['liability_rows']);
+                    $report['equity_rows'] = $this->mergeComparisonRows($report['equity_rows'], $comparisonSnapshot['equity_rows']);
+                    $report['comparison_enabled'] = true;
+                    $report['comparison_label'] = (string) ($comparison['label'] ?? 'Pembanding');
+                    $report['comparison_column_label'] = (string) ($comparison['column_label'] ?? 'Pembanding');
+                    $report['comparison_total_assets'] = (float) ($comparisonSnapshot['total_assets'] ?? 0.0);
+                    $report['comparison_total_liabilities'] = (float) ($comparisonSnapshot['total_liabilities'] ?? 0.0);
+                    $report['comparison_total_equity'] = (float) ($comparisonSnapshot['total_equity'] ?? 0.0);
+                    $report['comparison_total_liabilities_equity'] = (float) ($comparisonSnapshot['total_liabilities_equity'] ?? 0.0);
+                    $report['comparison_current_earnings'] = (float) ($comparisonSnapshot['current_earnings'] ?? 0.0);
+                    $report['comparison_difference'] = (float) ($comparisonSnapshot['difference'] ?? 0.0);
+                    $report['comparison_is_balanced'] = (bool) ($comparisonSnapshot['is_balanced'] ?? true);
+                    $report['comparison_as_of_date'] = (string) ($comparison['as_of_date'] ?? '');
+                    $report['row_count'] = count($report['asset_rows']) + count($report['liability_rows']) + count($report['equity_rows']);
+                }
             }
 
-            $report = $this->normalizeCurrentEquityBalance($report);
         }
 
         return [[
@@ -187,7 +207,7 @@ final class BalanceSheetController extends Controller
             'filters' => $filters,
             'comparisonModes' => [
                 'previous_period' => 'Bandingkan dengan periode lalu',
-                'previous_year' => 'Bandingkan dengan tahun lalu',
+                'previous_year' => 'Tahun sebelumnya (saldo awal)',
                 'none' => 'Tanpa pembanding',
             ],
             'reportYears' => accounting_report_year_options(),
@@ -243,6 +263,7 @@ final class BalanceSheetController extends Controller
         $report['total_liabilities_equity'] = $report['total_liabilities'] + $report['total_equity'];
         $report['difference'] = $report['total_assets'] - $report['total_liabilities_equity'];
         $report['is_balanced'] = balance_sheet_is_balanced((float) $report['total_assets'], (float) $report['total_liabilities_equity']);
+        $report['needs_closing_journal'] = false;
         $report['row_count'] = count($report['asset_rows']) + count($report['liability_rows']) + count($report['equity_rows']);
 
         return $report;
@@ -265,6 +286,50 @@ final class BalanceSheetController extends Controller
         return $report;
     }
 
+    private function buildOpeningSnapshot(string $dateTo, int $unitId): array
+    {
+        $report = $this->emptyReport();
+        $rawRows = $this->model()->getOpeningSnapshotRows($dateTo, $unitId);
+
+        foreach ($rawRows as $row) {
+            $amount = balance_sheet_amount(
+                (string) $row['account_type'],
+                (float) $row['opening_total_debit'],
+                (float) $row['opening_total_credit']
+            );
+
+            $entry = [
+                'account_id' => (int) ($row['id'] ?? 0),
+                'account_code' => (string) $row['account_code'],
+                'account_name' => (string) $row['account_name'],
+                'account_type' => (string) $row['account_type'],
+                'account_category' => (string) $row['account_category'],
+                'closing_total_debit' => (float) $row['opening_total_debit'],
+                'closing_total_credit' => (float) $row['opening_total_credit'],
+                'amount' => $amount,
+                'comparison_amount' => 0.0,
+            ];
+
+            if ((string) $row['account_type'] === 'ASSET') {
+                $report['asset_rows'][] = $entry;
+                $report['total_assets'] += $amount;
+            } elseif ((string) $row['account_type'] === 'LIABILITY') {
+                $report['liability_rows'][] = $entry;
+                $report['total_liabilities'] += $amount;
+            } elseif ((string) $row['account_type'] === 'EQUITY') {
+                $report['equity_rows'][] = $entry;
+                $report['total_equity'] += $amount;
+            }
+        }
+
+        $report['total_liabilities_equity'] = $report['total_liabilities'] + $report['total_equity'];
+        $report['difference'] = $report['total_assets'] - $report['total_liabilities_equity'];
+        $report['is_balanced'] = balance_sheet_is_balanced((float) $report['total_assets'], (float) $report['total_liabilities_equity']);
+        $report['row_count'] = count($report['asset_rows']) + count($report['liability_rows']) + count($report['equity_rows']);
+
+        return $report;
+    }
+
     private function emptyReport(): array
     {
         return [
@@ -278,6 +343,7 @@ final class BalanceSheetController extends Controller
             'total_liabilities_equity' => 0.0,
             'difference' => 0.0,
             'is_balanced' => true,
+            'needs_closing_journal' => false,
             'row_count' => 0,
             'comparison_enabled' => false,
             'comparison_label' => '',
@@ -342,19 +408,8 @@ final class BalanceSheetController extends Controller
         $filters['fiscal_year'] = (int) ($filters['fiscal_year'] ?? 0);
         $filters = apply_fiscal_year_filter($filters);
 
-        if ($filters['period_id'] > 0) {
-            $period = $this->model()->findPeriodById($filters['period_id']);
-            if (!$period) {
-                $errors[] = 'Periode yang dipilih tidak ditemukan.';
-            } else {
-                if ($filters['date_from'] === '') {
-                    $filters['date_from'] = (string) $period['start_date'];
-                }
-                if ($filters['date_to'] === '') {
-                    $filters['date_to'] = (string) $period['end_date'];
-                }
-            }
-        }
+        [$filters, $period, , $periodErrors] = report_resolve_period_filter($filters, fn (int $id): ?array => $this->model()->findPeriodById($id));
+        $errors = array_merge($errors, $periodErrors);
 
         if ($filters['unit_id'] > 0) {
             $unit = find_business_unit($filters['unit_id']);

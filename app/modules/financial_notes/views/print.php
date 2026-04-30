@@ -2,7 +2,7 @@
 <div class="print-sheet">
     <?php render_print_header($profile, 'Catatan atas Laporan Keuangan', report_period_label($filters, $selectedPeriod), $selectedUnitLabel ?? 'Semua Unit'); ?>
 
-    <div class="mb-3 text-secondary">Catatan atas Laporan Keuangan ini merupakan bagian yang tidak terpisahkan dari laporan keuangan BUMDes untuk periode yang disajikan.</div>
+    <div class="mb-3 text-secondary">Catatan atas Laporan Keuangan ini merupakan bagian yang tidak terpisahkan dari laporan keuangan BUMDes untuk periode yang disajikan dan disusun mengikuti struktur KepmenDesa PDTT Nomor 136 Tahun 2022.</div>
 
     <?php foreach ($notes as $note): ?>
         <section class="mb-4 page-break-inside-avoid">

@@ -188,27 +188,15 @@ foreach ($trendSeries as $index => $point) {
             <p class="dashboard-welcome__text">Berikut ringkasan keuangan <?= e($profile['bumdes_name'] ?: 'BUMDes') ?> untuk <?= e($dateContext) ?>. Tampilan ini difokuskan agar cepat dipindai, nyaman dibaca, dan tidak melelahkan saat dipakai harian.</p>
         </div>
         <div class="dashboard-welcome__actions">
-            <a href="#dashboardFilters" class="btn btn-outline-light">
-                <span class="dashboard-inline-icon"><?= $icon('settings') ?></span>
-                Atur Dashboard
-            </a>
-            <?php if ((string) ($user['role_code'] ?? '') === 'admin'): ?>
-                <form method="post" action="<?= e(base_url('/backups/create')) ?>" class="m-0">
-                    <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
-                    <input type="hidden" name="redirect_to" value="/dashboard">
-                    <input type="hidden" name="backup_reason" value="dashboard_quick_safety_backup">
-                    <button type="submit" class="btn btn-outline-light">Amankan Data</button>
-                </form>
-            <?php endif; ?>
-            <a href="<?= e(base_url('/journals/quick')) ?>" class="btn btn-primary">Transaksi Cepat</a>
+            <a href="<?= e(base_url('/journals/create')) ?>" class="btn btn-primary">Tambah Jurnal</a>
         </div>
     </section>
 
     <section class="dashboard-filter-panel" id="dashboardFilters">
         <div class="dashboard-filter-panel__head">
             <div>
-                <h2 class="dashboard-panel__title">Filter Dashboard</h2>
-                <p class="dashboard-panel__meta">Pilih periode, unit usaha, dan rentang tanggal agar ringkasan dashboard sesuai kebutuhan Anda.</p>
+                <h2 class="dashboard-panel__title">Filter Laporan Dashboard</h2>
+                <p class="dashboard-panel__meta">Pilih periode laporan, unit usaha, dan rentang tanggal agar angka dashboard sesuai kebutuhan pemeriksaan.</p>
             </div>
             <div class="dashboard-filter-panel__actions">
                 <span class="dashboard-filter-panel__hint"><?= e(current_accounting_period_label()) ?> · <?= e($selectedUnitLabel) ?></span>
@@ -216,15 +204,17 @@ foreach ($trendSeries as $index => $point) {
             </div>
         </div>
         <form method="get" action="<?= e(base_url('/dashboard')) ?>" class="row g-3 align-items-end">
-            <div class="col-12 col-xl-3">
-                <label for="period_id" class="form-label">Periode Default</label>
+            <input type="hidden" name="filter_scope" value="<?= e(report_filter_scope($filters)) ?>">
+            <div class="col-12 col-xl-2">
+                <label for="period_id" class="form-label">Periode Awal</label>
                 <select class="form-select" id="period_id" name="period_id">
-                    <option value="0">Gunakan periode aktif / default</option>
-                    <?php foreach (($periods ?? []) as $period): ?>
-                        <option value="<?= e((string) $period['id']) ?>" <?= (int) ($filters['period_id'] ?? 0) === (int) $period['id'] ? 'selected' : '' ?>>
-                            <?= e(($period['period_code'] ?? '') . ' - ' . ($period['period_name'] ?? '')) ?>
-                        </option>
-                    <?php endforeach; ?>
+                    <?= report_period_select_options($periods ?? [], (int) ($filters['period_id'] ?? 0), 'Gunakan periode aktif') ?>
+                </select>
+            </div>
+            <div class="col-12 col-xl-2">
+                <label for="period_to_id" class="form-label">Sampai Periode</label>
+                <select class="form-select" id="period_to_id" name="period_to_id">
+                    <?= report_period_select_options($periods ?? [], (int) ($filters['period_to_id'] ?? 0), 'Sama dengan periode awal') ?>
                 </select>
             </div>
             <?php if ($unitFeatureEnabled): ?>

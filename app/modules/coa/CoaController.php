@@ -163,13 +163,13 @@ final class CoaController extends Controller
             $skipped = (int) ($result['skipped'] ?? 0);
 
             if ($inserted > 0) {
-                flash('success', 'COA global BUMDes berhasil ditambahkan. Akun baru: ' . $inserted . '. Akun yang sudah ada dilewati: ' . $skipped . '.');
+                flash('success', 'COA standar KepmenDesa 136/2022 berhasil ditambahkan. Akun baru: ' . $inserted . '. Akun yang sudah ada dilewati: ' . $skipped . '.');
             } else {
-                flash('success', 'COA global BUMDes sudah lengkap. Tidak ada akun baru yang perlu ditambahkan.');
+                flash('success', 'COA standar KepmenDesa 136/2022 sudah lengkap. Tidak ada akun baru yang perlu ditambahkan.');
             }
         } catch (Throwable $e) {
             log_error($e);
-            flash('error', 'COA global BUMDes gagal ditambahkan. Silakan periksa log aplikasi.');
+            flash('error', 'COA standar KepmenDesa 136/2022 gagal ditambahkan. Silakan periksa log aplikasi.');
         }
 
         $this->redirect('/coa');

@@ -10,14 +10,17 @@ final class ReportDrilldownController extends Controller
         $period = current_accounting_period();
         $filters = [
             'period_id' => (int) get_query('period_id', (int) ($period['id'] ?? 0)),
+            'period_to_id' => (int) get_query('period_to_id', 0),
+            'filter_scope' => report_normalize_filter_scope((string) get_query('filter_scope', 'period')),
             'account_id' => (int) get_query('account_id', 0),
             'unit_id' => (int) get_query('unit_id', 0),
             'date_from' => trim((string) get_query('date_from', (string) ($period['start_date'] ?? ''))),
             'date_to' => trim((string) get_query('date_to', (string) ($period['end_date'] ?? ''))),
             'source_report' => trim((string) get_query('source_report', 'laporan')),
         ];
+        [$filters] = report_resolve_period_filter($filters, fn (int $id): ?array => $this->findPeriodById($db, $id));
 
-        [$sql, $params] = $this->buildQuery($filters, $this->columnExists($db, 'journal_headers', 'workflow_status'));
+        [$sql, $params] = $this->buildQuery($db, $filters, $this->columnExists($db, 'journal_headers', 'workflow_status'));
         $stmt = $db->prepare($sql);
         foreach ($params as $key => $value) {
             $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
@@ -34,7 +37,7 @@ final class ReportDrilldownController extends Controller
         ]);
     }
 
-    private function buildQuery(array $filters, bool $hasWorkflowStatus): array
+    private function buildQuery(PDO $db, array $filters, bool $hasWorkflowStatus): array
     {
         $workflowSelect = $hasWorkflowStatus ? "COALESCE(j.workflow_status, 'POSTED') AS workflow_status" : "'POSTED' AS workflow_status";
         $sql = "SELECT j.id AS journal_id,
@@ -58,13 +61,31 @@ final class ReportDrilldownController extends Controller
                 WHERE 1=1";
         $params = [];
 
-        if (!empty($filters['period_id'])) {
+        if (!empty($filters['period_id']) && empty($filters['period_to_id'])) {
             $sql .= ' AND j.period_id = :period_id';
             $params[':period_id'] = (int) $filters['period_id'];
         }
         if (!empty($filters['account_id'])) {
             $sql .= ' AND l.coa_id = :account_id';
             $params[':account_id'] = (int) $filters['account_id'];
+        } elseif ((string) ($filters['source_report'] ?? '') === 'cash_flow') {
+            $cashAccountIds = $this->cashAccountIds($db);
+            if ($cashAccountIds !== []) {
+                $cashPlaceholders = [];
+                foreach ($cashAccountIds as $index => $cashAccountId) {
+                    $paramName = ':cash_account_' . $index;
+                    $cashPlaceholders[] = $paramName;
+                    $params[$paramName] = $cashAccountId;
+                }
+
+                $sql .= ' AND EXISTS (
+                    SELECT 1
+                    FROM journal_lines cash_l
+                    WHERE cash_l.journal_id = j.id
+                      AND cash_l.coa_id IN (' . implode(', ', $cashPlaceholders) . ')
+                    LIMIT 1
+                )';
+            }
         }
         if (!empty($filters['unit_id'])) {
             $sql .= ' AND j.business_unit_id = :unit_id';
@@ -83,9 +104,34 @@ final class ReportDrilldownController extends Controller
         return [$sql, $params];
     }
 
+    private function cashAccountIds(PDO $db): array
+    {
+        $stmt = $db->prepare("SELECT id
+            FROM coa_accounts
+            WHERE is_active = 1
+              AND is_header = 0
+              AND account_type = 'ASSET'
+              AND account_category = 'CURRENT_ASSET'
+              AND (LOWER(account_name) LIKE :cash_keyword OR LOWER(account_name) LIKE :bank_keyword)");
+        $stmt->execute([
+            ':cash_keyword' => '%kas%',
+            ':bank_keyword' => '%bank%',
+        ]);
+
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+    }
+
     private function periodOptions(PDO $db): array
     {
-        return $db->query('SELECT id, period_code, period_name FROM accounting_periods ORDER BY start_date DESC, id DESC')->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $db->query('SELECT id, period_code, period_name, fiscal_year, start_date, end_date FROM accounting_periods ORDER BY start_date DESC, id DESC')->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    private function findPeriodById(PDO $db, int $id): ?array
+    {
+        $stmt = $db->prepare('SELECT id, period_code, period_name, fiscal_year, start_date, end_date FROM accounting_periods WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
     }
 
     private function accountOptions(PDO $db): array

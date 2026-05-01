@@ -705,6 +705,26 @@ final class JournalModel
         }
     }
 
+    public function updateLineAssetReference(int $journalId, int $lineNo, ?int $assetId): void
+    {
+        if (!$this->columnExists('journal_lines', 'asset_id')) {
+            return;
+        }
+
+        $stmt = $this->db->prepare('UPDATE journal_lines
+            SET asset_id = :asset_id
+            WHERE journal_id = :journal_id AND line_no = :line_no
+            LIMIT 1');
+        if ($assetId !== null && $assetId > 0) {
+            $stmt->bindValue(':asset_id', $assetId, PDO::PARAM_INT);
+        } else {
+            $stmt->bindValue(':asset_id', null, PDO::PARAM_NULL);
+        }
+        $stmt->bindValue(':journal_id', $journalId, PDO::PARAM_INT);
+        $stmt->bindValue(':line_no', $lineNo, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
     public function applyWorkflowAction(int $id, string $action, int $userId, string $reason = ''): array
     {
         if (!$this->supportsWorkflow()) {

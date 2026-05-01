@@ -14,6 +14,21 @@ final class JournalController extends Controller
         return new JournalAttachmentService();
     }
 
+    private function assetModel(): AssetModel
+    {
+        return new AssetModel(Database::getInstance(db_config()));
+    }
+
+    private function db(): PDO
+    {
+        return Database::getInstance(db_config());
+    }
+
+    private function userId(): int
+    {
+        return (int) (Auth::user()['id'] ?? 0);
+    }
+
     public function index(): void
     {
         try {
@@ -773,6 +788,16 @@ final class JournalController extends Controller
         $savingAccountIds = post('saving_account_id', []);
         $cashflowComponentIds = post('cashflow_component_id', []);
         $entryTags = post('entry_tag', []);
+        $assetFormEnabled = post('asset_form_enabled', []);
+        $assetFormNames = post('asset_form_asset_name', []);
+        $assetFormCategoryIds = post('asset_form_category_id', []);
+        $assetFormSubcategories = post('asset_form_subcategory_name', []);
+        $assetFormQuantities = post('asset_form_quantity', []);
+        $assetFormUnits = post('asset_form_unit_name', []);
+        $assetFormCosts = post('asset_form_acquisition_cost', []);
+        $assetFormLocations = post('asset_form_location', []);
+        $assetFormSuppliers = post('asset_form_supplier_name', []);
+        $assetFormDescriptions = post('asset_form_description', []);
 
         $detailInput = [];
         $maxRows = max(
@@ -786,7 +811,17 @@ final class JournalController extends Controller
             is_countable($assetIds) ? count($assetIds) : 0,
             is_countable($savingAccountIds) ? count($savingAccountIds) : 0,
             is_countable($cashflowComponentIds) ? count($cashflowComponentIds) : 0,
-            is_countable($entryTags) ? count($entryTags) : 0
+            is_countable($entryTags) ? count($entryTags) : 0,
+            is_countable($assetFormEnabled) ? count($assetFormEnabled) : 0,
+            is_countable($assetFormNames) ? count($assetFormNames) : 0,
+            is_countable($assetFormCategoryIds) ? count($assetFormCategoryIds) : 0,
+            is_countable($assetFormSubcategories) ? count($assetFormSubcategories) : 0,
+            is_countable($assetFormQuantities) ? count($assetFormQuantities) : 0,
+            is_countable($assetFormUnits) ? count($assetFormUnits) : 0,
+            is_countable($assetFormCosts) ? count($assetFormCosts) : 0,
+            is_countable($assetFormLocations) ? count($assetFormLocations) : 0,
+            is_countable($assetFormSuppliers) ? count($assetFormSuppliers) : 0,
+            is_countable($assetFormDescriptions) ? count($assetFormDescriptions) : 0
         );
         for ($i = 0; $i < $maxRows; $i++) {
             $detailInput[] = [
@@ -801,6 +836,18 @@ final class JournalController extends Controller
                 'saving_account_id' => isset($savingAccountIds[$i]) ? (int) $savingAccountIds[$i] : 0,
                 'cashflow_component_id' => isset($cashflowComponentIds[$i]) ? (int) $cashflowComponentIds[$i] : 0,
                 'entry_tag' => trim((string) ($entryTags[$i] ?? '')),
+                'asset_form' => [
+                    'enabled' => (string) ($assetFormEnabled[$i] ?? '0'),
+                    'asset_name' => trim((string) ($assetFormNames[$i] ?? '')),
+                    'category_id' => trim((string) ($assetFormCategoryIds[$i] ?? '')),
+                    'subcategory_name' => trim((string) ($assetFormSubcategories[$i] ?? '')),
+                    'quantity' => trim((string) ($assetFormQuantities[$i] ?? '1')),
+                    'unit_name' => trim((string) ($assetFormUnits[$i] ?? 'unit')),
+                    'acquisition_cost_raw' => trim((string) ($assetFormCosts[$i] ?? '')),
+                    'location' => trim((string) ($assetFormLocations[$i] ?? '')),
+                    'supplier_name' => trim((string) ($assetFormSuppliers[$i] ?? '')),
+                    'description' => trim((string) ($assetFormDescriptions[$i] ?? '')),
+                ],
             ];
         }
 
@@ -833,19 +880,26 @@ final class JournalController extends Controller
         ];
 
         try {
+            $db = $this->db();
+            $ownTransaction = !$db->inTransaction();
+            if ($ownTransaction) {
+                $db->beginTransaction();
+            }
             $beforeSnapshot = $id !== null ? $this->journalAuditSnapshot($id) : null;
+            $successMessage = '';
             if ($id === null) {
                 $journalId = $this->model()->create($payload, $normalizedLines, $normalizedReceipt);
+                $successMessage = 'Jurnal umum berhasil ditambahkan.';
                 audit_log('Jurnal Umum', 'create', 'Jurnal umum baru ditambahkan.', [
                     'entity_type' => 'journal',
                     'entity_id' => (string) $journalId,
                     'after' => $this->journalAuditSnapshot($journalId),
                     'context' => $this->journalAuditContext($payload, $normalizedLines),
                 ]);
-                flash('success', 'Jurnal umum berhasil ditambahkan.');
             } else {
                 $this->model()->update($id, $payload, $normalizedLines, $normalizedReceipt);
                 $journalId = $id;
+                $successMessage = 'Jurnal umum berhasil diperbarui.';
                 audit_log('Jurnal Umum', 'update', 'Jurnal umum diperbarui.', [
                     'entity_type' => 'journal',
                     'entity_id' => (string) $journalId,
@@ -853,13 +907,31 @@ final class JournalController extends Controller
                     'after' => $this->journalAuditSnapshot($journalId),
                     'context' => $this->journalAuditContext($payload, $normalizedLines),
                 ]);
-                flash('success', 'Jurnal umum berhasil diperbarui.');
             }
+
+            $savedHeader = $this->model()->findHeaderById($journalId);
+            if (!$savedHeader) {
+                throw new RuntimeException('Jurnal yang baru disimpan tidak dapat dimuat ulang untuk sinkronisasi aset.');
+            }
+
+            $assetSync = $this->syncManagedAssetsFromJournal($journalId, $savedHeader, $normalizedLines, $this->userId());
+
+            if ($ownTransaction && $db->inTransaction()) {
+                $db->commit();
+            }
+
             clear_old_input();
+            if (($assetSync['created'] + $assetSync['updated']) > 0) {
+                $successMessage .= ' Sinkron aset: ' . $assetSync['created'] . ' aset baru, ' . $assetSync['updated'] . ' aset diperbarui.';
+            }
+            flash('success', $successMessage);
             $this->redirect('/journals/detail?id=' . $journalId);
         } catch (Throwable $e) {
+            if (isset($ownTransaction) && $ownTransaction && $this->db()->inTransaction()) {
+                $this->db()->rollBack();
+            }
             log_error($e);
-            flash('error', 'Jurnal umum gagal disimpan. Silakan periksa data dan coba lagi.');
+            flash('error', 'Jurnal umum gagal disimpan. ' . $e->getMessage());
             $this->redirect($id === null ? '/journals/create' : '/journals/edit?id=' . $id);
         }
     }
@@ -983,6 +1055,14 @@ final class JournalController extends Controller
                 continue;
             }
 
+            [$assetFormErrors, $normalizedAssetForm] = $this->validateManagedAssetForm($line, $headerInput, $account ?? null, $rowNumber);
+            if ($assetFormErrors !== []) {
+                foreach ($assetFormErrors as $assetFormError) {
+                    $errors[] = $assetFormError;
+                }
+                continue;
+            }
+
             $normalizedLines[] = [
                 'coa_id' => $line['coa_id'],
                 'line_description' => $line['line_description'],
@@ -995,6 +1075,7 @@ final class JournalController extends Controller
                 'saving_account_id' => (int) ($line['saving_account_id'] ?? 0),
                 'cashflow_component_id' => (int) ($line['cashflow_component_id'] ?? 0),
                 'entry_tag' => trim((string) ($line['entry_tag'] ?? '')),
+                'asset_form' => $normalizedAssetForm,
             ];
             $totalDebitCents += $debitCents ?? 0;
             $totalCreditCents += $creditCents ?? 0;
@@ -1116,28 +1197,15 @@ final class JournalController extends Controller
                 if (is_array($quickTemplate) && !empty($quickTemplate['detail_rows']) && is_array($quickTemplate['detail_rows'])) {
                     $formRows = $quickTemplate['detail_rows'];
                 } elseif ($details !== []) {
-                    $formRows = array_map(function (array $detail): array {
-                        return [
-                            'coa_id' => (string) $detail['coa_id'],
-                            'line_description' => (string) $detail['line_description'],
-                            'debit_raw' => $this->formatMoneyForInput($detail['debit'] ?? 0),
-                            'credit_raw' => $this->formatMoneyForInput($detail['credit'] ?? 0),
-                            'partner_id' => (string) ($detail['partner_id'] ?? ''),
-                            'inventory_item_id' => (string) ($detail['inventory_item_id'] ?? ''),
-                            'raw_material_id' => (string) ($detail['raw_material_id'] ?? ''),
-                            'asset_id' => (string) ($detail['asset_id'] ?? ''),
-                            'saving_account_id' => (string) ($detail['saving_account_id'] ?? ''),
-                            'cashflow_component_id' => (string) ($detail['cashflow_component_id'] ?? ''),
-                            'entry_tag' => (string) ($detail['entry_tag'] ?? ''),
-                        ];
-                    }, $details);
+                    $formRows = array_map(fn (array $detail): array => $this->buildFormRowFromDetail($detail, $header), $details);
                 } else {
                     $formRows = [
-                        ['coa_id' => '', 'line_description' => '', 'debit_raw' => '', 'credit_raw' => '', 'partner_id' => '', 'inventory_item_id' => '', 'raw_material_id' => '', 'asset_id' => '', 'saving_account_id' => '', 'cashflow_component_id' => '', 'entry_tag' => ''],
-                        ['coa_id' => '', 'line_description' => '', 'debit_raw' => '', 'credit_raw' => '', 'partner_id' => '', 'inventory_item_id' => '', 'raw_material_id' => '', 'asset_id' => '', 'saving_account_id' => '', 'cashflow_component_id' => '', 'entry_tag' => ''],
+                        $this->emptyJournalFormRow(),
+                        $this->emptyJournalFormRow(),
                     ];
                 }
             }
+            $formRows = array_map(fn (array $row): array => $this->prepareFormRow($row, $header), $formRows);
 
             $receiptOld = old_input('receipt');
             $quickReceipt = is_array($quickTemplate['receipt'] ?? null) ? $quickTemplate['receipt'] : [];
@@ -1167,6 +1235,7 @@ final class JournalController extends Controller
                 'journalNoPreviewMap' => $journalNoPreviewMap,
                 'journalNoPreviewCurrent' => $journalNoPreviewMap[$selectedPeriodId] ?? ((string) ($header['journal_no'] ?? 'Otomatis saat disimpan')),
                 'accountOptions' => $this->model()->getAccountOptions((int) (Auth::user()['id'] ?? 0)),
+                'assetCategoryOptions' => $this->assetModel()->getCategories(false),
                 'unitOptions' => business_unit_options(),
                 'receiptPartyTitleOptions' => journal_receipt_party_title_options(),
                 'receiptFeatureStatus' => $this->model()->getReceiptFeatureStatus(),
@@ -1180,6 +1249,308 @@ final class JournalController extends Controller
             http_response_code(500);
             render_error_page(500, 'Form jurnal umum belum dapat dibuka. Pastikan tabel jurnal, periode, dan COA sudah tersedia.', $e);
         }
+    }
+
+    private function emptyJournalFormRow(): array
+    {
+        return [
+            'coa_id' => '',
+            'line_description' => '',
+            'debit_raw' => '',
+            'credit_raw' => '',
+            'partner_id' => '',
+            'inventory_item_id' => '',
+            'raw_material_id' => '',
+            'asset_id' => '',
+            'saving_account_id' => '',
+            'cashflow_component_id' => '',
+            'entry_tag' => '',
+            'asset_form' => $this->defaultManagedAssetForm(),
+        ];
+    }
+
+    private function prepareFormRow(array $row, ?array $header = null): array
+    {
+        $rawAssetForm = is_array($row['asset_form'] ?? null) ? $row['asset_form'] : [];
+        $prepared = array_merge($this->emptyJournalFormRow(), $row);
+        $prepared['asset_form'] = $this->normalizeManagedAssetFormForDisplay(
+            $rawAssetForm,
+            (int) ($prepared['asset_id'] ?? 0),
+            $prepared,
+            $header
+        );
+
+        return $prepared;
+    }
+
+    private function buildFormRowFromDetail(array $detail, ?array $header = null): array
+    {
+        return $this->prepareFormRow([
+            'coa_id' => (string) ($detail['coa_id'] ?? ''),
+            'line_description' => (string) ($detail['line_description'] ?? ''),
+            'debit_raw' => $this->formatMoneyForInput($detail['debit'] ?? 0),
+            'credit_raw' => $this->formatMoneyForInput($detail['credit'] ?? 0),
+            'partner_id' => (string) ($detail['partner_id'] ?? ''),
+            'inventory_item_id' => (string) ($detail['inventory_item_id'] ?? ''),
+            'raw_material_id' => (string) ($detail['raw_material_id'] ?? ''),
+            'asset_id' => (string) ($detail['asset_id'] ?? ''),
+            'saving_account_id' => (string) ($detail['saving_account_id'] ?? ''),
+            'cashflow_component_id' => (string) ($detail['cashflow_component_id'] ?? ''),
+            'entry_tag' => (string) ($detail['entry_tag'] ?? ''),
+        ], $header);
+    }
+
+    private function defaultManagedAssetForm(): array
+    {
+        return [
+            'enabled' => '0',
+            'asset_name' => '',
+            'category_id' => '',
+            'subcategory_name' => '',
+            'quantity' => '1',
+            'unit_name' => 'unit',
+            'acquisition_cost_raw' => '',
+            'location' => '',
+            'supplier_name' => '',
+            'description' => '',
+        ];
+    }
+
+    private function normalizeManagedAssetFormForDisplay(array $assetForm, int $assetId, array $row, ?array $header = null): array
+    {
+        $hasExplicitEnabled = array_key_exists('enabled', $assetForm);
+        $normalized = array_merge($this->defaultManagedAssetForm(), $assetForm);
+        $asset = null;
+        if ($assetId > 0) {
+            try {
+                $asset = $this->assetModel()->findAssetById($assetId);
+            } catch (Throwable) {
+                $asset = null;
+            }
+        }
+
+        if (is_array($asset)) {
+            $journalLinked = (int) ($asset['linked_journal_id'] ?? 0) > 0
+                && (int) ($asset['linked_journal_id'] ?? 0) === (int) ($header['id'] ?? 0);
+            $normalized['enabled'] = $hasExplicitEnabled ? (string) ($normalized['enabled'] ?? '0') : ($journalLinked ? '1' : '0');
+            $normalized['asset_name'] = trim((string) ($normalized['asset_name'] !== '' ? $normalized['asset_name'] : ($asset['asset_name'] ?? '')));
+            $normalized['category_id'] = (string) ($normalized['category_id'] !== '' ? $normalized['category_id'] : ($asset['category_id'] ?? ''));
+            $normalized['subcategory_name'] = trim((string) ($normalized['subcategory_name'] !== '' ? $normalized['subcategory_name'] : ($asset['subcategory_name'] ?? '')));
+            $normalized['quantity'] = trim((string) ($normalized['quantity'] !== '' ? $normalized['quantity'] : ($asset['quantity'] ?? '1')));
+            $normalized['unit_name'] = trim((string) ($normalized['unit_name'] !== '' ? $normalized['unit_name'] : (($asset['unit_name'] ?? '') !== '' ? $asset['unit_name'] : 'unit')));
+            $normalized['acquisition_cost_raw'] = trim((string) ($normalized['acquisition_cost_raw'] !== '' ? $normalized['acquisition_cost_raw'] : $this->formatMoneyForInput($asset['acquisition_cost'] ?? 0)));
+            $normalized['location'] = trim((string) ($normalized['location'] !== '' ? $normalized['location'] : ($asset['location'] ?? '')));
+            $normalized['supplier_name'] = trim((string) ($normalized['supplier_name'] !== '' ? $normalized['supplier_name'] : ($asset['supplier_name'] ?? '')));
+            $normalized['description'] = trim((string) ($normalized['description'] !== '' ? $normalized['description'] : ($asset['description'] ?? '')));
+        }
+
+        if ($normalized['asset_name'] === '') {
+            $normalized['asset_name'] = trim((string) (($row['line_description'] ?? '') !== '' ? ($row['line_description'] ?? '') : ($header['description'] ?? '')));
+        }
+        if ($normalized['acquisition_cost_raw'] === '') {
+            $normalized['acquisition_cost_raw'] = trim((string) (($row['debit_raw'] ?? '') !== '' ? ($row['debit_raw'] ?? '') : ''));
+        }
+        if ($normalized['unit_name'] === '') {
+            $normalized['unit_name'] = 'unit';
+        }
+
+        return $normalized;
+    }
+
+    private function validateManagedAssetForm(array $line, array $headerInput, ?array $account, int $rowNumber): array
+    {
+        $assetForm = is_array($line['asset_form'] ?? null) ? $line['asset_form'] : [];
+        $enabled = (string) ($assetForm['enabled'] ?? '0') === '1';
+        if (!$enabled) {
+            return [[], ['enabled' => false]];
+        }
+
+        $errors = [];
+        $debitCents = $this->moneyToCents((string) ($line['debit_raw'] ?? '0'));
+        if (($debitCents ?? 0) <= 0) {
+            $errors[] = 'Form aset pada baris jurnal #' . $rowNumber . ' hanya bisa dipakai pada baris debit dengan nilai perolehan.';
+        }
+
+        $category = null;
+        $categoryId = (int) ($assetForm['category_id'] ?? 0);
+        if ($categoryId > 0) {
+            $category = $this->assetModel()->findCategoryById($categoryId);
+        }
+        if (!$category && !empty($line['coa_id'])) {
+            $category = $this->assetModel()->findActiveCategoryByAssetCoaId((int) $line['coa_id']);
+            if ($category) {
+                $categoryId = (int) ($category['id'] ?? 0);
+            }
+        }
+        if (!$category || (int) ($category['is_active'] ?? 1) !== 1) {
+            $errors[] = 'Kategori aset pada baris jurnal #' . $rowNumber . ' wajib dipilih dan harus aktif.';
+        }
+
+        $assetName = trim((string) ($assetForm['asset_name'] ?? ''));
+        if ($assetName === '') {
+            $assetName = trim((string) (($line['line_description'] ?? '') !== '' ? ($line['line_description'] ?? '') : (($account['account_name'] ?? '') !== '' ? ($account['account_name'] ?? '') : ($headerInput['description'] ?? ''))));
+        }
+        if ($assetName === '' || mb_strlen($assetName) < 3 || mb_strlen($assetName) > 160) {
+            $errors[] = 'Nama aset pada baris jurnal #' . $rowNumber . ' harus 3 sampai 160 karakter.';
+        }
+
+        $quantity = $this->normalizeDecimalNumber((string) ($assetForm['quantity'] ?? '1'));
+        if ($quantity <= 0) {
+            $errors[] = 'Jumlah aset pada baris jurnal #' . $rowNumber . ' harus lebih besar dari 0.';
+        }
+
+        $unitName = trim((string) ($assetForm['unit_name'] ?? ''));
+        if ($unitName === '') {
+            $unitName = 'unit';
+        }
+        if (mb_strlen($unitName) > 30) {
+            $errors[] = 'Satuan aset pada baris jurnal #' . $rowNumber . ' maksimal 30 karakter.';
+        }
+
+        $acquisitionCost = $this->normalizeDecimalNumber((string) ($assetForm['acquisition_cost_raw'] ?? ''));
+        if ($acquisitionCost <= 0) {
+            $acquisitionCost = ((int) ($debitCents ?? 0)) / 100;
+        }
+        if ($acquisitionCost <= 0) {
+            $errors[] = 'Total nilai perolehan aset pada baris jurnal #' . $rowNumber . ' harus lebih besar dari 0.';
+        }
+
+        $subcategoryName = trim((string) ($assetForm['subcategory_name'] ?? ''));
+        if (mb_strlen($subcategoryName) > 120) {
+            $errors[] = 'Subkategori aset pada baris jurnal #' . $rowNumber . ' maksimal 120 karakter.';
+        }
+
+        $location = trim((string) ($assetForm['location'] ?? ''));
+        if (mb_strlen($location) > 150) {
+            $errors[] = 'Lokasi aset pada baris jurnal #' . $rowNumber . ' maksimal 150 karakter.';
+        }
+
+        $supplierName = trim((string) ($assetForm['supplier_name'] ?? ''));
+        if (mb_strlen($supplierName) > 150) {
+            $errors[] = 'Sumber perolehan aset pada baris jurnal #' . $rowNumber . ' maksimal 150 karakter.';
+        }
+
+        $description = trim((string) ($assetForm['description'] ?? ''));
+        if (mb_strlen($description) > 1000) {
+            $errors[] = 'Deskripsi aset pada baris jurnal #' . $rowNumber . ' maksimal 1000 karakter.';
+        }
+
+        return [$errors, [
+            'enabled' => true,
+            'asset_name' => $assetName,
+            'category_id' => $categoryId > 0 ? $categoryId : null,
+            'subcategory_name' => $subcategoryName,
+            'quantity' => $quantity,
+            'unit_name' => $unitName,
+            'acquisition_cost' => $acquisitionCost,
+            'location' => $location,
+            'supplier_name' => $supplierName,
+            'description' => $description,
+        ]];
+    }
+
+    private function syncManagedAssetsFromJournal(int $journalId, array $header, array $lines, int $userId): array
+    {
+        $summary = ['created' => 0, 'updated' => 0];
+        $offsetCoaId = $this->detectJournalOffsetCoaId($lines);
+
+        foreach ($lines as $index => $line) {
+            $assetForm = is_array($line['asset_form'] ?? null) ? $line['asset_form'] : [];
+            if (!(bool) ($assetForm['enabled'] ?? false)) {
+                continue;
+            }
+
+            $lineNo = $index + 1;
+            $existingAssetId = (int) ($line['asset_id'] ?? 0);
+            $existingAsset = $existingAssetId > 0 ? $this->assetModel()->findAssetById($existingAssetId) : null;
+            if ($existingAssetId > 0 && !$existingAsset) {
+                throw new RuntimeException('Aset pada baris jurnal #' . $lineNo . ' tidak ditemukan saat sinkronisasi.');
+            }
+            if ($existingAsset && (int) ($existingAsset['linked_journal_id'] ?? 0) > 0 && (int) ($existingAsset['linked_journal_id'] ?? 0) !== $journalId) {
+                throw new RuntimeException('Aset pada baris jurnal #' . $lineNo . ' sudah tertaut ke jurnal lain sehingga tidak aman diperbarui dari form jurnal ini.');
+            }
+
+            $assetCode = $existingAsset
+                ? (string) ($existingAsset['asset_code'] ?? '')
+                : $this->buildManagedAssetCode($journalId, $lineNo);
+
+            $category = $this->assetModel()->findCategoryById((int) ($assetForm['category_id'] ?? 0));
+            if (!$category) {
+                throw new RuntimeException('Kategori aset pada baris jurnal #' . $lineNo . ' tidak ditemukan saat sinkronisasi.');
+            }
+
+            $depreciationAllowed = (int) ($category['depreciation_allowed'] ?? 1) === 1;
+            $assetPayload = [
+                'asset_code' => $assetCode,
+                'asset_name' => (string) ($assetForm['asset_name'] ?? ''),
+                'entry_mode' => 'ACQUISITION',
+                'category_id' => (int) ($assetForm['category_id'] ?? 0),
+                'subcategory_name' => (string) ($assetForm['subcategory_name'] ?? ''),
+                'business_unit_id' => !empty($header['business_unit_id']) ? (int) $header['business_unit_id'] : null,
+                'quantity' => (float) ($assetForm['quantity'] ?? 1),
+                'unit_name' => (string) ($assetForm['unit_name'] ?? 'unit'),
+                'acquisition_date' => (string) ($header['journal_date'] ?? date('Y-m-d')),
+                'acquisition_cost' => (float) ($assetForm['acquisition_cost'] ?? 0),
+                'opening_as_of_date' => null,
+                'opening_accumulated_depreciation' => 0,
+                'residual_value' => 0,
+                'useful_life_months' => $depreciationAllowed ? (!empty($category['default_useful_life_months']) ? (int) $category['default_useful_life_months'] : 36) : null,
+                'depreciation_method' => (string) ($category['default_depreciation_method'] ?? 'STRAIGHT_LINE'),
+                'depreciation_start_date' => $depreciationAllowed ? (string) ($header['journal_date'] ?? date('Y-m-d')) : null,
+                'depreciation_allowed' => $depreciationAllowed,
+                'offset_coa_id' => $offsetCoaId,
+                'location' => (string) ($assetForm['location'] ?? ''),
+                'supplier_name' => (string) ($assetForm['supplier_name'] ?? ''),
+                'source_of_funds' => 'HASIL_USAHA',
+                'funding_source_detail' => '',
+                'reference_no' => (string) (($header['reference_no'] ?? '') !== '' ? $header['reference_no'] : ($header['journal_no'] ?? '')),
+                'linked_journal_id' => $journalId,
+                'condition_status' => $existingAsset ? (string) ($existingAsset['condition_status'] ?? 'GOOD') : 'GOOD',
+                'asset_status' => $existingAsset ? (string) ($existingAsset['asset_status'] ?? 'ACTIVE') : 'ACTIVE',
+                'acquisition_sync_status' => 'POSTED',
+                'is_active' => $existingAsset ? (int) ($existingAsset['is_active'] ?? 1) : 1,
+                'description' => (string) ($assetForm['description'] ?? ''),
+                'notes' => $this->buildManagedAssetNote($journalId, $lineNo, (string) ($header['journal_no'] ?? '')),
+            ];
+
+            if ($existingAsset) {
+                $this->assetModel()->updateAsset($existingAssetId, $assetPayload, $userId);
+                $summary['updated']++;
+                continue;
+            }
+
+            $createdAssetId = $this->assetModel()->createAsset($assetPayload, $userId);
+            $this->model()->updateLineAssetReference($journalId, $lineNo, $createdAssetId);
+            $summary['created']++;
+        }
+
+        return $summary;
+    }
+
+    private function detectJournalOffsetCoaId(array $lines): ?int
+    {
+        $bestCoaId = null;
+        $bestCredit = 0.0;
+        foreach ($lines as $line) {
+            $credit = (float) ($line['credit'] ?? 0);
+            if ($credit > $bestCredit && (int) ($line['coa_id'] ?? 0) > 0) {
+                $bestCredit = $credit;
+                $bestCoaId = (int) $line['coa_id'];
+            }
+        }
+
+        return $bestCoaId;
+    }
+
+    private function buildManagedAssetCode(int $journalId, int $lineNo): string
+    {
+        return 'JFA-' . $journalId . '-' . str_pad((string) $lineNo, 2, '0', STR_PAD_LEFT);
+    }
+
+    private function buildManagedAssetNote(int $journalId, int $lineNo, string $journalNo): string
+    {
+        $journalLabel = trim($journalNo) !== '' ? $journalNo : ('#' . $journalId);
+        return '[JOURNAL-FORM-ASSET:' . $journalId . ':' . $lineNo . '] Dibuat / diperbarui dari jurnal ' . $journalLabel . ' baris #' . $lineNo . '.';
     }
 
 
@@ -1312,6 +1683,32 @@ final class JournalController extends Controller
             return substr($normalized, 0, -3);
         }
         return rtrim(rtrim($normalized, '0'), '.');
+    }
+
+    private function normalizeDecimalNumber(string $value): float
+    {
+        $value = trim(str_replace(["Â ", ' ', 'Rp', 'rp'], '', $value));
+        if ($value === '') {
+            return 0.0;
+        }
+
+        $lastDot = strrpos($value, '.');
+        $lastComma = strrpos($value, ',');
+        if ($lastDot !== false && $lastComma !== false) {
+            if ($lastDot > $lastComma) {
+                $value = str_replace(',', '', $value);
+            } else {
+                $value = str_replace('.', '', $value);
+                $value = str_replace(',', '.', $value);
+            }
+        } elseif ($lastComma !== false) {
+            $value = str_replace('.', '', $value);
+            $value = str_replace(',', '.', $value);
+        } else {
+            $value = str_replace(',', '', $value);
+        }
+
+        return is_numeric($value) ? (float) $value : 0.0;
     }
 
     private function cleanupAttachmentFiles(array $attachments): void

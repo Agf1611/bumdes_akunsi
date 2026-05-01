@@ -342,7 +342,7 @@ final class AssetModel
         return $this->findCategoryByCode($fallbackCode) ?: $this->findCategoryByCode('OTHER');
     }
 
-    private function findActiveCategoryByAssetCoaId(int $coaId): ?array
+    public function findActiveCategoryByAssetCoaId(int $coaId): ?array
     {
         $stmt = $this->db->prepare('SELECT * FROM asset_categories WHERE is_active = 1 AND asset_coa_id = :asset_coa_id ORDER BY id ASC LIMIT 1');
         $stmt->bindValue(':asset_coa_id', $coaId, PDO::PARAM_INT);
@@ -783,7 +783,10 @@ final class AssetModel
 
     public function createAsset(array $data, int $userId): int
     {
-        $this->db->beginTransaction();
+        $ownTransaction = !$this->db->inTransaction();
+        if ($ownTransaction) {
+            $this->db->beginTransaction();
+        }
         try {
             $withQty = $this->assetItemsHasQtySupport();
             $columnParts = [
@@ -834,10 +837,12 @@ final class AssetModel
             ], $userId);
 
             $this->rebuildDepreciationForAsset($assetId);
-            $this->db->commit();
+            if ($ownTransaction && $this->db->inTransaction()) {
+                $this->db->commit();
+            }
             return $assetId;
         } catch (Throwable $e) {
-            if ($this->db->inTransaction()) {
+            if ($ownTransaction && $this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             throw $e;
@@ -850,7 +855,10 @@ final class AssetModel
         if (!$current) {
             throw new RuntimeException('Aset tidak ditemukan.');
         }
-        $this->db->beginTransaction();
+        $ownTransaction = !$this->db->inTransaction();
+        if ($ownTransaction) {
+            $this->db->beginTransaction();
+        }
         try {
             $setParts = [
                         'asset_code = :asset_code',
@@ -928,9 +936,11 @@ final class AssetModel
             ], $userId);
 
             $this->rebuildDepreciationForAsset($id);
-            $this->db->commit();
+            if ($ownTransaction && $this->db->inTransaction()) {
+                $this->db->commit();
+            }
         } catch (Throwable $e) {
-            if ($this->db->inTransaction()) {
+            if ($ownTransaction && $this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             throw $e;

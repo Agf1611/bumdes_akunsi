@@ -232,6 +232,30 @@ $referenceJs = [
   background: #f8fafc !important;
   font-weight: 700;
 }
+.jf-asset-item-list {
+  display: grid;
+  gap: .9rem;
+}
+.jf-asset-item {
+  border: 1px solid #dbe5f2;
+  border-radius: 18px;
+  background: #fff;
+  padding: .95rem;
+}
+.jf-asset-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-bottom: .8rem;
+}
+.jf-asset-item-index {
+  font-size: .78rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
 
 .jf-card .form-label,
 .jf-card .small,
@@ -455,6 +479,20 @@ $referenceJs = [
             <?php
             $assetForm = is_array($row['asset_form'] ?? null) ? $row['asset_form'] : [];
             $assetFormEnabled = (string) ($assetForm['enabled'] ?? '0') === '1';
+            $assetFormItems = array_values(is_array($assetForm['items'] ?? null) ? $assetForm['items'] : []);
+            if ($assetFormItems === []) {
+                $assetFormItems = [[
+                    'asset_name' => '',
+                    'category_id' => '',
+                    'subcategory_name' => '',
+                    'quantity' => '1',
+                    'unit_name' => 'unit',
+                    'acquisition_cost_raw' => '',
+                    'location' => '',
+                    'supplier_name' => '',
+                    'description' => '',
+                ]];
+            }
             ?>
             <div class="jf-line-item" data-line-item>
               <div class="jf-line-top">
@@ -559,6 +597,7 @@ $referenceJs = [
               </div>
               <div class="jf-asset-panel <?= $assetFormEnabled ? '' : 'is-hidden' ?>" data-asset-panel>
                 <input type="hidden" name="asset_form_enabled[]" class="asset-form-enabled-input" value="<?= $assetFormEnabled ? '1' : '0' ?>">
+                <input type="hidden" name="asset_form_items[]" class="asset-form-items-input" value="<?= e((string) json_encode($assetFormItems, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>">
                 <div class="jf-asset-head">
                   <div>
                     <div class="fw-semibold">Sinkron Asset Tetap</div>
@@ -570,54 +609,12 @@ $referenceJs = [
                   </label>
                 </div>
                 <div class="small jf-muted asset-existing-note"></div>
-                <div class="row g-3 asset-form-fields <?= $assetFormEnabled ? '' : 'is-hidden' ?>" data-asset-fields>
-                  <div class="col-md-4">
-                    <label class="form-label">Nama Asset</label>
-                    <input type="text" name="asset_form_asset_name[]" class="form-control asset-form-name" maxlength="160" value="<?= e((string) ($assetForm['asset_name'] ?? '')) ?>" placeholder="Contoh: Modem pelanggan, kabel FO, router utama">
+                <div class="asset-form-fields <?= $assetFormEnabled ? '' : 'is-hidden' ?>" data-asset-fields>
+                  <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-2">
+                    <div class="jf-inline">Tambahkan beberapa item asset jika satu transaksi berisi merek, tipe, atau kelompok asset yang berbeda.</div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary add-asset-item-btn">Tambah Item Asset</button>
                   </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Kategori Asset</label>
-                    <select name="asset_form_category_id[]" class="form-select asset-form-category">
-                      <option value="">Pilih kategori asset</option>
-                      <?php foreach ($assetCategoryOptions as $category): ?>
-                        <option value="<?= e((string) $category['id']) ?>" <?= (string) ($assetForm['category_id'] ?? '') === (string) $category['id'] ? 'selected' : '' ?>>
-                          <?= e((string) $category['category_name'] . ' (' . asset_group_label((string) $category['asset_group']) . ')') ?>
-                        </option>
-                      <?php endforeach; ?>
-                    </select>
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Tipe / Subkategori</label>
-                    <input type="text" name="asset_form_subcategory_name[]" class="form-control asset-form-subcategory" maxlength="120" value="<?= e((string) ($assetForm['subcategory_name'] ?? '')) ?>" placeholder="Contoh: Modem, Kabel FO, Switch, Starlink">
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">Qty</label>
-                    <input type="number" step="0.01" min="0" name="asset_form_quantity[]" class="form-control asset-form-quantity" value="<?= e((string) ($assetForm['quantity'] ?? '1')) ?>">
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">Satuan</label>
-                    <input type="text" name="asset_form_unit_name[]" class="form-control asset-form-unit" maxlength="30" value="<?= e((string) ($assetForm['unit_name'] ?? 'unit')) ?>" placeholder="unit / pcs / roll">
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label">Total Nilai Perolehan</label>
-                    <input type="number" step="0.01" min="0" name="asset_form_acquisition_cost[]" class="form-control asset-form-cost" value="<?= e((string) ($assetForm['acquisition_cost_raw'] ?? '')) ?>" placeholder="Mengikuti debit bila dikosongkan">
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label">Harga per Unit</label>
-                    <input type="text" class="form-control jf-asset-unit-cost asset-form-unit-cost" value="-" readonly>
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">Lokasi</label>
-                    <input type="text" name="asset_form_location[]" class="form-control asset-form-location" maxlength="150" value="<?= e((string) ($assetForm['location'] ?? '')) ?>" placeholder="Lokasi asset">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Sumber Perolehan</label>
-                    <input type="text" name="asset_form_supplier_name[]" class="form-control asset-form-supplier" maxlength="150" value="<?= e((string) ($assetForm['supplier_name'] ?? '')) ?>" placeholder="Toko, vendor, hibah, swadaya">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Deskripsi Asset</label>
-                    <input type="text" name="asset_form_description[]" class="form-control asset-form-description" maxlength="1000" value="<?= e((string) ($assetForm['description'] ?? '')) ?>" placeholder="Spesifikasi singkat, seri, kapasitas, atau catatan penting">
-                  </div>
+                  <div class="jf-asset-item-list asset-item-list"></div>
                 </div>
               </div>
             </div>
@@ -721,6 +718,7 @@ $referenceJs = [
     </div>
     <div class="jf-asset-panel is-hidden" data-asset-panel>
       <input type="hidden" name="asset_form_enabled[]" class="asset-form-enabled-input" value="0">
+      <input type="hidden" name="asset_form_items[]" class="asset-form-items-input" value="[]">
       <div class="jf-asset-head">
         <div>
           <div class="fw-semibold">Sinkron Asset Tetap</div>
@@ -732,54 +730,70 @@ $referenceJs = [
         </label>
       </div>
       <div class="small jf-muted asset-existing-note"></div>
-      <div class="row g-3 asset-form-fields is-hidden" data-asset-fields>
-        <div class="col-md-4">
-          <label class="form-label">Nama Asset</label>
-          <input type="text" name="asset_form_asset_name[]" class="form-control asset-form-name" maxlength="160" placeholder="Contoh: Modem pelanggan, kabel FO, router utama">
+      <div class="asset-form-fields is-hidden" data-asset-fields>
+        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-2">
+          <div class="jf-inline">Tambahkan beberapa item asset jika transaksi ini berisi tipe atau merek berbeda.</div>
+          <button type="button" class="btn btn-sm btn-outline-secondary add-asset-item-btn">Tambah Item Asset</button>
         </div>
-        <div class="col-md-4">
-          <label class="form-label">Kategori Asset</label>
-          <select name="asset_form_category_id[]" class="form-select asset-form-category">
-            <option value="">Pilih kategori asset</option>
-            <?php foreach ($assetCategoryOptions as $category): ?>
-              <option value="<?= e((string) $category['id']) ?>">
-                <?= e((string) $category['category_name'] . ' (' . asset_group_label((string) $category['asset_group']) . ')') ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Tipe / Subkategori</label>
-          <input type="text" name="asset_form_subcategory_name[]" class="form-control asset-form-subcategory" maxlength="120" placeholder="Contoh: Modem, Kabel FO, Switch, Starlink">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Qty</label>
-          <input type="number" step="0.01" min="0" name="asset_form_quantity[]" class="form-control asset-form-quantity" value="1">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Satuan</label>
-          <input type="text" name="asset_form_unit_name[]" class="form-control asset-form-unit" maxlength="30" value="unit" placeholder="unit / pcs / roll">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Total Nilai Perolehan</label>
-          <input type="number" step="0.01" min="0" name="asset_form_acquisition_cost[]" class="form-control asset-form-cost" placeholder="Mengikuti debit bila dikosongkan">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Harga per Unit</label>
-          <input type="text" class="form-control jf-asset-unit-cost asset-form-unit-cost" value="-" readonly>
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Lokasi</label>
-          <input type="text" name="asset_form_location[]" class="form-control asset-form-location" maxlength="150" placeholder="Lokasi asset">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Sumber Perolehan</label>
-          <input type="text" name="asset_form_supplier_name[]" class="form-control asset-form-supplier" maxlength="150" placeholder="Toko, vendor, hibah, swadaya">
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Deskripsi Asset</label>
-          <input type="text" name="asset_form_description[]" class="form-control asset-form-description" maxlength="1000" placeholder="Spesifikasi singkat, seri, kapasitas, atau catatan penting">
-        </div>
+        <div class="jf-asset-item-list asset-item-list"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="journal-asset-item-template">
+  <div class="jf-asset-item" data-asset-item>
+    <div class="jf-asset-item-head">
+      <div class="jf-asset-item-index">Item Asset <span class="asset-item-number">1</span></div>
+      <button type="button" class="btn btn-sm btn-outline-danger remove-asset-item-btn">Hapus Item</button>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Nama Asset</label>
+        <input type="text" class="form-control asset-item-name" maxlength="160" placeholder="Contoh: Modem pelanggan, kabel FO, router utama">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Kategori Asset</label>
+        <select class="form-select asset-item-category">
+          <option value="">Pilih kategori asset</option>
+          <?php foreach ($assetCategoryOptions as $category): ?>
+            <option value="<?= e((string) $category['id']) ?>">
+              <?= e((string) $category['category_name'] . ' (' . asset_group_label((string) $category['asset_group']) . ')') ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Tipe / Subkategori</label>
+        <input type="text" class="form-control asset-item-subcategory" maxlength="120" placeholder="Contoh: Modem, Kabel FO, Switch, Starlink">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Qty</label>
+        <input type="number" step="0.01" min="0" class="form-control asset-item-quantity" value="1">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Satuan</label>
+        <input type="text" class="form-control asset-item-unit" maxlength="30" value="unit" placeholder="unit / pcs / roll">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Total Nilai Perolehan</label>
+        <input type="number" step="0.01" min="0" class="form-control asset-item-cost" placeholder="Isi nilai item ini">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Harga per Unit</label>
+        <input type="text" class="form-control jf-asset-unit-cost asset-item-unit-cost" value="-" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Lokasi</label>
+        <input type="text" class="form-control asset-item-location" maxlength="150" placeholder="Lokasi asset">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Sumber Perolehan</label>
+        <input type="text" class="form-control asset-item-supplier" maxlength="150" placeholder="Toko, vendor, hibah, swadaya">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Deskripsi Asset</label>
+        <input type="text" class="form-control asset-item-description" maxlength="1000" placeholder="Spesifikasi singkat, seri, kapasitas, atau catatan penting">
       </div>
     </div>
   </div>
@@ -790,6 +804,18 @@ $referenceJs = [
   const form = document.getElementById('journal-form');
   if (!form) return;
 
+  const defaultAssetItem = () => ({
+    asset_name: '',
+    category_id: '',
+    subcategory_name: '',
+    quantity: '1',
+    unit_name: 'unit',
+    acquisition_cost_raw: '',
+    location: '',
+    supplier_name: '',
+    description: ''
+  });
+
   const accountOptions = <?= json_encode($accountJs, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) ?> || [];
   const assetCategoryOptions = <?= json_encode($assetCategoryJs, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) ?> || [];
   const referenceOptions = <?= json_encode($referenceJs, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) ?> || {};
@@ -798,6 +824,7 @@ $referenceJs = [
 
   const lineList = document.getElementById('journal-line-list');
   const lineTemplate = document.getElementById('journal-line-template');
+  const assetItemTemplate = document.getElementById('journal-asset-item-template');
   const periodSelect = document.getElementById('period_id');
   const templateSelect = document.getElementById('print_template');
   const receiptCard = document.getElementById('receipt-card');
@@ -880,6 +907,17 @@ $referenceJs = [
     setOptions(item.querySelector('.saving-select'), referenceOptions.savings || []);
     setOptions(item.querySelector('.cashflow-select'), referenceOptions.cashflow_components || []);
     setTagOptions(item.querySelector('.entry-tag-select'));
+    let initialItems = [defaultAssetItem()];
+    try {
+      const raw = item.querySelector('.asset-form-items-input')?.value || '[]';
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) {
+        initialItems = parsed;
+      }
+    } catch (error) {
+      initialItems = [defaultAssetItem()];
+    }
+    renderAssetItems(item, initialItems);
   }
 
   function refreshLineNumbers() {
@@ -929,10 +967,10 @@ $referenceJs = [
     return !!suggestedAssetCategory(account);
   }
 
-  function updateAssetUnitCost(item) {
-    const qty = parseFlexibleNumber(item.querySelector('.asset-form-quantity')?.value || '1');
-    const cost = parseFlexibleNumber(item.querySelector('.asset-form-cost')?.value || '0');
-    const display = item.querySelector('.asset-form-unit-cost');
+  function updateSingleAssetItemUnitCost(assetItem) {
+    const qty = parseFlexibleNumber(assetItem.querySelector('.asset-item-quantity')?.value || '1');
+    const cost = parseFlexibleNumber(assetItem.querySelector('.asset-item-cost')?.value || '0');
+    const display = assetItem.querySelector('.asset-item-unit-cost');
     if (!display) return;
     if (qty <= 0 || cost <= 0) {
       display.value = '-';
@@ -941,16 +979,83 @@ $referenceJs = [
     display.value = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(cost / qty);
   }
 
+  function collectAssetItems(item) {
+    return Array.from(item.querySelectorAll('[data-asset-item]')).map((assetItem) => ({
+      asset_name: assetItem.querySelector('.asset-item-name')?.value || '',
+      category_id: assetItem.querySelector('.asset-item-category')?.value || '',
+      subcategory_name: assetItem.querySelector('.asset-item-subcategory')?.value || '',
+      quantity: assetItem.querySelector('.asset-item-quantity')?.value || '1',
+      unit_name: assetItem.querySelector('.asset-item-unit')?.value || 'unit',
+      acquisition_cost_raw: assetItem.querySelector('.asset-item-cost')?.value || '',
+      location: assetItem.querySelector('.asset-item-location')?.value || '',
+      supplier_name: assetItem.querySelector('.asset-item-supplier')?.value || '',
+      description: assetItem.querySelector('.asset-item-description')?.value || '',
+    }));
+  }
+
   function lineHasManagedAssetInput(item) {
-    const name = item.querySelector('.asset-form-name')?.value.trim() || '';
-    const category = item.querySelector('.asset-form-category')?.value || '';
-    const subcategory = item.querySelector('.asset-form-subcategory')?.value.trim() || '';
-    const location = item.querySelector('.asset-form-location')?.value.trim() || '';
-    const supplier = item.querySelector('.asset-form-supplier')?.value.trim() || '';
-    const description = item.querySelector('.asset-form-description')?.value.trim() || '';
-    const cost = parseFlexibleNumber(item.querySelector('.asset-form-cost')?.value || '');
-    const qty = parseFlexibleNumber(item.querySelector('.asset-form-quantity')?.value || '1');
-    return !!(name || category || subcategory || location || supplier || description || cost > 0 || Math.abs(qty - 1) > 0.0001);
+    return collectAssetItems(item).some((assetItem) => {
+      const qty = parseFlexibleNumber(assetItem.quantity || '1');
+      const cost = parseFlexibleNumber(assetItem.acquisition_cost_raw || '');
+      return !!(
+        String(assetItem.asset_name || '').trim() ||
+        String(assetItem.category_id || '').trim() ||
+        String(assetItem.subcategory_name || '').trim() ||
+        String(assetItem.location || '').trim() ||
+        String(assetItem.supplier_name || '').trim() ||
+        String(assetItem.description || '').trim() ||
+        cost > 0 ||
+        Math.abs(qty - 1) > 0.0001
+      );
+    });
+  }
+
+  function hydrateAssetItemNode(assetItem, data = {}) {
+    assetItem.querySelector('.asset-item-name').value = String(data.asset_name || '');
+    assetItem.querySelector('.asset-item-category').value = String(data.category_id || '');
+    assetItem.querySelector('.asset-item-subcategory').value = String(data.subcategory_name || '');
+    assetItem.querySelector('.asset-item-quantity').value = String(data.quantity || '1');
+    assetItem.querySelector('.asset-item-unit').value = String(data.unit_name || 'unit');
+    assetItem.querySelector('.asset-item-cost').value = String(data.acquisition_cost_raw || '');
+    assetItem.querySelector('.asset-item-location').value = String(data.location || '');
+    assetItem.querySelector('.asset-item-supplier').value = String(data.supplier_name || '');
+    assetItem.querySelector('.asset-item-description').value = String(data.description || '');
+    updateSingleAssetItemUnitCost(assetItem);
+  }
+
+  function refreshAssetItemNumbers(item) {
+    Array.from(item.querySelectorAll('[data-asset-item]')).forEach((assetItem, index) => {
+      const label = assetItem.querySelector('.asset-item-number');
+      if (label) label.textContent = String(index + 1);
+    });
+  }
+
+  function writeAssetItemsInput(item) {
+    const hiddenInput = item.querySelector('.asset-form-items-input');
+    if (!hiddenInput) return;
+    hiddenInput.value = JSON.stringify(collectAssetItems(item));
+  }
+
+  function ensureAssetItems(item) {
+    const list = item.querySelector('.asset-item-list');
+    if (!list || list.querySelector('[data-asset-item]')) return;
+    const node = assetItemTemplate.content.firstElementChild.cloneNode(true);
+    hydrateAssetItemNode(node, defaultAssetItem());
+    list.appendChild(node);
+  }
+
+  function renderAssetItems(item, items = []) {
+    const list = item.querySelector('.asset-item-list');
+    if (!list) return;
+    list.innerHTML = '';
+    const sourceItems = Array.isArray(items) && items.length ? items : [defaultAssetItem()];
+    sourceItems.forEach((assetItem) => {
+      const node = assetItemTemplate.content.firstElementChild.cloneNode(true);
+      hydrateAssetItemNode(node, assetItem);
+      list.appendChild(node);
+    });
+    refreshAssetItemNumbers(item);
+    writeAssetItemsInput(item);
   }
 
   function syncManagedAssetPanel(item) {
@@ -967,11 +1072,6 @@ $referenceJs = [
     const lineDescription = item.querySelector('input[name="line_description[]"]')?.value.trim() || '';
     const journalDescription = document.getElementById('description')?.value.trim() || '';
     const debitValue = item.querySelector('.debit-input')?.value || '';
-    const costInput = item.querySelector('.asset-form-cost');
-    const qtyInput = item.querySelector('.asset-form-quantity');
-    const unitInput = item.querySelector('.asset-form-unit');
-    const nameInput = item.querySelector('.asset-form-name');
-    const categorySelect = item.querySelector('.asset-form-category');
     const note = item.querySelector('.asset-existing-note');
     const userChoice = toggle ? String(toggle.dataset.userChoice || '') : '';
 
@@ -994,34 +1094,39 @@ $referenceJs = [
       fields.classList.toggle('is-hidden', !enabled);
     }
 
-    if (categorySelect && enabled && !categorySelect.value) {
-      const suggested = suggestedAssetCategory(account);
-      if (suggested) {
-        categorySelect.value = String(suggested.id || '');
-      }
-    }
-    if (qtyInput && !qtyInput.value) {
-      qtyInput.value = '1';
-    }
-    if (unitInput && !unitInput.value.trim()) {
-      unitInput.value = 'unit';
-    }
-    if (nameInput && enabled && !nameInput.value.trim()) {
-      nameInput.value = lineDescription || String(account?.name || '') || journalDescription;
-    }
-    if (costInput && enabled && !costInput.value.trim() && parseFlexibleNumber(debitValue) > 0) {
-      costInput.value = debitValue;
+    if (enabled) {
+      ensureAssetItems(item);
+      Array.from(item.querySelectorAll('[data-asset-item]')).forEach((assetItem, index) => {
+        const categorySelect = assetItem.querySelector('.asset-item-category');
+        const unitInput = assetItem.querySelector('.asset-item-unit');
+        const nameInput = assetItem.querySelector('.asset-item-name');
+        const costInput = assetItem.querySelector('.asset-item-cost');
+        const suggested = suggestedAssetCategory(account);
+        if (categorySelect && !categorySelect.value && suggested) {
+          categorySelect.value = String(suggested.id || '');
+        }
+        if (unitInput && !unitInput.value.trim()) {
+          unitInput.value = 'unit';
+        }
+        if (nameInput && !nameInput.value.trim()) {
+          nameInput.value = lineDescription || String(account?.name || '') || journalDescription;
+        }
+        if (costInput && !costInput.value.trim() && index === 0 && parseFlexibleNumber(debitValue) > 0) {
+          costInput.value = debitValue;
+        }
+        updateSingleAssetItemUnitCost(assetItem);
+      });
     }
 
     if (note) {
       if (hasLinkedAsset && enabled) {
-        note.textContent = 'Baris ini akan memperbarui asset yang dipilih pada referensi aset.';
+        note.textContent = 'Baris ini akan memperbarui asset yang dipilih pada referensi aset jika itemnya satu. Jika item lebih dari satu, referensi asset lama sebaiknya dikosongkan.';
         note.classList.add('jf-asset-note');
       } else if (hasLinkedAsset) {
         note.textContent = 'Baris ini hanya menautkan jurnal ke asset yang sudah ada.';
         note.classList.add('jf-asset-note');
       } else if (shouldSuggest) {
-        note.textContent = 'Akun ini terdeteksi sebagai akun asset tetap. Lengkapi detail asset jika transaksi ini menambah master asset.';
+        note.textContent = 'Akun ini terdeteksi sebagai akun asset tetap. Anda bisa menambah beberapa item asset untuk merek atau tipe yang berbeda.';
         note.classList.add('jf-asset-note');
       } else {
         note.textContent = '';
@@ -1029,7 +1134,8 @@ $referenceJs = [
       }
     }
 
-    updateAssetUnitCost(item);
+    refreshAssetItemNumbers(item);
+    writeAssetItemsInput(item);
   }
 
   function computeSummary() {
@@ -1068,15 +1174,24 @@ $referenceJs = [
       if (!account) issues.push(`Baris ${index + 1}: akun belum dipilih.`);
       if ((d > 0 && c > 0) || (d <= 0 && c <= 0)) issues.push(`Baris ${index + 1}: isi salah satu, debit atau kredit.`);
       if (assetEnabled) {
-        const assetName = item.querySelector('.asset-form-name')?.value.trim() || '';
-        const assetCategory = item.querySelector('.asset-form-category')?.value || '';
-        const assetQty = parseFlexibleNumber(item.querySelector('.asset-form-quantity')?.value || '1');
-        const assetCost = parseFlexibleNumber(item.querySelector('.asset-form-cost')?.value || item.querySelector('.debit-input')?.value || '0');
+        const assetItems = collectAssetItems(item);
+        const totalAssetCost = assetItems.reduce((sum, assetItem) => sum + parseFlexibleNumber(assetItem.acquisition_cost_raw || '0'), 0);
         if (d <= 0) issues.push(`Baris ${index + 1}: form asset hanya boleh dipakai pada baris debit.`);
-        if (assetName.length < 3) issues.push(`Baris ${index + 1}: nama asset minimal 3 karakter.`);
-        if (!assetCategory) issues.push(`Baris ${index + 1}: kategori asset wajib dipilih.`);
-        if (assetQty <= 0) issues.push(`Baris ${index + 1}: qty asset harus lebih besar dari 0.`);
-        if (assetCost <= 0) issues.push(`Baris ${index + 1}: total nilai perolehan asset harus lebih besar dari 0.`);
+        if (!assetItems.length) issues.push(`Baris ${index + 1}: minimal harus ada satu item asset.`);
+        assetItems.forEach((assetItem, assetIndex) => {
+          const assetQty = parseFlexibleNumber(assetItem.quantity || '1');
+          const assetCost = parseFlexibleNumber(assetItem.acquisition_cost_raw || '');
+          if (String(assetItem.asset_name || '').trim().length < 3) issues.push(`Baris ${index + 1}, item asset ${assetIndex + 1}: nama asset minimal 3 karakter.`);
+          if (!String(assetItem.category_id || '').trim()) issues.push(`Baris ${index + 1}, item asset ${assetIndex + 1}: kategori asset wajib dipilih.`);
+          if (assetQty <= 0) issues.push(`Baris ${index + 1}, item asset ${assetIndex + 1}: qty harus lebih besar dari 0.`);
+          if (assetCost <= 0) issues.push(`Baris ${index + 1}, item asset ${assetIndex + 1}: total nilai perolehan harus lebih besar dari 0.`);
+        });
+        if (assetItems.length > 1 && item.querySelector('.asset-select')?.value) {
+          issues.push(`Baris ${index + 1}: referensi asset lama tidak bisa dipakai jika item asset lebih dari satu.`);
+        }
+        if (Math.abs(totalAssetCost - d) >= 0.005) {
+          issues.push(`Baris ${index + 1}: total semua item asset harus sama dengan nilai debit baris.`);
+        }
       }
       if (d > 0) debitLines += 1;
       if (c > 0) creditLines += 1;
@@ -1162,15 +1277,7 @@ $referenceJs = [
     node.querySelector('.entry-tag-select').value = String(data.entry_tag || '');
     node.querySelector('.asset-form-enabled-input').value = String(data.asset_form?.enabled || '0');
     node.querySelector('.asset-form-toggle').checked = String(data.asset_form?.enabled || '0') === '1';
-    node.querySelector('.asset-form-name').value = String(data.asset_form?.asset_name || '');
-    node.querySelector('.asset-form-category').value = String(data.asset_form?.category_id || '');
-    node.querySelector('.asset-form-subcategory').value = String(data.asset_form?.subcategory_name || '');
-    node.querySelector('.asset-form-quantity').value = String(data.asset_form?.quantity || '1');
-    node.querySelector('.asset-form-unit').value = String(data.asset_form?.unit_name || 'unit');
-    node.querySelector('.asset-form-cost').value = String(data.asset_form?.acquisition_cost_raw || '');
-    node.querySelector('.asset-form-location').value = String(data.asset_form?.location || '');
-    node.querySelector('.asset-form-supplier').value = String(data.asset_form?.supplier_name || '');
-    node.querySelector('.asset-form-description').value = String(data.asset_form?.description || '');
+    renderAssetItems(node, Array.isArray(data.asset_form?.items) ? data.asset_form.items : [defaultAssetItem()]);
     syncAccountSearchInput(node);
     syncManagedAssetPanel(node);
     return node;
@@ -1206,15 +1313,7 @@ $referenceJs = [
         entry_tag: item.querySelector('.entry-tag-select')?.value || '',
         asset_form: {
           enabled: item.querySelector('.asset-form-enabled-input')?.value || '0',
-          asset_name: item.querySelector('.asset-form-name')?.value || '',
-          category_id: item.querySelector('.asset-form-category')?.value || '',
-          subcategory_name: item.querySelector('.asset-form-subcategory')?.value || '',
-          quantity: item.querySelector('.asset-form-quantity')?.value || '1',
-          unit_name: item.querySelector('.asset-form-unit')?.value || 'unit',
-          acquisition_cost_raw: item.querySelector('.asset-form-cost')?.value || '',
-          location: item.querySelector('.asset-form-location')?.value || '',
-          supplier_name: item.querySelector('.asset-form-supplier')?.value || '',
-          description: item.querySelector('.asset-form-description')?.value || '',
+          items: collectAssetItems(item),
         },
       }))
     };
@@ -1290,15 +1389,7 @@ $referenceJs = [
       entry_tag: last.querySelector('.entry-tag-select')?.value || '',
       asset_form: {
         enabled: last.querySelector('.asset-form-enabled-input')?.value || '0',
-        asset_name: last.querySelector('.asset-form-name')?.value || '',
-        category_id: last.querySelector('.asset-form-category')?.value || '',
-        subcategory_name: last.querySelector('.asset-form-subcategory')?.value || '',
-        quantity: last.querySelector('.asset-form-quantity')?.value || '1',
-        unit_name: last.querySelector('.asset-form-unit')?.value || 'unit',
-        acquisition_cost_raw: last.querySelector('.asset-form-cost')?.value || '',
-        location: last.querySelector('.asset-form-location')?.value || '',
-        supplier_name: last.querySelector('.asset-form-supplier')?.value || '',
-        description: last.querySelector('.asset-form-description')?.value || ''
+        items: collectAssetItems(last)
       }
     }));
     updateAll();
@@ -1314,6 +1405,30 @@ $referenceJs = [
       if (lineList.querySelectorAll('[data-line-item]').length <= 2) return;
       item.remove();
       updateAll();
+    }
+    if (event.target.closest('.add-asset-item-btn')) {
+      const list = item.querySelector('.asset-item-list');
+      if (list) {
+        const node = assetItemTemplate.content.firstElementChild.cloneNode(true);
+        hydrateAssetItemNode(node, defaultAssetItem());
+        list.appendChild(node);
+        refreshAssetItemNumbers(item);
+        updateAll();
+      }
+    }
+    if (event.target.closest('.remove-asset-item-btn')) {
+      const assetItem = event.target.closest('[data-asset-item]');
+      const list = item.querySelector('.asset-item-list');
+      if (assetItem && list) {
+        const count = list.querySelectorAll('[data-asset-item]').length;
+        if (count <= 1) {
+          hydrateAssetItemNode(assetItem, defaultAssetItem());
+        } else {
+          assetItem.remove();
+        }
+        refreshAssetItemNumbers(item);
+        updateAll();
+      }
     }
   });
 
@@ -1335,8 +1450,8 @@ $referenceJs = [
       const debit = item.querySelector('.debit-input');
       if (debit) debit.value = '';
     }
-    if (event.target.classList.contains('asset-form-quantity') || event.target.classList.contains('asset-form-cost')) {
-      updateAssetUnitCost(item);
+    if (event.target.closest('[data-asset-item]')) {
+      updateSingleAssetItemUnitCost(event.target.closest('[data-asset-item]'));
     }
     updateAll();
   });

@@ -789,15 +789,7 @@ final class JournalController extends Controller
         $cashflowComponentIds = post('cashflow_component_id', []);
         $entryTags = post('entry_tag', []);
         $assetFormEnabled = post('asset_form_enabled', []);
-        $assetFormNames = post('asset_form_asset_name', []);
-        $assetFormCategoryIds = post('asset_form_category_id', []);
-        $assetFormSubcategories = post('asset_form_subcategory_name', []);
-        $assetFormQuantities = post('asset_form_quantity', []);
-        $assetFormUnits = post('asset_form_unit_name', []);
-        $assetFormCosts = post('asset_form_acquisition_cost', []);
-        $assetFormLocations = post('asset_form_location', []);
-        $assetFormSuppliers = post('asset_form_supplier_name', []);
-        $assetFormDescriptions = post('asset_form_description', []);
+        $assetFormItems = post('asset_form_items', []);
 
         $detailInput = [];
         $maxRows = max(
@@ -813,15 +805,7 @@ final class JournalController extends Controller
             is_countable($cashflowComponentIds) ? count($cashflowComponentIds) : 0,
             is_countable($entryTags) ? count($entryTags) : 0,
             is_countable($assetFormEnabled) ? count($assetFormEnabled) : 0,
-            is_countable($assetFormNames) ? count($assetFormNames) : 0,
-            is_countable($assetFormCategoryIds) ? count($assetFormCategoryIds) : 0,
-            is_countable($assetFormSubcategories) ? count($assetFormSubcategories) : 0,
-            is_countable($assetFormQuantities) ? count($assetFormQuantities) : 0,
-            is_countable($assetFormUnits) ? count($assetFormUnits) : 0,
-            is_countable($assetFormCosts) ? count($assetFormCosts) : 0,
-            is_countable($assetFormLocations) ? count($assetFormLocations) : 0,
-            is_countable($assetFormSuppliers) ? count($assetFormSuppliers) : 0,
-            is_countable($assetFormDescriptions) ? count($assetFormDescriptions) : 0
+            is_countable($assetFormItems) ? count($assetFormItems) : 0
         );
         for ($i = 0; $i < $maxRows; $i++) {
             $detailInput[] = [
@@ -838,15 +822,7 @@ final class JournalController extends Controller
                 'entry_tag' => trim((string) ($entryTags[$i] ?? '')),
                 'asset_form' => [
                     'enabled' => (string) ($assetFormEnabled[$i] ?? '0'),
-                    'asset_name' => trim((string) ($assetFormNames[$i] ?? '')),
-                    'category_id' => trim((string) ($assetFormCategoryIds[$i] ?? '')),
-                    'subcategory_name' => trim((string) ($assetFormSubcategories[$i] ?? '')),
-                    'quantity' => trim((string) ($assetFormQuantities[$i] ?? '1')),
-                    'unit_name' => trim((string) ($assetFormUnits[$i] ?? 'unit')),
-                    'acquisition_cost_raw' => trim((string) ($assetFormCosts[$i] ?? '')),
-                    'location' => trim((string) ($assetFormLocations[$i] ?? '')),
-                    'supplier_name' => trim((string) ($assetFormSuppliers[$i] ?? '')),
-                    'description' => trim((string) ($assetFormDescriptions[$i] ?? '')),
+                    'items' => $this->decodeManagedAssetItemsJson((string) ($assetFormItems[$i] ?? '')),
                 ],
             ];
         }
@@ -1304,6 +1280,13 @@ final class JournalController extends Controller
     {
         return [
             'enabled' => '0',
+            'items' => [$this->defaultManagedAssetFormItem()],
+        ];
+    }
+
+    private function defaultManagedAssetFormItem(): array
+    {
+        return [
             'asset_name' => '',
             'category_id' => '',
             'subcategory_name' => '',
@@ -1320,6 +1303,11 @@ final class JournalController extends Controller
     {
         $hasExplicitEnabled = array_key_exists('enabled', $assetForm);
         $normalized = array_merge($this->defaultManagedAssetForm(), $assetForm);
+        $normalized['items'] = $this->normalizeManagedAssetItemsForDisplay(
+            is_array($normalized['items'] ?? null) ? $normalized['items'] : [],
+            $row,
+            $header
+        );
         $asset = null;
         if ($assetId > 0) {
             try {
@@ -1333,28 +1321,113 @@ final class JournalController extends Controller
             $journalLinked = (int) ($asset['linked_journal_id'] ?? 0) > 0
                 && (int) ($asset['linked_journal_id'] ?? 0) === (int) ($header['id'] ?? 0);
             $normalized['enabled'] = $hasExplicitEnabled ? (string) ($normalized['enabled'] ?? '0') : ($journalLinked ? '1' : '0');
-            $normalized['asset_name'] = trim((string) ($normalized['asset_name'] !== '' ? $normalized['asset_name'] : ($asset['asset_name'] ?? '')));
-            $normalized['category_id'] = (string) ($normalized['category_id'] !== '' ? $normalized['category_id'] : ($asset['category_id'] ?? ''));
-            $normalized['subcategory_name'] = trim((string) ($normalized['subcategory_name'] !== '' ? $normalized['subcategory_name'] : ($asset['subcategory_name'] ?? '')));
-            $normalized['quantity'] = trim((string) ($normalized['quantity'] !== '' ? $normalized['quantity'] : ($asset['quantity'] ?? '1')));
-            $normalized['unit_name'] = trim((string) ($normalized['unit_name'] !== '' ? $normalized['unit_name'] : (($asset['unit_name'] ?? '') !== '' ? $asset['unit_name'] : 'unit')));
-            $normalized['acquisition_cost_raw'] = trim((string) ($normalized['acquisition_cost_raw'] !== '' ? $normalized['acquisition_cost_raw'] : $this->formatMoneyForInput($asset['acquisition_cost'] ?? 0)));
-            $normalized['location'] = trim((string) ($normalized['location'] !== '' ? $normalized['location'] : ($asset['location'] ?? '')));
-            $normalized['supplier_name'] = trim((string) ($normalized['supplier_name'] !== '' ? $normalized['supplier_name'] : ($asset['supplier_name'] ?? '')));
-            $normalized['description'] = trim((string) ($normalized['description'] !== '' ? $normalized['description'] : ($asset['description'] ?? '')));
+            if ($normalized['items'] === [] || $this->managedAssetItemsAreEmpty($normalized['items'])) {
+                $normalized['items'] = [[
+                    'asset_name' => (string) ($asset['asset_name'] ?? ''),
+                    'category_id' => (string) ($asset['category_id'] ?? ''),
+                    'subcategory_name' => (string) ($asset['subcategory_name'] ?? ''),
+                    'quantity' => (string) ($asset['quantity'] ?? '1'),
+                    'unit_name' => (string) (($asset['unit_name'] ?? '') !== '' ? $asset['unit_name'] : 'unit'),
+                    'acquisition_cost_raw' => $this->formatMoneyForInput($asset['acquisition_cost'] ?? 0),
+                    'location' => (string) ($asset['location'] ?? ''),
+                    'supplier_name' => (string) ($asset['supplier_name'] ?? ''),
+                    'description' => (string) ($asset['description'] ?? ''),
+                ]];
+            }
         }
 
-        if ($normalized['asset_name'] === '') {
-            $normalized['asset_name'] = trim((string) (($row['line_description'] ?? '') !== '' ? ($row['line_description'] ?? '') : ($header['description'] ?? '')));
-        }
-        if ($normalized['acquisition_cost_raw'] === '') {
-            $normalized['acquisition_cost_raw'] = trim((string) (($row['debit_raw'] ?? '') !== '' ? ($row['debit_raw'] ?? '') : ''));
-        }
-        if ($normalized['unit_name'] === '') {
-            $normalized['unit_name'] = 'unit';
+        if ((!is_array($asset) || (int) ($asset['id'] ?? 0) <= 0)
+            && ((int) ($header['id'] ?? 0) > 0)
+            && ((int) ($row['line_no'] ?? 0) > 0)
+            && ($normalized['items'] === [] || $this->managedAssetItemsAreEmpty($normalized['items']))) {
+            $managedAssets = $this->assetModel()->getManagedJournalAssetsByLine((int) $header['id'], (int) $row['line_no']);
+            if ($managedAssets !== []) {
+                $normalized['enabled'] = $hasExplicitEnabled ? (string) ($normalized['enabled'] ?? '0') : '1';
+                $normalized['items'] = array_map(function (array $managedAsset): array {
+                    return [
+                        'asset_name' => (string) ($managedAsset['asset_name'] ?? ''),
+                        'category_id' => (string) ($managedAsset['category_id'] ?? ''),
+                        'subcategory_name' => (string) ($managedAsset['subcategory_name'] ?? ''),
+                        'quantity' => (string) ($managedAsset['quantity'] ?? '1'),
+                        'unit_name' => (string) (($managedAsset['unit_name'] ?? '') !== '' ? $managedAsset['unit_name'] : 'unit'),
+                        'acquisition_cost_raw' => $this->formatMoneyForInput($managedAsset['acquisition_cost'] ?? 0),
+                        'location' => (string) ($managedAsset['location'] ?? ''),
+                        'supplier_name' => (string) ($managedAsset['supplier_name'] ?? ''),
+                        'description' => (string) ($managedAsset['description'] ?? ''),
+                    ];
+                }, $managedAssets);
+            }
         }
 
         return $normalized;
+    }
+
+    private function normalizeManagedAssetItemsForDisplay(array $items, array $row, ?array $header = null): array
+    {
+        if ($items === [] && $this->hasLegacyManagedAssetItemShape($row)) {
+            $items = [[
+                'asset_name' => (string) ($row['asset_name'] ?? ''),
+                'category_id' => (string) ($row['category_id'] ?? ''),
+                'subcategory_name' => (string) ($row['subcategory_name'] ?? ''),
+                'quantity' => (string) ($row['quantity'] ?? '1'),
+                'unit_name' => (string) ($row['unit_name'] ?? 'unit'),
+                'acquisition_cost_raw' => (string) ($row['acquisition_cost_raw'] ?? ''),
+                'location' => (string) ($row['location'] ?? ''),
+                'supplier_name' => (string) ($row['supplier_name'] ?? ''),
+                'description' => (string) ($row['description'] ?? ''),
+            ]];
+        }
+
+        if ($items === []) {
+            $items = [$this->defaultManagedAssetFormItem()];
+        }
+
+        $normalizedItems = [];
+        foreach ($items as $item) {
+            $normalizedItem = array_merge($this->defaultManagedAssetFormItem(), is_array($item) ? $item : []);
+            if ($normalizedItem['asset_name'] === '') {
+                $normalizedItem['asset_name'] = trim((string) (($row['line_description'] ?? '') !== '' ? ($row['line_description'] ?? '') : ($header['description'] ?? '')));
+            }
+            if ($normalizedItem['acquisition_cost_raw'] === '') {
+                $normalizedItem['acquisition_cost_raw'] = trim((string) (($row['debit_raw'] ?? '') !== '' ? ($row['debit_raw'] ?? '') : ''));
+            }
+            if ($normalizedItem['unit_name'] === '') {
+                $normalizedItem['unit_name'] = 'unit';
+            }
+            $normalizedItems[] = $normalizedItem;
+        }
+
+        return $normalizedItems;
+    }
+
+    private function hasLegacyManagedAssetItemShape(array $row): bool
+    {
+        foreach (['asset_name', 'category_id', 'subcategory_name', 'quantity', 'unit_name', 'acquisition_cost_raw', 'location', 'supplier_name', 'description'] as $key) {
+            if (array_key_exists($key, $row)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function managedAssetItemsAreEmpty(array $items): bool
+    {
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            foreach (['asset_name', 'category_id', 'subcategory_name', 'acquisition_cost_raw', 'location', 'supplier_name', 'description'] as $key) {
+                if (trim((string) ($item[$key] ?? '')) !== '') {
+                    return false;
+                }
+            }
+            if ((float) $this->normalizeDecimalNumber((string) ($item['quantity'] ?? '1')) !== 1.0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function validateManagedAssetForm(array $line, array $headerInput, ?array $account, int $rowNumber): array
@@ -1362,7 +1435,7 @@ final class JournalController extends Controller
         $assetForm = is_array($line['asset_form'] ?? null) ? $line['asset_form'] : [];
         $enabled = (string) ($assetForm['enabled'] ?? '0') === '1';
         if (!$enabled) {
-            return [[], ['enabled' => false]];
+            return [[], ['enabled' => false, 'items' => []]];
         }
 
         $errors = [];
@@ -1371,81 +1444,107 @@ final class JournalController extends Controller
             $errors[] = 'Form aset pada baris jurnal #' . $rowNumber . ' hanya bisa dipakai pada baris debit dengan nilai perolehan.';
         }
 
-        $category = null;
-        $categoryId = (int) ($assetForm['category_id'] ?? 0);
-        if ($categoryId > 0) {
-            $category = $this->assetModel()->findCategoryById($categoryId);
+        $items = $this->normalizeManagedAssetItemsForValidation($assetForm, $line, $headerInput, $account);
+        if ($items === []) {
+            $errors[] = 'Form aset pada baris jurnal #' . $rowNumber . ' minimal harus memiliki satu item aset.';
+            return [$errors, ['enabled' => true, 'items' => []]];
         }
-        if (!$category && !empty($line['coa_id'])) {
-            $category = $this->assetModel()->findActiveCategoryByAssetCoaId((int) $line['coa_id']);
-            if ($category) {
-                $categoryId = (int) ($category['id'] ?? 0);
+
+        if ((int) ($line['asset_id'] ?? 0) > 0 && count($items) > 1) {
+            $errors[] = 'Baris jurnal #' . $rowNumber . ' tidak bisa menautkan satu referensi aset lama untuk lebih dari satu item aset baru.';
+        }
+
+        $normalizedItems = [];
+        $totalCost = 0.0;
+        foreach ($items as $itemIndex => $item) {
+            $itemNumber = $itemIndex + 1;
+            $category = null;
+            $categoryId = (int) ($item['category_id'] ?? 0);
+            if ($categoryId > 0) {
+                $category = $this->assetModel()->findCategoryById($categoryId);
             }
-        }
-        if (!$category || (int) ($category['is_active'] ?? 1) !== 1) {
-            $errors[] = 'Kategori aset pada baris jurnal #' . $rowNumber . ' wajib dipilih dan harus aktif.';
+            if (!$category && !empty($line['coa_id'])) {
+                $category = $this->assetModel()->findActiveCategoryByAssetCoaId((int) $line['coa_id']);
+                if ($category) {
+                    $categoryId = (int) ($category['id'] ?? 0);
+                }
+            }
+            if (!$category || (int) ($category['is_active'] ?? 1) !== 1) {
+                $errors[] = 'Kategori aset item #' . $itemNumber . ' pada baris jurnal #' . $rowNumber . ' wajib dipilih dan harus aktif.';
+            }
+
+            $assetName = trim((string) ($item['asset_name'] ?? ''));
+            if ($assetName === '') {
+                $assetName = trim((string) (($line['line_description'] ?? '') !== '' ? ($line['line_description'] ?? '') : (($account['account_name'] ?? '') !== '' ? ($account['account_name'] ?? '') : ($headerInput['description'] ?? ''))));
+            }
+            if ($assetName === '' || mb_strlen($assetName) < 3 || mb_strlen($assetName) > 160) {
+                $errors[] = 'Nama aset item #' . $itemNumber . ' pada baris jurnal #' . $rowNumber . ' harus 3 sampai 160 karakter.';
+            }
+
+            $quantity = $this->normalizeDecimalNumber((string) ($item['quantity'] ?? '1'));
+            if ($quantity <= 0) {
+                $errors[] = 'Jumlah aset item #' . $itemNumber . ' pada baris jurnal #' . $rowNumber . ' harus lebih besar dari 0.';
+            }
+
+            $unitName = trim((string) ($item['unit_name'] ?? ''));
+            if ($unitName === '') {
+                $unitName = 'unit';
+            }
+            if (mb_strlen($unitName) > 30) {
+                $errors[] = 'Satuan aset item #' . $itemNumber . ' pada baris jurnal #' . $rowNumber . ' maksimal 30 karakter.';
+            }
+
+            $acquisitionCost = $this->normalizeDecimalNumber((string) ($item['acquisition_cost_raw'] ?? ''));
+            if (count($items) === 1 && $acquisitionCost <= 0) {
+                $acquisitionCost = ((int) ($debitCents ?? 0)) / 100;
+            }
+            if ($acquisitionCost <= 0) {
+                $errors[] = 'Total nilai perolehan item #' . $itemNumber . ' pada baris jurnal #' . $rowNumber . ' harus lebih besar dari 0.';
+            }
+
+            $subcategoryName = trim((string) ($item['subcategory_name'] ?? ''));
+            if (mb_strlen($subcategoryName) > 120) {
+                $errors[] = 'Subkategori item #' . $itemNumber . ' pada baris jurnal #' . $rowNumber . ' maksimal 120 karakter.';
+            }
+
+            $location = trim((string) ($item['location'] ?? ''));
+            if (mb_strlen($location) > 150) {
+                $errors[] = 'Lokasi item #' . $itemNumber . ' pada baris jurnal #' . $rowNumber . ' maksimal 150 karakter.';
+            }
+
+            $supplierName = trim((string) ($item['supplier_name'] ?? ''));
+            if (mb_strlen($supplierName) > 150) {
+                $errors[] = 'Sumber perolehan item #' . $itemNumber . ' pada baris jurnal #' . $rowNumber . ' maksimal 150 karakter.';
+            }
+
+            $description = trim((string) ($item['description'] ?? ''));
+            if (mb_strlen($description) > 1000) {
+                $errors[] = 'Deskripsi item #' . $itemNumber . ' pada baris jurnal #' . $rowNumber . ' maksimal 1000 karakter.';
+            }
+
+            $normalizedItems[] = [
+                'asset_name' => $assetName,
+                'category_id' => $categoryId > 0 ? $categoryId : null,
+                'subcategory_name' => $subcategoryName,
+                'quantity' => $quantity,
+                'unit_name' => $unitName,
+                'acquisition_cost' => $acquisitionCost,
+                'acquisition_cost_raw' => $this->formatMoneyForInput($acquisitionCost),
+                'location' => $location,
+                'supplier_name' => $supplierName,
+                'description' => $description,
+            ];
+            $totalCost += $acquisitionCost;
         }
 
-        $assetName = trim((string) ($assetForm['asset_name'] ?? ''));
-        if ($assetName === '') {
-            $assetName = trim((string) (($line['line_description'] ?? '') !== '' ? ($line['line_description'] ?? '') : (($account['account_name'] ?? '') !== '' ? ($account['account_name'] ?? '') : ($headerInput['description'] ?? ''))));
-        }
-        if ($assetName === '' || mb_strlen($assetName) < 3 || mb_strlen($assetName) > 160) {
-            $errors[] = 'Nama aset pada baris jurnal #' . $rowNumber . ' harus 3 sampai 160 karakter.';
-        }
-
-        $quantity = $this->normalizeDecimalNumber((string) ($assetForm['quantity'] ?? '1'));
-        if ($quantity <= 0) {
-            $errors[] = 'Jumlah aset pada baris jurnal #' . $rowNumber . ' harus lebih besar dari 0.';
-        }
-
-        $unitName = trim((string) ($assetForm['unit_name'] ?? ''));
-        if ($unitName === '') {
-            $unitName = 'unit';
-        }
-        if (mb_strlen($unitName) > 30) {
-            $errors[] = 'Satuan aset pada baris jurnal #' . $rowNumber . ' maksimal 30 karakter.';
-        }
-
-        $acquisitionCost = $this->normalizeDecimalNumber((string) ($assetForm['acquisition_cost_raw'] ?? ''));
-        if ($acquisitionCost <= 0) {
-            $acquisitionCost = ((int) ($debitCents ?? 0)) / 100;
-        }
-        if ($acquisitionCost <= 0) {
-            $errors[] = 'Total nilai perolehan aset pada baris jurnal #' . $rowNumber . ' harus lebih besar dari 0.';
-        }
-
-        $subcategoryName = trim((string) ($assetForm['subcategory_name'] ?? ''));
-        if (mb_strlen($subcategoryName) > 120) {
-            $errors[] = 'Subkategori aset pada baris jurnal #' . $rowNumber . ' maksimal 120 karakter.';
-        }
-
-        $location = trim((string) ($assetForm['location'] ?? ''));
-        if (mb_strlen($location) > 150) {
-            $errors[] = 'Lokasi aset pada baris jurnal #' . $rowNumber . ' maksimal 150 karakter.';
-        }
-
-        $supplierName = trim((string) ($assetForm['supplier_name'] ?? ''));
-        if (mb_strlen($supplierName) > 150) {
-            $errors[] = 'Sumber perolehan aset pada baris jurnal #' . $rowNumber . ' maksimal 150 karakter.';
-        }
-
-        $description = trim((string) ($assetForm['description'] ?? ''));
-        if (mb_strlen($description) > 1000) {
-            $errors[] = 'Deskripsi aset pada baris jurnal #' . $rowNumber . ' maksimal 1000 karakter.';
+        $lineDebit = ((int) ($debitCents ?? 0)) / 100;
+        if ($lineDebit > 0 && abs($totalCost - $lineDebit) >= 0.005) {
+            $errors[] = 'Total nilai semua item aset pada baris jurnal #' . $rowNumber . ' harus sama dengan nilai debit baris tersebut.';
         }
 
         return [$errors, [
             'enabled' => true,
-            'asset_name' => $assetName,
-            'category_id' => $categoryId > 0 ? $categoryId : null,
-            'subcategory_name' => $subcategoryName,
-            'quantity' => $quantity,
-            'unit_name' => $unitName,
-            'acquisition_cost' => $acquisitionCost,
-            'location' => $location,
-            'supplier_name' => $supplierName,
-            'description' => $description,
+            'items' => $normalizedItems,
         ]];
     }
 
@@ -1456,72 +1555,100 @@ final class JournalController extends Controller
 
         foreach ($lines as $index => $line) {
             $assetForm = is_array($line['asset_form'] ?? null) ? $line['asset_form'] : [];
+            $lineNo = $index + 1;
             if (!(bool) ($assetForm['enabled'] ?? false)) {
+                $this->assetModel()->purgeManagedJournalAssetsByLineExceptCodes($journalId, $lineNo, [], $userId);
+                $existingAssetId = (int) ($line['asset_id'] ?? 0);
+                if ($existingAssetId > 0) {
+                    $existingAsset = $this->assetModel()->findAssetById($existingAssetId);
+                    if ($existingAsset && (int) ($existingAsset['linked_journal_id'] ?? 0) === $journalId) {
+                        $this->model()->updateLineAssetReference($journalId, $lineNo, null);
+                    }
+                }
                 continue;
             }
-
-            $lineNo = $index + 1;
+            $items = is_array($assetForm['items'] ?? null) ? $assetForm['items'] : [];
             $existingAssetId = (int) ($line['asset_id'] ?? 0);
-            $existingAsset = $existingAssetId > 0 ? $this->assetModel()->findAssetById($existingAssetId) : null;
-            if ($existingAssetId > 0 && !$existingAsset) {
+            $existingSelectedAsset = $existingAssetId > 0 ? $this->assetModel()->findAssetById($existingAssetId) : null;
+            if ($existingAssetId > 0 && !$existingSelectedAsset) {
                 throw new RuntimeException('Aset pada baris jurnal #' . $lineNo . ' tidak ditemukan saat sinkronisasi.');
             }
-            if ($existingAsset && (int) ($existingAsset['linked_journal_id'] ?? 0) > 0 && (int) ($existingAsset['linked_journal_id'] ?? 0) !== $journalId) {
+            if ($existingSelectedAsset && (int) ($existingSelectedAsset['linked_journal_id'] ?? 0) > 0 && (int) ($existingSelectedAsset['linked_journal_id'] ?? 0) !== $journalId) {
                 throw new RuntimeException('Aset pada baris jurnal #' . $lineNo . ' sudah tertaut ke jurnal lain sehingga tidak aman diperbarui dari form jurnal ini.');
             }
 
-            $assetCode = $existingAsset
-                ? (string) ($existingAsset['asset_code'] ?? '')
-                : $this->buildManagedAssetCode($journalId, $lineNo);
-
-            $category = $this->assetModel()->findCategoryById((int) ($assetForm['category_id'] ?? 0));
-            if (!$category) {
-                throw new RuntimeException('Kategori aset pada baris jurnal #' . $lineNo . ' tidak ditemukan saat sinkronisasi.');
+            $managedAssets = $this->assetModel()->getManagedJournalAssetsByLine($journalId, $lineNo);
+            $managedAssetsByCode = [];
+            foreach ($managedAssets as $managedAsset) {
+                $managedAssetsByCode[(string) ($managedAsset['asset_code'] ?? '')] = $managedAsset;
             }
 
-            $depreciationAllowed = (int) ($category['depreciation_allowed'] ?? 1) === 1;
-            $assetPayload = [
-                'asset_code' => $assetCode,
-                'asset_name' => (string) ($assetForm['asset_name'] ?? ''),
-                'entry_mode' => 'ACQUISITION',
-                'category_id' => (int) ($assetForm['category_id'] ?? 0),
-                'subcategory_name' => (string) ($assetForm['subcategory_name'] ?? ''),
-                'business_unit_id' => !empty($header['business_unit_id']) ? (int) $header['business_unit_id'] : null,
-                'quantity' => (float) ($assetForm['quantity'] ?? 1),
-                'unit_name' => (string) ($assetForm['unit_name'] ?? 'unit'),
-                'acquisition_date' => (string) ($header['journal_date'] ?? date('Y-m-d')),
-                'acquisition_cost' => (float) ($assetForm['acquisition_cost'] ?? 0),
-                'opening_as_of_date' => null,
-                'opening_accumulated_depreciation' => 0,
-                'residual_value' => 0,
-                'useful_life_months' => $depreciationAllowed ? (!empty($category['default_useful_life_months']) ? (int) $category['default_useful_life_months'] : 36) : null,
-                'depreciation_method' => (string) ($category['default_depreciation_method'] ?? 'STRAIGHT_LINE'),
-                'depreciation_start_date' => $depreciationAllowed ? (string) ($header['journal_date'] ?? date('Y-m-d')) : null,
-                'depreciation_allowed' => $depreciationAllowed,
-                'offset_coa_id' => $offsetCoaId,
-                'location' => (string) ($assetForm['location'] ?? ''),
-                'supplier_name' => (string) ($assetForm['supplier_name'] ?? ''),
-                'source_of_funds' => 'HASIL_USAHA',
-                'funding_source_detail' => '',
-                'reference_no' => (string) (($header['reference_no'] ?? '') !== '' ? $header['reference_no'] : ($header['journal_no'] ?? '')),
-                'linked_journal_id' => $journalId,
-                'condition_status' => $existingAsset ? (string) ($existingAsset['condition_status'] ?? 'GOOD') : 'GOOD',
-                'asset_status' => $existingAsset ? (string) ($existingAsset['asset_status'] ?? 'ACTIVE') : 'ACTIVE',
-                'acquisition_sync_status' => 'POSTED',
-                'is_active' => $existingAsset ? (int) ($existingAsset['is_active'] ?? 1) : 1,
-                'description' => (string) ($assetForm['description'] ?? ''),
-                'notes' => $this->buildManagedAssetNote($journalId, $lineNo, (string) ($header['journal_no'] ?? '')),
-            ];
+            $keepCodes = [];
+            $savedIds = [];
+            foreach ($items as $itemIndex => $assetItem) {
+                $itemNo = $itemIndex + 1;
+                $assetCode = $this->buildManagedAssetCode($journalId, $lineNo, $itemNo);
+                $existingAsset = $managedAssetsByCode[$assetCode] ?? null;
+                if (!$existingAsset && count($items) === 1 && $existingSelectedAsset) {
+                    $existingAsset = $existingSelectedAsset;
+                    $assetCode = (string) ($existingSelectedAsset['asset_code'] ?? $assetCode);
+                }
+                $keepCodes[] = $assetCode;
 
-            if ($existingAsset) {
-                $this->assetModel()->updateAsset($existingAssetId, $assetPayload, $userId);
-                $summary['updated']++;
-                continue;
+                $category = $this->assetModel()->findCategoryById((int) ($assetItem['category_id'] ?? 0));
+                if (!$category) {
+                    throw new RuntimeException('Kategori aset item #' . $itemNo . ' pada baris jurnal #' . $lineNo . ' tidak ditemukan saat sinkronisasi.');
+                }
+
+                $depreciationAllowed = (int) ($category['depreciation_allowed'] ?? 1) === 1;
+                $assetPayload = [
+                    'asset_code' => $assetCode,
+                    'asset_name' => (string) ($assetItem['asset_name'] ?? ''),
+                    'entry_mode' => 'ACQUISITION',
+                    'category_id' => (int) ($assetItem['category_id'] ?? 0),
+                    'subcategory_name' => (string) ($assetItem['subcategory_name'] ?? ''),
+                    'business_unit_id' => !empty($header['business_unit_id']) ? (int) $header['business_unit_id'] : null,
+                    'quantity' => (float) ($assetItem['quantity'] ?? 1),
+                    'unit_name' => (string) ($assetItem['unit_name'] ?? 'unit'),
+                    'acquisition_date' => (string) ($header['journal_date'] ?? date('Y-m-d')),
+                    'acquisition_cost' => (float) ($assetItem['acquisition_cost'] ?? 0),
+                    'opening_as_of_date' => null,
+                    'opening_accumulated_depreciation' => 0,
+                    'residual_value' => 0,
+                    'useful_life_months' => $depreciationAllowed ? (!empty($category['default_useful_life_months']) ? (int) $category['default_useful_life_months'] : 36) : null,
+                    'depreciation_method' => (string) ($category['default_depreciation_method'] ?? 'STRAIGHT_LINE'),
+                    'depreciation_start_date' => $depreciationAllowed ? (string) ($header['journal_date'] ?? date('Y-m-d')) : null,
+                    'depreciation_allowed' => $depreciationAllowed,
+                    'offset_coa_id' => $offsetCoaId,
+                    'location' => (string) ($assetItem['location'] ?? ''),
+                    'supplier_name' => (string) ($assetItem['supplier_name'] ?? ''),
+                    'source_of_funds' => 'HASIL_USAHA',
+                    'funding_source_detail' => '',
+                    'reference_no' => (string) (($header['reference_no'] ?? '') !== '' ? $header['reference_no'] : ($header['journal_no'] ?? '')),
+                    'linked_journal_id' => $journalId,
+                    'condition_status' => $existingAsset ? (string) ($existingAsset['condition_status'] ?? 'GOOD') : 'GOOD',
+                    'asset_status' => $existingAsset ? (string) ($existingAsset['asset_status'] ?? 'ACTIVE') : 'ACTIVE',
+                    'acquisition_sync_status' => 'POSTED',
+                    'is_active' => $existingAsset ? (int) ($existingAsset['is_active'] ?? 1) : 1,
+                    'description' => (string) ($assetItem['description'] ?? ''),
+                    'notes' => $this->buildManagedAssetNote($journalId, $lineNo, $itemNo, (string) ($header['journal_no'] ?? '')),
+                ];
+
+                if ($existingAsset) {
+                    $assetId = (int) ($existingAsset['id'] ?? 0);
+                    $this->assetModel()->updateAsset($assetId, $assetPayload, $userId);
+                    $savedIds[] = $assetId;
+                    $summary['updated']++;
+                    continue;
+                }
+
+                $createdAssetId = $this->assetModel()->createAsset($assetPayload, $userId);
+                $savedIds[] = $createdAssetId;
+                $summary['created']++;
             }
 
-            $createdAssetId = $this->assetModel()->createAsset($assetPayload, $userId);
-            $this->model()->updateLineAssetReference($journalId, $lineNo, $createdAssetId);
-            $summary['created']++;
+            $this->assetModel()->purgeManagedJournalAssetsByLineExceptCodes($journalId, $lineNo, $keepCodes, $userId);
+            $this->model()->updateLineAssetReference($journalId, $lineNo, count($savedIds) === 1 ? (int) $savedIds[0] : null);
         }
 
         return $summary;
@@ -1542,15 +1669,92 @@ final class JournalController extends Controller
         return $bestCoaId;
     }
 
-    private function buildManagedAssetCode(int $journalId, int $lineNo): string
+    private function buildManagedAssetCode(int $journalId, int $lineNo, int $itemNo): string
     {
-        return 'JFA-' . $journalId . '-' . str_pad((string) $lineNo, 2, '0', STR_PAD_LEFT);
+        return 'JFA-' . $journalId . '-' . str_pad((string) $lineNo, 2, '0', STR_PAD_LEFT) . '-' . str_pad((string) $itemNo, 2, '0', STR_PAD_LEFT);
     }
 
-    private function buildManagedAssetNote(int $journalId, int $lineNo, string $journalNo): string
+    private function buildManagedAssetNote(int $journalId, int $lineNo, int $itemNo, string $journalNo): string
     {
         $journalLabel = trim($journalNo) !== '' ? $journalNo : ('#' . $journalId);
-        return '[JOURNAL-FORM-ASSET:' . $journalId . ':' . $lineNo . '] Dibuat / diperbarui dari jurnal ' . $journalLabel . ' baris #' . $lineNo . '.';
+        return '[JOURNAL-FORM-ASSET:' . $journalId . ':' . $lineNo . ':' . $itemNo . '] Dibuat / diperbarui dari jurnal ' . $journalLabel . ' baris #' . $lineNo . ' item #' . $itemNo . '.';
+    }
+
+    private function normalizeManagedAssetItemsForValidation(array $assetForm, array $line, array $headerInput, ?array $account): array
+    {
+        $rawItems = is_array($assetForm['items'] ?? null) ? $assetForm['items'] : [];
+        $normalized = [];
+        foreach ($rawItems as $item) {
+            $candidate = array_merge($this->defaultManagedAssetFormItem(), is_array($item) ? $item : []);
+            $hasAnyValue = false;
+            foreach (['asset_name', 'category_id', 'subcategory_name', 'acquisition_cost_raw', 'location', 'supplier_name', 'description'] as $key) {
+                if (trim((string) ($candidate[$key] ?? '')) !== '') {
+                    $hasAnyValue = true;
+                    break;
+                }
+            }
+            if (!$hasAnyValue) {
+                $quantity = $this->normalizeDecimalNumber((string) ($candidate['quantity'] ?? '1'));
+                if ($quantity !== 1.0) {
+                    $hasAnyValue = true;
+                }
+            }
+            if (!$hasAnyValue) {
+                continue;
+            }
+
+            if (trim((string) ($candidate['asset_name'] ?? '')) === '') {
+                $candidate['asset_name'] = trim((string) (($line['line_description'] ?? '') !== '' ? ($line['line_description'] ?? '') : (($account['account_name'] ?? '') !== '' ? ($account['account_name'] ?? '') : ($headerInput['description'] ?? ''))));
+            }
+            if (trim((string) ($candidate['category_id'] ?? '')) === '' && !empty($line['coa_id'])) {
+                $category = $this->assetModel()->findActiveCategoryByAssetCoaId((int) $line['coa_id']);
+                if ($category) {
+                    $candidate['category_id'] = (string) ($category['id'] ?? '');
+                }
+            }
+
+            $normalized[] = $candidate;
+        }
+
+        return $normalized;
+    }
+
+    private function decodeManagedAssetItemsJson(string $json): array
+    {
+        $json = trim($json);
+        if ($json === '') {
+            return [];
+        }
+
+        try {
+            $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        } catch (Throwable) {
+            return [];
+        }
+
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($decoded as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $items[] = array_merge($this->defaultManagedAssetFormItem(), [
+                'asset_name' => trim((string) ($item['asset_name'] ?? '')),
+                'category_id' => trim((string) ($item['category_id'] ?? '')),
+                'subcategory_name' => trim((string) ($item['subcategory_name'] ?? '')),
+                'quantity' => trim((string) ($item['quantity'] ?? '1')),
+                'unit_name' => trim((string) ($item['unit_name'] ?? 'unit')),
+                'acquisition_cost_raw' => trim((string) ($item['acquisition_cost_raw'] ?? '')),
+                'location' => trim((string) ($item['location'] ?? '')),
+                'supplier_name' => trim((string) ($item['supplier_name'] ?? '')),
+                'description' => trim((string) ($item['description'] ?? '')),
+            ]);
+        }
+
+        return $items;
     }
 
 

@@ -218,6 +218,47 @@ final class AssetModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    public function getManagedJournalAssetsByLine(int $journalId, int $lineNo): array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM asset_items
+            WHERE linked_journal_id = :journal_id
+              AND notes LIKE :marker
+            ORDER BY asset_code ASC, id ASC');
+        $stmt->bindValue(':journal_id', $journalId, PDO::PARAM_INT);
+        $stmt->bindValue(':marker', '%[JOURNAL-FORM-ASSET:' . $journalId . ':' . $lineNo . ':%', PDO::PARAM_STR);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function purgeManagedJournalAssetsByLineExceptCodes(int $journalId, int $lineNo, array $keepCodes, int $userId): array
+    {
+        $assets = $this->getManagedJournalAssetsByLine($journalId, $lineNo);
+        $keepLookup = [];
+        foreach ($keepCodes as $code) {
+            $code = trim((string) $code);
+            if ($code !== '') {
+                $keepLookup[$code] = true;
+            }
+        }
+
+        $summary = ['deleted' => 0, 'blocked' => 0, 'warnings' => []];
+        foreach ($assets as $asset) {
+            $assetCode = trim((string) ($asset['asset_code'] ?? ''));
+            if ($assetCode !== '' && isset($keepLookup[$assetCode])) {
+                continue;
+            }
+            try {
+                $this->deleteAutoSyncedAsset((int) ($asset['id'] ?? 0), $userId);
+                $summary['deleted']++;
+            } catch (Throwable $e) {
+                $summary['blocked']++;
+                $summary['warnings'][] = $e->getMessage();
+            }
+        }
+
+        return $summary;
+    }
+
     private function buildJournalAssetCandidates(array $header, array $details): array
     {
         $journalId = (int) ($header['id'] ?? 0);

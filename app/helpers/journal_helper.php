@@ -187,6 +187,21 @@ function journal_attachment_type_label(array $attachment): string
     };
 }
 
+function journal_attachment_is_pdf(array $attachment): bool
+{
+    return strtolower((string) ($attachment['file_ext'] ?? '')) === 'pdf';
+}
+
+function journal_attachment_is_image(array $attachment): bool
+{
+    return in_array(strtolower((string) ($attachment['file_ext'] ?? '')), ['jpg', 'jpeg', 'png', 'webp'], true);
+}
+
+function journal_attachment_is_previewable(array $attachment): bool
+{
+    return journal_attachment_is_pdf($attachment) || journal_attachment_is_image($attachment);
+}
+
 
 function journal_quick_template_options(): array
 {

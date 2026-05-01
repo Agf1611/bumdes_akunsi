@@ -114,6 +114,115 @@ $isMobileNavActive = static function (array $needles) use ($currentPath): string
 <script src="<?= e(asset_url('js/workspace-tools.js')) ?>?v=<?= e($assetVersion('js/workspace-tools.js')) ?>"></script>
 <script src="<?= e(asset_url('js/report-filters.js')) ?>?v=<?= e($assetVersion('js/report-filters.js')) ?>"></script>
 <script>
+    (function () {
+        var storagePrefix = 'bumdes_scroll_restore:';
+        var restoreTtlMs = 10 * 60 * 1000;
+
+        function normalizeUrl(input) {
+            try {
+                var url = new URL(input, window.location.origin);
+                url.hash = '';
+                return url.toString();
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function currentPageKey() {
+            return storagePrefix + normalizeUrl(window.location.href);
+        }
+
+        function saveScrollPosition() {
+            try {
+                sessionStorage.setItem(currentPageKey(), JSON.stringify({
+                    y: window.scrollY || window.pageYOffset || 0,
+                    savedAt: Date.now()
+                }));
+            } catch (error) {
+                return;
+            }
+        }
+
+        function restoreScrollPosition() {
+            if (window.location.hash) {
+                return;
+            }
+
+            try {
+                var raw = sessionStorage.getItem(currentPageKey());
+                if (!raw) {
+                    return;
+                }
+
+                var payload = JSON.parse(raw);
+                var y = Number(payload && payload.y ? payload.y : 0);
+                var savedAt = Number(payload && payload.savedAt ? payload.savedAt : 0);
+                if (!Number.isFinite(y) || y < 0) {
+                    sessionStorage.removeItem(currentPageKey());
+                    return;
+                }
+                if (!Number.isFinite(savedAt) || (Date.now() - savedAt) > restoreTtlMs) {
+                    sessionStorage.removeItem(currentPageKey());
+                    return;
+                }
+
+                var applyScroll = function () {
+                    window.scrollTo(0, y);
+                };
+
+                requestAnimationFrame(applyScroll);
+                window.addEventListener('load', function () {
+                    setTimeout(applyScroll, 40);
+                }, { once: true });
+                sessionStorage.removeItem(currentPageKey());
+            } catch (error) {
+                try {
+                    sessionStorage.removeItem(currentPageKey());
+                } catch (storageError) {
+                    return;
+                }
+            }
+        }
+
+        document.addEventListener('submit', function (event) {
+            var form = event.target instanceof HTMLFormElement ? event.target : null;
+            if (!form) {
+                return;
+            }
+
+            var method = String(form.method || 'get').toUpperCase();
+            if (method === 'GET') {
+                return;
+            }
+
+            saveScrollPosition();
+        }, true);
+
+        document.addEventListener('click', function (event) {
+            var link = event.target.closest('a[href]');
+            if (!link) {
+                return;
+            }
+            if (link.target && link.target !== '_self') {
+                return;
+            }
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+                return;
+            }
+
+            var href = normalizeUrl(link.href || '');
+            var current = normalizeUrl(window.location.href);
+            if (href === '' || current === '' || href === current) {
+                return;
+            }
+
+            saveScrollPosition();
+        }, true);
+
+        window.addEventListener('pagehide', saveScrollPosition);
+        restoreScrollPosition();
+    })();
+
     document.addEventListener('click', function (event) {
         var trigger = event.target.closest('[data-mobile-menu-toggle]');
         if (!trigger) {

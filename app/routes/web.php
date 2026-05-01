@@ -109,6 +109,7 @@ $router->get('/journals/print', [JournalController::class, 'print'], [[RoleMiddl
 $router->get('/journals/print-receipt', [JournalController::class, 'printReceipt'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/journals/print-list', [JournalController::class, 'printList'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->post('/journals/attachments/upload', [JournalController::class, 'uploadAttachment'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
+$router->get('/journals/attachments/preview', [JournalController::class, 'previewAttachment'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/journals/attachments/download', [JournalController::class, 'downloadAttachment'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->post('/journals/attachments/delete', [JournalController::class, 'deleteAttachment'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/journals/export', [JournalController::class, 'export'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);

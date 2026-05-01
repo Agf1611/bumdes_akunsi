@@ -12,25 +12,27 @@ final class UserAccountModel
 
     public function getList(string $search = '', string $roleCode = ''): array
     {
+        $allowedRoles = $this->manageableRoleCodes();
+        $quotedRoles = "'" . implode("','", array_map(static fn (string $role): string => str_replace("'", "''", $role), $allowedRoles)) . "'";
         $sql = 'SELECT u.id, u.full_name, u.username, u.is_active, u.last_login_at, u.created_at, '
                 . ($this->hasMfaEnabledColumn() ? 'u.mfa_enabled' : '0 AS mfa_enabled') . ',
                        r.code AS role_code, r.name AS role_name,
                        (SELECT COUNT(*) FROM journal_headers j WHERE j.created_by = u.id) AS journal_count
                 FROM users u
                 INNER JOIN roles r ON r.id = u.role_id
-                WHERE r.code IN (\'bendahara\', \'pimpinan\')';
+                WHERE r.code IN (' . $quotedRoles . ')';
 
         $params = [];
         if ($search !== '') {
             $sql .= ' AND (u.full_name LIKE :search OR u.username LIKE :search OR r.name LIKE :search)';
             $params[':search'] = '%' . $search . '%';
         }
-        if ($roleCode !== '' && in_array($roleCode, ['bendahara', 'pimpinan'], true)) {
+        if ($roleCode !== '' && in_array($roleCode, $allowedRoles, true)) {
             $sql .= ' AND r.code = :role_code';
             $params[':role_code'] = $roleCode;
         }
 
-        $sql .= ' ORDER BY FIELD(r.code, \'bendahara\', \'pimpinan\'), u.full_name ASC, u.id ASC';
+        $sql .= ' ORDER BY FIELD(r.code, \'admin\', \'bendahara\', \'pimpinan\'), u.full_name ASC, u.id ASC';
         $stmt = $this->db->prepare($sql);
         foreach ($params as $key => $value) {
             $stmt->bindValue($key, $value, PDO::PARAM_STR);
@@ -41,16 +43,45 @@ final class UserAccountModel
 
     public function getRoleOptions(): array
     {
-        $stmt = $this->db->query("SELECT id, code, name FROM roles WHERE code IN ('bendahara', 'pimpinan') ORDER BY FIELD(code, 'bendahara', 'pimpinan')");
+        $stmt = $this->db->query("SELECT id, code, name FROM roles WHERE code IN ('admin', 'bendahara', 'pimpinan') ORDER BY FIELD(code, 'admin', 'bendahara', 'pimpinan')");
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getSummary(): array
+    {
+        $quotedRoles = "'" . implode("','", array_map(static fn (string $role): string => str_replace("'", "''", $role), $this->manageableRoleCodes())) . "'";
+        $sql = 'SELECT
+                    COUNT(*) AS total_users,
+                    SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END) AS active_users,
+                    SUM(CASE WHEN u.is_active = 0 THEN 1 ELSE 0 END) AS inactive_users,
+                    SUM(CASE WHEN r.code = \'admin\' THEN 1 ELSE 0 END) AS admin_users,
+                    SUM(CASE WHEN r.code = \'bendahara\' THEN 1 ELSE 0 END) AS bendahara_users,
+                    SUM(CASE WHEN r.code = \'pimpinan\' THEN 1 ELSE 0 END) AS pimpinan_users,
+                    SUM(CASE WHEN ' . ($this->hasMfaEnabledColumn() ? 'u.mfa_enabled = 1' : '0 = 1') . ' THEN 1 ELSE 0 END) AS mfa_users
+                FROM users u
+                INNER JOIN roles r ON r.id = u.role_id
+                WHERE r.code IN (' . $quotedRoles . ')';
+        $stmt = $this->db->query($sql);
+        $row = $stmt ? ($stmt->fetch(PDO::FETCH_ASSOC) ?: []) : [];
+
+        return [
+            'total_users' => (int) ($row['total_users'] ?? 0),
+            'active_users' => (int) ($row['active_users'] ?? 0),
+            'inactive_users' => (int) ($row['inactive_users'] ?? 0),
+            'admin_users' => (int) ($row['admin_users'] ?? 0),
+            'bendahara_users' => (int) ($row['bendahara_users'] ?? 0),
+            'pimpinan_users' => (int) ($row['pimpinan_users'] ?? 0),
+            'mfa_users' => (int) ($row['mfa_users'] ?? 0),
+        ];
     }
 
     public function findById(int $id): ?array
     {
+        $quotedRoles = "'" . implode("','", array_map(static fn (string $role): string => str_replace("'", "''", $role), $this->manageableRoleCodes())) . "'";
         $stmt = $this->db->prepare('SELECT u.*, r.code AS role_code, r.name AS role_name
                                     FROM users u
                                     INNER JOIN roles r ON r.id = u.role_id
-                                    WHERE u.id = :id AND r.code IN (\'bendahara\', \'pimpinan\')
+                                    WHERE u.id = :id AND r.code IN (' . $quotedRoles . ')
                                     LIMIT 1');
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -77,11 +108,16 @@ final class UserAccountModel
 
     public function findRoleByCode(string $roleCode): ?array
     {
-        $stmt = $this->db->prepare("SELECT id, code, name FROM roles WHERE code = :code AND code IN ('bendahara', 'pimpinan') LIMIT 1");
+        $stmt = $this->db->prepare("SELECT id, code, name FROM roles WHERE code = :code AND code IN ('admin', 'bendahara', 'pimpinan') LIMIT 1");
         $stmt->bindValue(':code', $roleCode, PDO::PARAM_STR);
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
+    }
+
+    private function manageableRoleCodes(): array
+    {
+        return ['admin', 'bendahara', 'pimpinan'];
     }
 
     public function create(array $data): int

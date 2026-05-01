@@ -14,13 +14,16 @@ final class UserAccountController extends Controller
         try {
             $search = trim((string) get_query('search', ''));
             $roleCode = trim((string) get_query('role', ''));
+            $rows = $this->model()->getList($search, $roleCode);
 
             $this->view('user_accounts/views/index', [
                 'title' => 'Manajemen Akun Pengguna',
-                'rows' => $this->model()->getList($search, $roleCode),
+                'rows' => $rows,
                 'search' => $search,
                 'roleCode' => $roleCode,
                 'roleOptions' => $this->model()->getRoleOptions(),
+                'summary' => $this->model()->getSummary(),
+                'currentUserId' => (int) (Auth::user()['id'] ?? 0),
             ]);
         } catch (Throwable $e) {
             log_error($e);
@@ -31,7 +34,7 @@ final class UserAccountController extends Controller
 
     public function create(): void
     {
-        $this->showForm('Tambah Akun Bendahara / Pimpinan', null);
+        $this->showForm('Tambah Akun Pengguna', null);
     }
 
     public function edit(): void
@@ -44,7 +47,7 @@ final class UserAccountController extends Controller
 
         $row = $this->model()->findById($id);
         if (!$row) {
-            flash('error', 'Akun bendahara / pimpinan tidak ditemukan.');
+            flash('error', 'Akun pengguna tidak ditemukan.');
             $this->redirect('/user-accounts');
         }
 
@@ -66,7 +69,7 @@ final class UserAccountController extends Controller
 
         $row = $this->model()->findById($id);
         if (!$row) {
-            flash('error', 'Akun bendahara / pimpinan tidak ditemukan.');
+            flash('error', 'Akun pengguna tidak ditemukan.');
             $this->redirect('/user-accounts');
         }
 
@@ -84,13 +87,16 @@ final class UserAccountController extends Controller
 
         $row = $this->model()->findById($id);
         if (!$row) {
-            flash('error', 'Akun bendahara / pimpinan tidak ditemukan.');
+            flash('error', 'Akun pengguna tidak ditemukan.');
             $this->redirect('/user-accounts');
         }
 
         try {
             $beforeRow = $row;
             $newStatus = ((int) ($row['is_active'] ?? 0)) !== 1;
+            if ((int) ($row['id'] ?? 0) === (int) (Auth::user()['id'] ?? 0) && !$newStatus) {
+                throw new RuntimeException('Akun Anda sendiri tidak boleh dinonaktifkan dari halaman ini.');
+            }
             $this->model()->toggleActive($id, $newStatus);
             audit_log('Akun Pengguna', $newStatus ? 'activate' : 'deactivate', $newStatus ? 'Akun pengguna diaktifkan.' : 'Akun pengguna dinonaktifkan.', [
                 'entity_type' => 'user',
@@ -101,7 +107,7 @@ final class UserAccountController extends Controller
             flash('success', $newStatus ? 'Akun berhasil diaktifkan.' : 'Akun berhasil dinonaktifkan.');
         } catch (Throwable $e) {
             log_error($e);
-            flash('error', 'Status akun gagal diperbarui.');
+            flash('error', 'Status akun gagal diperbarui. ' . $e->getMessage());
         }
 
         $this->redirect('/user-accounts');
@@ -118,7 +124,7 @@ final class UserAccountController extends Controller
 
         $row = $this->model()->findById($id);
         if (!$row) {
-            flash('error', 'Akun bendahara / pimpinan tidak ditemukan.');
+            flash('error', 'Akun pengguna tidak ditemukan.');
             $this->redirect('/user-accounts');
         }
 
@@ -187,7 +193,18 @@ final class UserAccountController extends Controller
 
         $role = $this->model()->findRoleByCode($input['role_code']);
         if (!$role) {
-            $errors[] = 'Role pengguna hanya boleh Bendahara atau Pimpinan.';
+            $errors[] = 'Role pengguna hanya boleh Admin, Bendahara, atau Pimpinan.';
+        }
+
+        $currentUserId = (int) (Auth::user()['id'] ?? 0);
+        $existingRow = $id !== null ? $this->model()->findById($id) : null;
+        if ($id !== null && $existingRow && (int) ($existingRow['id'] ?? 0) === $currentUserId) {
+            if (!$input['is_active']) {
+                $errors[] = 'Akun Anda sendiri tidak boleh dinonaktifkan dari halaman ini.';
+            }
+            if (($existingRow['role_code'] ?? '') === 'admin' && $input['role_code'] !== 'admin') {
+                $errors[] = 'Akun admin yang sedang Anda pakai tidak boleh diturunkan rolenya dari halaman ini.';
+            }
         }
 
         if ($id === null) {
@@ -220,7 +237,7 @@ final class UserAccountController extends Controller
         }
 
         try {
-            $beforeRow = $id !== null ? $this->model()->findById($id) : null;
+            $beforeRow = $existingRow;
             $payload = [
                 'role_id' => (int) $role['id'],
                 'full_name' => $input['full_name'],
@@ -265,7 +282,7 @@ final class UserAccountController extends Controller
             'full_name' => old('full_name', (string) ($row['full_name'] ?? '')),
             'username' => old('username', (string) ($row['username'] ?? '')),
             'role_code' => old('role_code', (string) ($row['role_code'] ?? 'bendahara')),
-            'is_active' => old('is_active', isset($row['is_active']) && (int) $row['is_active'] === 1 ? '1' : '1'),
+            'is_active' => old('is_active', isset($row['is_active']) && (int) $row['is_active'] === 1 ? '1' : ($row ? '0' : '1')),
             'mfa_enabled' => old('mfa_enabled', isset($row['mfa_enabled']) && (int) $row['mfa_enabled'] === 1 ? '1' : '0'),
             'mfa_secret' => old('mfa_secret', (string) ($row['mfa_secret'] ?? ($row ? '' : AuthMfa::generateSecret()))),
         ];
@@ -275,6 +292,7 @@ final class UserAccountController extends Controller
             'row' => $row,
             'formData' => $formData,
             'roleOptions' => $this->model()->getRoleOptions(),
+            'currentUserId' => (int) (Auth::user()['id'] ?? 0),
         ]);
     }
 

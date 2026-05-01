@@ -67,7 +67,7 @@ foreach ($trendPoints as $point) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-xl-3 col-lg-4">
+                <div class="col-xl-4 col-lg-6">
                     <label for="unit_id" class="form-label">Unit Usaha</label>
                     <select name="unit_id" id="unit_id" class="form-select">
                         <option value="">Semua Unit</option>
@@ -76,15 +76,18 @@ foreach ($trendPoints as $point) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-xl-2 col-lg-3">
-                    <label for="date_to" class="form-label">Tanggal Akhir</label>
-                    <input type="date" name="date_to" id="date_to" class="form-control" value="<?= e((string) $filters['date_to']) ?>">
+                <div class="col-12">
+                    <div class="small text-secondary">Tanggal manual dipakai jika ingin rentang khusus. Isi tanggal awal lebih dulu, lalu tanggal akhir.</div>
                 </div>
-                <div class="col-xl-2 col-lg-3">
+                <div class="col-xl-3 col-lg-4">
                     <label for="date_from" class="form-label">Tanggal Awal Manual</label>
                     <input type="date" name="date_from" id="date_from" class="form-control" value="<?= e((string) $filters['date_from']) ?>">
                 </div>
-                <div class="col-xl-2 col-lg-3 d-grid">
+                <div class="col-xl-3 col-lg-4">
+                    <label for="date_to" class="form-label">Tanggal Akhir Manual</label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" value="<?= e((string) $filters['date_to']) ?>">
+                </div>
+                <div class="col-xl-2 col-lg-4 d-grid">
                     <button type="submit" class="btn btn-primary">Tampil</button>
                 </div>
             </form>

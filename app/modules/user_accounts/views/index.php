@@ -146,12 +146,104 @@ $selectedRoleCode = (string) ($roleCode ?? '');
     gap: .5rem;
 }
 
+.user-admin-page .user-quick-action {
+    width: 2.35rem;
+    height: 2.35rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+}
+
+.user-admin-page .user-quick-action i,
+.user-admin-page .user-hero-action i,
+.user-admin-page .user-filter-button i {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.user-admin-page .user-hero-action,
+.user-admin-page .user-filter-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+}
+
 .user-admin-page .user-inline-note {
     border: 1px dashed rgba(59, 130, 246, .28);
     border-radius: 18px;
     background: rgba(59, 130, 246, .06);
     color: #1e3a8a;
     padding: .9rem 1rem;
+}
+
+@media (max-width: 991.98px) {
+    .user-admin-page .module-hero__actions,
+    .user-admin-page .module-hero__actions .btn {
+        width: 100%;
+    }
+
+    .user-admin-page .user-list-table thead {
+        display: none;
+    }
+
+    .user-admin-page .user-list-table,
+    .user-admin-page .user-list-table tbody,
+    .user-admin-page .user-list-table tr,
+    .user-admin-page .user-list-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .user-admin-page .user-list-table tbody {
+        padding: 1rem;
+    }
+
+    .user-admin-page .user-list-table tbody tr {
+        border: 1px solid rgba(226, 232, 240, .95);
+        border-radius: 22px;
+        padding: 1rem;
+        background: #fff;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, .05);
+    }
+
+    .user-admin-page .user-list-table tbody tr + tr {
+        margin-top: 1rem;
+    }
+
+    .user-admin-page .user-list-table tbody td {
+        border: 0;
+        padding: .55rem 0;
+    }
+
+    .user-admin-page .user-list-table tbody td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: .35rem;
+        color: #64748b;
+        font-size: .75rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        font-weight: 700;
+    }
+
+    .user-admin-page .user-stats,
+    .user-admin-page .user-action-group {
+        justify-items: start;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .user-admin-page .user-summary-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .user-admin-page .user-action-group {
+        gap: .4rem;
+    }
 }
 </style>
 
@@ -164,7 +256,10 @@ $selectedRoleCode = (string) ($roleCode ?? '');
                 <p class="module-hero__text">Sekarang akun admin, bendahara, dan pimpinan bisa dikelola dari satu tempat. Saya rapikan tampilannya supaya edit akun, reset password, dan cek status login terasa lebih jelas.</p>
             </div>
             <div class="module-hero__actions">
-                <a href="<?= e(base_url('/user-accounts/create')) ?>" class="btn btn-primary">Tambah Akun Pengguna</a>
+                <a href="<?= e(base_url('/user-accounts/create')) ?>" class="btn btn-primary user-hero-action">
+                    <i class="bi bi-person-plus" aria-hidden="true"></i>
+                    <span>Tambah Akun</span>
+                </a>
             </div>
         </div>
     </section>
@@ -204,7 +299,10 @@ $selectedRoleCode = (string) ($roleCode ?? '');
                                 <p class="text-secondary mb-0">Pakai nama, username, atau role untuk menyaring akun yang ingin Anda kelola.</p>
                             </div>
                             <?php if ($searchValue !== '' || $selectedRoleCode !== ''): ?>
-                                <a href="<?= e(base_url('/user-accounts')) ?>" class="btn btn-outline-secondary btn-sm">Reset Filter</a>
+                                <a href="<?= e(base_url('/user-accounts')) ?>" class="btn btn-outline-secondary btn-sm user-filter-button" title="Reset filter">
+                                    <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                                    <span>Reset</span>
+                                </a>
                             <?php endif; ?>
                         </div>
                         <form method="get" action="<?= e(base_url('/user-accounts')) ?>" class="row g-3 align-items-end">
@@ -222,7 +320,10 @@ $selectedRoleCode = (string) ($roleCode ?? '');
                                 </select>
                             </div>
                             <div class="col-md-2 d-grid">
-                                <button type="submit" class="btn btn-primary">Tampil</button>
+                                <button type="submit" class="btn btn-primary user-filter-button">
+                                    <i class="bi bi-search" aria-hidden="true"></i>
+                                    <span>Tampil</span>
+                                </button>
                             </div>
                         </form>
                         <div class="user-inline-note small">
@@ -286,9 +387,10 @@ $selectedRoleCode = (string) ($roleCode ?? '');
                             'pimpinan' => 'text-bg-primary',
                             default => 'text-bg-secondary',
                         };
+                        $toggleTitle = (int) $userRow['is_active'] === 1 ? 'Nonaktifkan akun' : 'Aktifkan akun';
                         ?>
                         <tr>
-                            <td>
+                            <td data-label="Akun">
                                 <div class="user-person">
                                     <div class="user-person__name">
                                         <?= e((string) $userRow['full_name']) ?>
@@ -300,7 +402,7 @@ $selectedRoleCode = (string) ($roleCode ?? '');
                                     <div class="user-person__meta">Dibuat: <?= e(!empty($userRow['created_at']) ? format_id_date(substr((string) $userRow['created_at'], 0, 10)) : '-') ?></div>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Role & Status">
                                 <div class="d-grid gap-2">
                                     <div>
                                         <span class="badge <?= e($roleBadgeClass) ?>"><?= e((string) $userRow['role_name']) ?></span>
@@ -312,7 +414,7 @@ $selectedRoleCode = (string) ($roleCode ?? '');
                                 </div>
                             </td>
                             <?php if ($mfaGloballyEnabled): ?>
-                                <td>
+                                <td data-label="Keamanan">
                                     <div class="d-grid gap-2">
                                         <div>
                                             <span class="badge <?= (int) ($userRow['mfa_enabled'] ?? 0) === 1 ? 'text-bg-warning' : 'text-bg-dark' ?>"><?= (int) ($userRow['mfa_enabled'] ?? 0) === 1 ? 'MFA Aktif' : 'MFA Off' ?></span>
@@ -321,23 +423,27 @@ $selectedRoleCode = (string) ($roleCode ?? '');
                                     </div>
                                 </td>
                             <?php endif; ?>
-                            <td class="text-end">
+                            <td class="text-end" data-label="Aktivitas">
                                 <div class="user-stats">
                                     <div class="user-stats__value"><?= e(number_format((int) ($userRow['journal_count'] ?? 0), 0, ',', '.')) ?> jurnal</div>
                                     <div class="user-stats__meta">Login terakhir: <?= e(!empty($userRow['last_login_at']) ? format_id_date(substr((string) $userRow['last_login_at'], 0, 10)) . ' ' . substr((string) $userRow['last_login_at'], 11, 5) : '-') ?></div>
                                 </div>
                             </td>
-                            <td class="text-end">
+                            <td class="text-end" data-label="Aksi">
                                 <div class="user-action-group">
-                                    <a href="<?= e(base_url('/user-accounts/edit?id=' . (int) $userRow['id'])) ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <a href="<?= e(base_url('/user-accounts/edit?id=' . (int) $userRow['id'])) ?>" class="btn btn-sm btn-outline-primary user-quick-action" title="Edit akun" aria-label="Edit akun">
+                                        <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                    </a>
                                     <form method="post" action="<?= e(base_url('/user-accounts/reset-password?id=' . (int) $userRow['id'])) ?>" class="m-0" onsubmit="return confirm('Reset password akun ini dan buat password sementara baru?');">
                                         <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
-                                        <button type="submit" class="btn btn-sm btn-outline-info">Reset Password</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-info user-quick-action" title="Reset password" aria-label="Reset password">
+                                            <i class="bi bi-key" aria-hidden="true"></i>
+                                        </button>
                                     </form>
                                     <form method="post" action="<?= e(base_url('/user-accounts/toggle-active?id=' . (int) $userRow['id'])) ?>" class="m-0">
                                         <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
-                                        <button type="submit" class="btn btn-sm <?= (int) $userRow['is_active'] === 1 ? 'btn-outline-secondary' : 'btn-outline-success' ?>">
-                                            <?= (int) $userRow['is_active'] === 1 ? 'Nonaktifkan' : 'Aktifkan' ?>
+                                        <button type="submit" class="btn btn-sm <?= (int) $userRow['is_active'] === 1 ? 'btn-outline-secondary' : 'btn-outline-success' ?> user-quick-action" title="<?= e($toggleTitle) ?>" aria-label="<?= e($toggleTitle) ?>">
+                                            <i class="bi <?= (int) $userRow['is_active'] === 1 ? 'bi-pause-circle' : 'bi-play-circle' ?>" aria-hidden="true"></i>
                                         </button>
                                     </form>
                                 </div>

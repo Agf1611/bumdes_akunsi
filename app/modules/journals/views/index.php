@@ -55,6 +55,20 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
 .journal-page .journal-table .col-amount { min-width: 120px; }
 .journal-page .journal-table .col-status { min-width: 86px; }
 .journal-page .journal-table .col-actions { min-width: 90px; width: 90px; position: sticky; right: 0; z-index: 3; background: #fff; box-shadow: -10px 0 18px rgba(15, 23, 42, .08); }
+.journal-page .journal-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+}
+.journal-page .journal-toolbar-btn i,
+.journal-page .journal-quick-btn i,
+.journal-page .journal-card-action i,
+.journal-page .journal-action-panel i,
+.journal-page .journal-action-trigger i {
+    font-size: 1rem;
+    line-height: 1;
+}
 .journal-page .journal-wrap {
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -76,7 +90,10 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     display: none;
 }
 .journal-page .journal-action-trigger {
-    min-width: 78px;
+    min-width: auto;
+    width: 2.35rem;
+    height: 2.35rem;
+    padding: 0;
     justify-content: center;
     position: relative;
     z-index: 1;
@@ -132,6 +149,16 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     background: rgba(220, 38, 38, .08);
     color: #b91c1c;
 }
+.journal-page .journal-quick-btn,
+.journal-page .journal-card-action {
+    width: 2.35rem;
+    height: 2.35rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+}
 .journal-page .journal-card {
     border: 1px solid rgba(148, 163, 184, .18);
     border-radius: 18px;
@@ -169,9 +196,6 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     gap: .5rem;
     flex-wrap: wrap;
     margin-top: .95rem;
-}
-.journal-page .journal-card__actions .btn {
-    flex: 1 1 auto;
 }
 .journal-page .journal-bulk-card {
     border: 1px solid rgba(148, 163, 184, .18);
@@ -238,8 +262,15 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     background: #f8fbff;
 }
 @media (max-width: 991.98px) {
+    .journal-page .journal-page-toolbar,
+    .journal-page .journal-page-toolbar .btn {
+        width: 100%;
+    }
     .journal-page .journal-card__meta {
         grid-template-columns: 1fr;
+    }
+    .journal-page .journal-card__actions {
+        justify-content: flex-start;
     }
     .journal-page .journal-action-panel {
         position: fixed;
@@ -251,6 +282,13 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
         max-width: none;
     }
 }
+@media (max-width: 575.98px) {
+    .journal-page .journal-bulk-toolbar > div,
+    .journal-page .journal-bulk-toolbar .btn,
+    .journal-page .journal-bulk-toolbar .form-select {
+        width: 100%;
+    }
+}
 </style>
 
 <div class="journal-page">
@@ -259,10 +297,19 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
             <h1 class="h3 mb-1">Jurnal Umum</h1>
             <p class="text-secondary mb-0">Kelola jurnal double-entry, cetak bukti transaksi, dan telusuri riwayat posting dengan lebih rapi.</p>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="<?= e(base_url('/journals/print-list?' . report_filters_query($filters ?? []))) ?>" target="_blank" class="btn btn-outline-info">Cetak Daftar Jurnal</a>
-            <a href="<?= e(base_url('/journals/create?template=cash_in')) ?>" class="btn btn-outline-success">Transaksi Cepat</a>
-            <a href="<?= e(base_url('/journals/create')) ?>" class="btn btn-primary">Tambah Jurnal</a>
+        <div class="d-flex gap-2 flex-wrap journal-page-toolbar">
+            <a href="<?= e(base_url('/journals/print-list?' . report_filters_query($filters ?? []))) ?>" target="_blank" class="btn btn-outline-info journal-toolbar-btn">
+                <i class="bi bi-printer" aria-hidden="true"></i>
+                <span>Cetak</span>
+            </a>
+            <a href="<?= e(base_url('/journals/create?template=cash_in')) ?>" class="btn btn-outline-success journal-toolbar-btn">
+                <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+                <span>Cepat</span>
+            </a>
+            <a href="<?= e(base_url('/journals/create')) ?>" class="btn btn-primary journal-toolbar-btn">
+                <i class="bi bi-journal-plus" aria-hidden="true"></i>
+                <span>Tambah</span>
+            </a>
         </div>
     </div>
 
@@ -274,8 +321,14 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                     <p class="text-secondary mb-0">Unduh template, impor jurnal dari Excel, atau ekspor jurnal sesuai filter yang sedang aktif.</p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <a href="<?= e(base_url('/imports/template?type=journal')) ?>" class="btn btn-outline-light">Unduh Template Jurnal</a>
-                    <a href="<?= e(base_url('/journals/export?' . report_filters_query($filters ?? []))) ?>" class="btn btn-outline-info">Export Jurnal</a>
+                    <a href="<?= e(base_url('/imports/template?type=journal')) ?>" class="btn btn-outline-light journal-toolbar-btn">
+                        <i class="bi bi-download" aria-hidden="true"></i>
+                        <span>Template</span>
+                    </a>
+                    <a href="<?= e(base_url('/journals/export?' . report_filters_query($filters ?? []))) ?>" class="btn btn-outline-info journal-toolbar-btn">
+                        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                        <span>Export</span>
+                    </a>
                 </div>
             </div>
 
@@ -295,7 +348,10 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                     </ul>
                     <?php if ($importFeedbackUrl !== ''): ?>
                         <div class="mt-3">
-                            <a href="<?= e($importFeedbackUrl) ?>" class="btn btn-sm btn-outline-light">Unduh File Audit Import</a>
+                            <a href="<?= e($importFeedbackUrl) ?>" class="btn btn-sm btn-outline-light journal-toolbar-btn">
+                                <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i>
+                                <span>Audit Import</span>
+                            </a>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -324,7 +380,10 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                         <div class="form-text text-secondary">Pilih unit tujuan sebelum import. Kosongkan jika jurnal memang ingin masuk ke global.</div>
                     </div>
                     <div class="col-12 col-md-6 col-xl-3 d-flex gap-2 flex-wrap">
-                        <button type="submit" class="btn btn-primary">Import Jurnal</button>
+                        <button type="submit" class="btn btn-primary journal-toolbar-btn">
+                            <i class="bi bi-upload" aria-hidden="true"></i>
+                            <span>Import</span>
+                        </button>
                     </div>
                 </form>
             <?php endif; ?>
@@ -358,7 +417,10 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                     <input type="date" name="date_to" class="form-control" value="<?= e((string) ($filters['date_to'] ?? '')) ?>">
                 </div>
                 <div class="col-lg-2 d-grid">
-                    <button type="submit" class="btn btn-outline-light">Terapkan</button>
+                    <button type="submit" class="btn btn-outline-light journal-toolbar-btn">
+                        <i class="bi bi-funnel" aria-hidden="true"></i>
+                        <span>Filter</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -374,8 +436,14 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                 </div>
                 <div class="journal-bulk-meta">
                     <span class="journal-bulk-counter"><span id="journalBulkSelectedCount">0</span> jurnal ditandai</span>
-                    <button type="button" class="btn btn-outline-light btn-sm" id="journalBulkSelectAll">Tandai semua di halaman</button>
-                    <button type="button" class="btn btn-outline-light btn-sm" id="journalBulkClear">Bersihkan tandai</button>
+                    <button type="button" class="btn btn-outline-light btn-sm journal-toolbar-btn" id="journalBulkSelectAll">
+                        <i class="bi bi-check2-square" aria-hidden="true"></i>
+                        <span>Tandai</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-light btn-sm journal-toolbar-btn" id="journalBulkClear">
+                        <i class="bi bi-eraser" aria-hidden="true"></i>
+                        <span>Bersihkan</span>
+                    </button>
                 </div>
             </div>
             <form method="post" action="<?= e(base_url('/journals/bulk-action')) ?>" id="journalBulkForm" class="journal-bulk-toolbar">
@@ -399,7 +467,10 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                     </select>
                 </div>
                 <div class="d-flex gap-2 flex-wrap align-self-end">
-                    <button type="submit" class="btn btn-primary" id="journalBulkSubmit">Proses jurnal terpilih</button>
+                    <button type="submit" class="btn btn-primary journal-toolbar-btn" id="journalBulkSubmit">
+                        <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
+                        <span>Proses</span>
+                    </button>
                 </div>
                 <div class="journal-bulk-hint align-self-center">Unit tujuan hanya wajib dipilih saat aksi <strong>Ubah unit usaha</strong>. Jurnal pada periode tutup akan dilewati otomatis.</div>
             </form>
@@ -470,16 +541,18 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                             </td>
                             <td class="col-actions text-end">
                                 <details class="journal-action-menu">
-                                    <summary class="btn btn-sm btn-outline-primary journal-action-trigger">Aksi</summary>
+                                    <summary class="btn btn-sm btn-outline-primary journal-action-trigger" title="Menu aksi jurnal" aria-label="Menu aksi jurnal">
+                                        <i class="bi bi-three-dots" aria-hidden="true"></i>
+                                    </summary>
                                     <div class="journal-action-panel">
-                                        <a href="<?= e($detailUrl) ?>">Detail jurnal</a>
-                                        <a href="<?= e($printUrl) ?>" target="_blank" rel="noopener">Cetak standar</a>
+                                        <a href="<?= e($detailUrl) ?>"><i class="bi bi-eye" aria-hidden="true"></i><span>Detail jurnal</span></a>
+                                        <a href="<?= e($printUrl) ?>" target="_blank" rel="noopener"><i class="bi bi-printer" aria-hidden="true"></i><span>Cetak standar</span></a>
                                         <?php if (journal_is_receipt_enabled($journal)): ?>
-                                            <a href="<?= e($receiptUrl) ?>" target="_blank" rel="noopener">Cetak kwitansi</a>
+                                            <a href="<?= e($receiptUrl) ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i><span>Cetak kwitansi</span></a>
                                         <?php endif; ?>
-                                        <a href="<?= e($duplicateUrl) ?>">Duplikat jurnal</a>
+                                        <a href="<?= e($duplicateUrl) ?>"><i class="bi bi-copy" aria-hidden="true"></i><span>Duplikat jurnal</span></a>
                                         <?php if ((string) $journal['period_status'] === 'OPEN'): ?>
-                                            <a href="<?= e($editUrl) ?>">Edit jurnal</a>
+                                            <a href="<?= e($editUrl) ?>"><i class="bi bi-pencil-square" aria-hidden="true"></i><span>Edit jurnal</span></a>
                                             <?php foreach ($workflowActions as $workflowAction): ?>
                                                 <form method="post" action="<?= e(base_url('/journals/workflow-action')) ?>" class="m-0 journal-workflow-form" data-workflow-action="<?= e((string) $workflowAction) ?>">
                                                     <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
@@ -492,7 +565,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                                             <?php endforeach; ?>
                                             <form method="post" action="<?= e(base_url('/journals/delete?id=' . (int) $journal['id'])) ?>" onsubmit="return confirm('Hapus jurnal ini?');" class="m-0">
                                                 <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
-                                                <button type="submit" class="journal-action-danger">Hapus jurnal</button>
+                                                <button type="submit" class="journal-action-danger"><i class="bi bi-trash" aria-hidden="true"></i><span>Hapus jurnal</span></button>
                                             </form>
                                         <?php endif; ?>
                                     </div>
@@ -565,17 +638,23 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                     <div class="small text-secondary mt-2">Lampiran: <?= e((string) ((int) ($journal['attachment_count'] ?? 0))) ?></div>
                 </div>
                 <div class="journal-card__actions">
-                    <a href="<?= e($detailUrl) ?>" class="btn btn-sm btn-outline-primary">Detail</a>
-                    <a href="<?= e($printUrl) ?>" target="_blank" rel="noopener" class="btn btn-sm btn-outline-info">Cetak</a>
+                    <a href="<?= e($detailUrl) ?>" class="btn btn-sm btn-outline-primary journal-card-action" title="Detail jurnal" aria-label="Detail jurnal">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                    </a>
+                    <a href="<?= e($printUrl) ?>" target="_blank" rel="noopener" class="btn btn-sm btn-outline-info journal-card-action" title="Cetak jurnal" aria-label="Cetak jurnal">
+                        <i class="bi bi-printer" aria-hidden="true"></i>
+                    </a>
                     <details class="journal-action-menu flex-fill">
-                        <summary class="btn btn-sm btn-outline-primary journal-action-trigger d-flex">Menu</summary>
+                        <summary class="btn btn-sm btn-outline-primary journal-action-trigger d-flex" title="Menu aksi jurnal" aria-label="Menu aksi jurnal">
+                            <i class="bi bi-three-dots" aria-hidden="true"></i>
+                        </summary>
                         <div class="journal-action-panel">
                             <?php if (journal_is_receipt_enabled($journal)): ?>
-                                <a href="<?= e($receiptUrl) ?>" target="_blank" rel="noopener">Cetak kwitansi</a>
+                                <a href="<?= e($receiptUrl) ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i><span>Cetak kwitansi</span></a>
                             <?php endif; ?>
-                            <a href="<?= e($duplicateUrl) ?>">Duplikat jurnal</a>
+                            <a href="<?= e($duplicateUrl) ?>"><i class="bi bi-copy" aria-hidden="true"></i><span>Duplikat jurnal</span></a>
                             <?php if ((string) $journal['period_status'] === 'OPEN'): ?>
-                                <a href="<?= e($editUrl) ?>">Edit jurnal</a>
+                                <a href="<?= e($editUrl) ?>"><i class="bi bi-pencil-square" aria-hidden="true"></i><span>Edit jurnal</span></a>
                                 <?php foreach ($workflowActions as $workflowAction): ?>
                                     <form method="post" action="<?= e(base_url('/journals/workflow-action')) ?>" class="m-0 journal-workflow-form" data-workflow-action="<?= e((string) $workflowAction) ?>">
                                         <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
@@ -588,7 +667,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
                                 <?php endforeach; ?>
                                 <form method="post" action="<?= e(base_url('/journals/delete?id=' . (int) $journal['id'])) ?>" onsubmit="return confirm('Hapus jurnal ini?');" class="m-0">
                                     <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
-                                    <button type="submit" class="journal-action-danger">Hapus jurnal</button>
+                                    <button type="submit" class="journal-action-danger"><i class="bi bi-trash" aria-hidden="true"></i><span>Hapus jurnal</span></button>
                                 </form>
                             <?php endif; ?>
                         </div>

@@ -300,6 +300,26 @@ $referenceJs = [
 }
 .jf-card .btn-outline-info:hover { color: #075985 !important; }
 .jf-card .btn-outline-danger:hover { color: #991b1b !important; }
+.jf-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+}
+.jf-btn-icon i {
+  font-size: 1rem;
+  line-height: 1;
+}
+.jf-btn-square {
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  border-radius: 14px;
+}
+.jf-btn-square.btn-sm {
+  width: 2.1rem;
+  height: 2.1rem;
+}
 
 @media (max-width: 1199px) {
   .jf-side-grid { grid-template-columns: 1fr; }
@@ -314,6 +334,12 @@ $referenceJs = [
   .jf-summary-grid { grid-template-columns: 1fr; }
   .jf-actions-row { flex-direction: column; align-items: stretch; }
   .jf-card-head, .jf-page-head { align-items: stretch; }
+  .jf-toolbar,
+  .jf-toolbar .btn,
+  .jf-actions-row .btn,
+  .module-hero__actions.jf-toolbar .btn {
+    width: 100%;
+  }
 }
 </style>
 
@@ -327,10 +353,19 @@ $referenceJs = [
       </div>
       <div class="module-hero__actions jf-toolbar">
         <?php if ($duplicateUrl !== ''): ?>
-          <a href="<?= e($duplicateUrl) ?>" class="btn btn-outline-secondary">Duplikat Jurnal</a>
+          <a href="<?= e($duplicateUrl) ?>" class="btn btn-outline-secondary jf-btn-icon">
+            <i class="bi bi-copy" aria-hidden="true"></i>
+            <span>Duplikat</span>
+          </a>
         <?php endif; ?>
-        <a href="<?= e(base_url('/journals/quick')) ?>" class="btn btn-outline-info">Transaksi Cepat</a>
-        <a href="<?= e($backUrl) ?>" class="btn btn-outline-secondary">Kembali ke Daftar</a>
+        <a href="<?= e(base_url('/journals/quick')) ?>" class="btn btn-outline-info jf-btn-icon">
+          <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+          <span>Cepat</span>
+        </a>
+        <a href="<?= e($backUrl) ?>" class="btn btn-outline-secondary jf-btn-icon">
+          <i class="bi bi-arrow-left" aria-hidden="true"></i>
+          <span>Kembali</span>
+        </a>
       </div>
     </div>
   </div>
@@ -469,8 +504,14 @@ $referenceJs = [
           <div class="jf-inline">Minimal 2 baris. Setiap baris cukup isi debit atau kredit. Klik <strong>Referensi &amp; Arus Kas</strong> bila jurnal perlu dihubungkan ke persediaan, aset, simpanan, atau Komponen Laporan Arus Kas.</div>
         </div>
         <div class="jf-toolbar">
-          <button type="button" class="btn btn-sm btn-outline-secondary" id="add-line-btn">Tambah Baris</button>
-          <button type="button" class="btn btn-sm btn-outline-secondary" id="duplicate-last-line-btn">Duplikat Baris Terakhir</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary jf-btn-icon" id="add-line-btn">
+            <i class="bi bi-plus-circle" aria-hidden="true"></i>
+            <span>Baris</span>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary jf-btn-icon" id="duplicate-last-line-btn">
+            <i class="bi bi-files" aria-hidden="true"></i>
+            <span>Duplikat</span>
+          </button>
         </div>
       </div>
       <div class="jf-card-body">
@@ -498,8 +539,12 @@ $referenceJs = [
               <div class="jf-line-top">
                 <div class="fw-semibold">Baris <span class="line-number"><?= $index + 1 ?></span></div>
                 <div class="jf-toolbar">
-                  <button type="button" class="btn btn-sm btn-outline-info toggle-meta-btn">Referensi &amp; Arus Kas</button>
-                  <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn">Hapus</button>
+                  <button type="button" class="btn btn-sm btn-outline-info toggle-meta-btn jf-btn-square" title="Buka referensi dan arus kas" aria-label="Buka referensi dan arus kas">
+                    <i class="bi bi-sliders" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn jf-btn-square" title="Hapus baris jurnal" aria-label="Hapus baris jurnal">
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                  </button>
                 </div>
               </div>
               <div class="jf-line-grid">
@@ -612,7 +657,10 @@ $referenceJs = [
                 <div class="asset-form-fields <?= $assetFormEnabled ? '' : 'is-hidden' ?>" data-asset-fields>
                   <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-2">
                     <div class="jf-inline">Tambahkan beberapa item asset jika satu transaksi berisi merek, tipe, atau kelompok asset yang berbeda.</div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary add-asset-item-btn">Tambah Item Asset</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary add-asset-item-btn jf-btn-icon">
+                      <i class="bi bi-plus-circle" aria-hidden="true"></i>
+                      <span>Item Asset</span>
+                    </button>
                   </div>
                   <div class="jf-asset-item-list asset-item-list"></div>
                 </div>
@@ -653,9 +701,18 @@ $referenceJs = [
         <div class="jf-card-body d-grid gap-3">
           <div class="jf-inline">Draft hanya tersimpan di browser perangkat ini. Cocok untuk input yang belum selesai.</div>
           <div class="jf-toolbar">
-            <button type="button" class="btn btn-outline-secondary" id="save-draft-btn">Simpan Draft</button>
-            <button type="button" class="btn btn-outline-secondary" id="load-draft-btn">Pulihkan Draft</button>
-            <button type="button" class="btn btn-outline-danger" id="clear-draft-btn">Hapus Draft</button>
+            <button type="button" class="btn btn-outline-secondary jf-btn-icon" id="save-draft-btn">
+              <i class="bi bi-floppy" aria-hidden="true"></i>
+              <span>Simpan</span>
+            </button>
+            <button type="button" class="btn btn-outline-secondary jf-btn-icon" id="load-draft-btn">
+              <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+              <span>Pulihkan</span>
+            </button>
+            <button type="button" class="btn btn-outline-danger jf-btn-icon" id="clear-draft-btn">
+              <i class="bi bi-trash3" aria-hidden="true"></i>
+              <span>Hapus</span>
+            </button>
           </div>
           <div class="small jf-muted" id="draft-status">Belum ada status draft.</div>
         </div>
@@ -667,8 +724,14 @@ $referenceJs = [
         <div class="jf-actions-row">
           <div class="jf-inline">Saat disimpan, jurnal akan memengaruhi modul sesuai akun dan referensi yang dipilih.</div>
           <div class="jf-toolbar">
-            <button type="submit" class="btn btn-primary" id="submit-btn">Simpan Jurnal</button>
-            <a href="<?= e($backUrl) ?>" class="btn btn-outline-secondary">Batal</a>
+            <button type="submit" class="btn btn-primary jf-btn-icon" id="submit-btn">
+              <i class="bi bi-check2-circle" aria-hidden="true"></i>
+              <span>Simpan</span>
+            </button>
+            <a href="<?= e($backUrl) ?>" class="btn btn-outline-secondary jf-btn-icon">
+              <i class="bi bi-x-circle" aria-hidden="true"></i>
+              <span>Batal</span>
+            </a>
           </div>
         </div>
       </div>
@@ -681,8 +744,12 @@ $referenceJs = [
     <div class="jf-line-top">
       <div class="fw-semibold">Baris <span class="line-number">0</span></div>
       <div class="jf-toolbar">
-        <button type="button" class="btn btn-sm btn-outline-info toggle-meta-btn">Referensi</button>
-        <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn">Hapus</button>
+        <button type="button" class="btn btn-sm btn-outline-info toggle-meta-btn jf-btn-square" title="Buka referensi dan arus kas" aria-label="Buka referensi dan arus kas">
+          <i class="bi bi-sliders" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn jf-btn-square" title="Hapus baris jurnal" aria-label="Hapus baris jurnal">
+          <i class="bi bi-trash" aria-hidden="true"></i>
+        </button>
       </div>
     </div>
     <div class="jf-line-grid">
@@ -733,7 +800,10 @@ $referenceJs = [
       <div class="asset-form-fields is-hidden" data-asset-fields>
         <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-2">
           <div class="jf-inline">Tambahkan beberapa item asset jika transaksi ini berisi tipe atau merek berbeda.</div>
-          <button type="button" class="btn btn-sm btn-outline-secondary add-asset-item-btn">Tambah Item Asset</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary add-asset-item-btn jf-btn-icon">
+            <i class="bi bi-plus-circle" aria-hidden="true"></i>
+            <span>Item Asset</span>
+          </button>
         </div>
         <div class="jf-asset-item-list asset-item-list"></div>
       </div>
@@ -745,7 +815,9 @@ $referenceJs = [
   <div class="jf-asset-item" data-asset-item>
     <div class="jf-asset-item-head">
       <div class="jf-asset-item-index">Item Asset <span class="asset-item-number">1</span></div>
-      <button type="button" class="btn btn-sm btn-outline-danger remove-asset-item-btn">Hapus Item</button>
+      <button type="button" class="btn btn-sm btn-outline-danger remove-asset-item-btn jf-btn-square" title="Hapus item asset" aria-label="Hapus item asset">
+        <i class="bi bi-trash" aria-hidden="true"></i>
+      </button>
     </div>
     <div class="row g-3">
       <div class="col-md-4">

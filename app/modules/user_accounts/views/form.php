@@ -129,9 +129,27 @@ foreach (($roleOptions ?? []) as $roleOption) {
     color: rgba(226, 232, 240, .82) !important;
 }
 
+.user-account-form-page .user-form-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+}
+
+.user-account-form-page .user-form-action i {
+    font-size: 1rem;
+    line-height: 1;
+}
+
 @media (max-width: 991.98px) {
     .user-account-form-page .user-form-grid {
         grid-template-columns: 1fr;
+    }
+
+    .user-account-form-page .module-hero__actions,
+    .user-account-form-page .module-hero__actions .btn,
+    .user-account-form-page .d-flex.justify-content-end .btn {
+        width: 100%;
     }
 }
 </style>
@@ -145,7 +163,10 @@ foreach (($roleOptions ?? []) as $roleOption) {
                 <p class="module-hero__text">Form ini saya rapikan supaya admin lebih mudah mengelola identitas akun, akses login, status aktif, dan keamanan pengguna dalam satu alur yang lebih nyaman.</p>
             </div>
             <div class="module-hero__actions">
-                <a href="<?= e(base_url('/user-accounts')) ?>" class="btn btn-outline-secondary">Kembali ke Data User</a>
+                <a href="<?= e(base_url('/user-accounts')) ?>" class="btn btn-outline-secondary user-form-action">
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                    <span>Data User</span>
+                </a>
             </div>
         </div>
     </section>
@@ -254,8 +275,14 @@ foreach (($roleOptions ?? []) as $roleOption) {
                     </section>
 
                     <div class="d-flex flex-wrap justify-content-end gap-2 mt-4 pt-2">
-                        <a href="<?= e(base_url('/user-accounts')) ?>" class="btn btn-outline-secondary">Batal</a>
-                        <button type="submit" class="btn btn-primary"><?= $isEditing ? 'Simpan Perubahan Akun' : 'Simpan Akun Pengguna' ?></button>
+                        <a href="<?= e(base_url('/user-accounts')) ?>" class="btn btn-outline-secondary user-form-action" title="Batal dan kembali">
+                            <i class="bi bi-x-circle" aria-hidden="true"></i>
+                            <span>Batal</span>
+                        </a>
+                        <button type="submit" class="btn btn-primary user-form-action">
+                            <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                            <span><?= $isEditing ? 'Simpan Perubahan' : 'Simpan Akun' ?></span>
+                        </button>
                     </div>
                 </form>
             </div>

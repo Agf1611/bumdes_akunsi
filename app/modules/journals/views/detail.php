@@ -35,11 +35,20 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
     display: none;
 }
 
+.journal-detail-page .card,
+.journal-detail-page .journal-attachment-upload-preview,
+.journal-detail-page .journal-attachment-inline-preview {
+    background: var(--bg-panel);
+    border-color: var(--border-soft);
+    color: var(--text-main);
+    box-shadow: var(--shadow-xs);
+}
+
 .journal-attachment-upload-preview,
 .journal-attachment-inline-preview {
-    border: 1px solid #dbe5f2;
+    border: 1px solid var(--border-soft);
     border-radius: 18px;
-    background: #f8fbff;
+    background: var(--bg-panel-soft);
     padding: .95rem;
 }
 
@@ -59,18 +68,18 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
 
 .journal-attachment-preview-title {
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-main);
 }
 
 .journal-attachment-preview-meta {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: .84rem;
 }
 
 .journal-attachment-media-frame {
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-soft);
     border-radius: 14px;
-    background: #fff;
+    background: var(--bg-panel);
     overflow: hidden;
 }
 
@@ -83,7 +92,7 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
 
 .journal-attachment-media-frame iframe {
     min-height: 260px;
-    background: #fff;
+    background: var(--bg-panel);
 }
 
 .journal-attachment-media-frame--image {
@@ -101,11 +110,44 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
     align-items: center;
     gap: .45rem;
     border-radius: 999px;
-    background: #e0f2fe;
-    color: #075985;
+    background: var(--primary-soft);
+    color: var(--primary);
     padding: .35rem .7rem;
     font-size: .78rem;
     font-weight: 600;
+}
+
+.journal-detail-page .text-dark,
+.journal-detail-page .fw-semibold {
+    color: var(--text-main) !important;
+}
+
+.journal-detail-page .text-secondary,
+.journal-detail-page .small,
+.journal-detail-page .form-text {
+    color: var(--text-muted) !important;
+}
+
+.journal-detail-page .table {
+    color: var(--text-main);
+}
+
+.journal-detail-page .table thead th,
+.journal-detail-page .table tfoot th {
+    background: var(--bg-panel-soft);
+    color: var(--text-muted);
+    border-color: var(--border-soft);
+}
+
+.journal-detail-page .table td,
+.journal-detail-page .table th {
+    border-color: var(--border-soft);
+    background: transparent;
+}
+
+.journal-upload-preview-toggle.is-hidden,
+.journal-attachment-preview-frame.is-hidden {
+    display: none;
 }
 </style>
 <div class="journal-detail-page module-page">
@@ -236,7 +278,7 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
                 <div class="col-lg-4">
                     <label class="form-label">File Lampiran</label>
                     <input type="file" name="attachment_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
-                    <div class="form-text text-secondary">Setelah file dipilih, preview akan muncul di bawah agar Anda bisa cek dulu sebelum upload.</div>
+                    <div class="form-text text-secondary">Setelah file dipilih, cek nama file dulu. Jika perlu, klik tombol preview untuk melihat isinya sebelum upload.</div>
                 </div>
                 <div class="col-12">
                     <div class="journal-attachment-upload-preview is-hidden" id="journalUploadPreview" aria-live="polite">
@@ -245,9 +287,12 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
                                 <div class="journal-attachment-preview-title">Preview Sebelum Upload</div>
                                 <div class="journal-attachment-preview-meta" id="journalUploadPreviewMeta">Belum ada file dipilih.</div>
                             </div>
-                            <span class="journal-attachment-file-badge" id="journalUploadPreviewType">-</span>
+                            <div class="d-flex gap-2 align-items-center flex-wrap">
+                                <span class="journal-attachment-file-badge" id="journalUploadPreviewType">-</span>
+                                <button type="button" class="btn btn-sm btn-outline-primary journal-upload-preview-toggle is-hidden" id="journalUploadPreviewToggle">Tampilkan Preview</button>
+                            </div>
                         </div>
-                        <div class="journal-attachment-media-frame" id="journalUploadPreviewFrame"></div>
+                        <div class="journal-attachment-media-frame journal-attachment-preview-frame is-hidden" id="journalUploadPreviewFrame"></div>
                     </div>
                 </div>
                 <div class="col-12 d-flex justify-content-end">
@@ -287,23 +332,6 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
                                 <?php if (trim((string) ($attachment['attachment_notes'] ?? '')) !== ''): ?>
                                     <div class="small text-info mt-1"><?= e((string) $attachment['attachment_notes']) ?></div>
                                 <?php endif; ?>
-                                <?php if (journal_attachment_is_previewable($attachment)): ?>
-                                    <div class="journal-attachment-inline-preview">
-                                        <div class="journal-attachment-preview-head">
-                                            <div class="journal-attachment-preview-title">Preview Lampiran</div>
-                                            <div class="journal-attachment-preview-meta"><?= e(journal_attachment_type_label($attachment)) ?></div>
-                                        </div>
-                                        <?php if (journal_attachment_is_image($attachment)): ?>
-                                            <div class="journal-attachment-media-frame journal-attachment-media-frame--image">
-                                                <img src="<?= e($previewUrl) ?>" alt="<?= e($displayName) ?>" loading="lazy">
-                                            </div>
-                                        <?php elseif (journal_attachment_is_pdf($attachment)): ?>
-                                            <div class="journal-attachment-media-frame">
-                                                <iframe src="<?= e($previewUrl) ?>" title="Preview <?= e($displayName) ?>" loading="lazy"></iframe>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endif; ?>
                             </td>
                             <td><span class="badge text-bg-secondary"><?= e(journal_attachment_type_label($attachment)) ?></span></td>
                             <td class="text-end"><?= e(journal_attachment_file_size((int) ($attachment['file_size'] ?? 0))) ?></td>
@@ -339,11 +367,14 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
     var previewMeta = document.getElementById('journalUploadPreviewMeta');
     var previewType = document.getElementById('journalUploadPreviewType');
     var previewFrame = document.getElementById('journalUploadPreviewFrame');
-    if (!fileInput || !previewBox || !previewMeta || !previewType || !previewFrame) {
+    var previewToggle = document.getElementById('journalUploadPreviewToggle');
+    if (!fileInput || !previewBox || !previewMeta || !previewType || !previewFrame || !previewToggle) {
         return;
     }
 
     var activeObjectUrl = null;
+    var previewRendered = false;
+    var pendingRenderer = null;
 
     function clearPreview() {
         if (activeObjectUrl) {
@@ -354,6 +385,11 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
         previewType.textContent = '-';
         previewMeta.textContent = 'Belum ada file dipilih.';
         previewBox.classList.add('is-hidden');
+        previewFrame.classList.add('is-hidden');
+        previewToggle.classList.add('is-hidden');
+        previewToggle.textContent = 'Tampilkan Preview';
+        previewRendered = false;
+        pendingRenderer = null;
     }
 
     function formatSize(size) {
@@ -388,21 +424,43 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
         previewBox.classList.remove('is-hidden');
         previewMeta.textContent = file.name + ' · ' + formatSize(file.size);
         previewType.textContent = isPdf ? 'PDF' : (isImage ? 'Gambar' : 'File');
+        previewFrame.classList.add('is-hidden');
+        previewToggle.classList.remove('is-hidden');
+        previewToggle.textContent = 'Tampilkan Preview';
+        previewRendered = false;
 
-        if (!isImage && !isPdf) {
-            previewFrame.innerHTML = '<div class="p-3 text-secondary small">Preview langsung hanya tersedia untuk PDF dan gambar.</div>';
+        pendingRenderer = function () {
+            if (!isImage && !isPdf) {
+                previewFrame.className = 'journal-attachment-media-frame journal-attachment-preview-frame';
+                previewFrame.innerHTML = '<div class="p-3 text-secondary small">Preview langsung hanya tersedia untuk PDF dan gambar.</div>';
+                return;
+            }
+
+            activeObjectUrl = URL.createObjectURL(file);
+            if (isImage) {
+                previewFrame.className = 'journal-attachment-media-frame journal-attachment-media-frame--image journal-attachment-preview-frame';
+                previewFrame.innerHTML = '<img src="' + activeObjectUrl + '" alt="Preview lampiran">';
+                return;
+            }
+
+            previewFrame.className = 'journal-attachment-media-frame journal-attachment-preview-frame';
+            previewFrame.innerHTML = '<iframe src="' + activeObjectUrl + '" title="Preview PDF"></iframe>';
+        };
+    });
+
+    previewToggle.addEventListener('click', function () {
+        if (previewFrame.classList.contains('is-hidden')) {
+            if (!previewRendered && typeof pendingRenderer === 'function') {
+                pendingRenderer();
+                previewRendered = true;
+            }
+            previewFrame.classList.remove('is-hidden');
+            previewToggle.textContent = 'Sembunyikan Preview';
             return;
         }
 
-        activeObjectUrl = URL.createObjectURL(file);
-        if (isImage) {
-            previewFrame.className = 'journal-attachment-media-frame journal-attachment-media-frame--image';
-            previewFrame.innerHTML = '<img src="' + activeObjectUrl + '" alt="Preview lampiran">';
-            return;
-        }
-
-        previewFrame.className = 'journal-attachment-media-frame';
-        previewFrame.innerHTML = '<iframe src="' + activeObjectUrl + '" title="Preview PDF"></iframe>';
+        previewFrame.classList.add('is-hidden');
+        previewToggle.textContent = 'Tampilkan Preview';
     });
 })();
 </script>

@@ -14,10 +14,17 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
 ?>
 
 <style>
+.journal-page .card {
+    background: var(--bg-panel);
+    border-color: var(--border-soft);
+    color: var(--text-main);
+    box-shadow: var(--shadow-xs);
+}
 .journal-page .journal-table th,
 .journal-page .journal-table td {
     vertical-align: top;
     white-space: normal;
+    border-color: var(--border-soft);
 }
 .journal-page .journal-table th {
     font-size: .78rem;
@@ -35,7 +42,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
 }
 .journal-page .journal-table thead .col-actions {
     z-index: 4;
-    background: #f8fafc;
+    background: var(--bg-panel-soft);
 }
 .journal-page .journal-action-menu[open] {
     z-index: 60;
@@ -43,7 +50,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
 .journal-page .journal-scroll-note {
     padding: .9rem 1rem 0;
     font-size: .82rem;
-    color: #64748b;
+    color: var(--text-muted);
 }
 .journal-page .journal-table .col-journal { min-width: 110px; }
 .journal-page .journal-table .col-date { min-width: 95px; }
@@ -97,9 +104,9 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     justify-content: center;
     position: relative;
     z-index: 1;
-    background: #ffffff !important;
-    border-color: rgba(37, 99, 235, .28) !important;
-    color: #1e3a8a !important;
+    background: var(--bg-panel) !important;
+    border-color: var(--border-strong) !important;
+    color: var(--text-main) !important;
     box-shadow: 0 4px 12px rgba(15, 23, 42, .06);
     opacity: 1 !important;
 }
@@ -116,8 +123,8 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     right: 0;
     z-index: 30;
     width: 220px;
-    background: #fff;
-    border: 1px solid rgba(16,24,40,.08);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
     border-radius: 14px;
     box-shadow: 0 18px 40px rgba(15, 23, 42, .16);
     padding: .5rem;
@@ -130,7 +137,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     gap: .5rem;
     border: 0;
     background: transparent;
-    color: #24324b;
+    color: var(--text-main);
     border-radius: 10px;
     padding: .7rem .8rem;
     text-decoration: none;
@@ -160,11 +167,11 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     border-radius: 14px;
 }
 .journal-page .journal-card {
-    border: 1px solid rgba(148, 163, 184, .18);
+    border: 1px solid var(--border-soft);
     border-radius: 18px;
-    background: #fff;
+    background: var(--bg-panel);
     padding: 1rem;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+    box-shadow: var(--shadow-xs);
 }
 .journal-page .journal-card + .journal-card {
     margin-top: 1rem;
@@ -179,15 +186,15 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     font-size: .72rem;
     text-transform: uppercase;
     letter-spacing: .04em;
-    color: #64748b;
+    color: var(--text-muted);
     margin-bottom: .25rem;
 }
 .journal-page .journal-card__value {
-    color: #24324b;
+    color: var(--text-main);
     font-weight: 600;
 }
 .journal-page .journal-card__desc {
-    border-top: 1px dashed rgba(148, 163, 184, .35);
+    border-top: 1px dashed var(--border-soft);
     margin-top: .85rem;
     padding-top: .85rem;
 }
@@ -198,9 +205,9 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     margin-top: .95rem;
 }
 .journal-page .journal-bulk-card {
-    border: 1px solid rgba(148, 163, 184, .18);
+    border: 1px solid var(--border-soft);
     border-radius: 18px;
-    background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.98));
+    background: var(--bg-panel);
 }
 .journal-page .journal-bulk-toolbar {
     display: flex;
@@ -210,7 +217,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
 }
 .journal-page .journal-bulk-toolbar .form-label {
     font-size: .78rem;
-    color: #64748b;
+    color: var(--text-muted);
 }
 .journal-page .journal-bulk-meta {
     display: flex;
@@ -231,7 +238,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
 }
 .journal-page .journal-bulk-hint {
     font-size: .82rem;
-    color: #64748b;
+    color: var(--text-muted);
 }
 .journal-page .journal-bulk-check-col {
     min-width: 52px;
@@ -239,11 +246,11 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     position: sticky;
     left: 0;
     z-index: 4;
-    background: #fff;
+    background: var(--bg-panel);
     box-shadow: 8px 0 18px rgba(15, 23, 42, .05);
 }
 .journal-page .journal-table thead .journal-bulk-check-col {
-    background: #f8fafc;
+    background: var(--bg-panel-soft);
     z-index: 5;
 }
 .journal-page .journal-bulk-checkbox {
@@ -259,7 +266,25 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
 }
 .journal-page .journal-bulk-row-active .journal-bulk-check-col,
 .journal-page .journal-bulk-row-active .col-actions {
-    background: #f8fbff;
+    background: var(--bg-panel-soft);
+}
+.journal-page .text-secondary,
+.journal-page .small {
+    color: var(--text-muted) !important;
+}
+.journal-page .text-dark,
+.journal-page .fw-semibold,
+.journal-page .h3,
+.journal-page .h5 {
+    color: var(--text-main) !important;
+}
+.journal-page .table {
+    color: var(--text-main);
+}
+.journal-page .journal-table thead th {
+    background: var(--bg-panel-soft);
+    color: var(--text-muted);
+    border-bottom-color: var(--border-soft);
 }
 @media (max-width: 991.98px) {
     .journal-page .journal-page-toolbar,
@@ -482,7 +507,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
         <div class="journal-scroll-note">Geser tabel ke kanan bila kolom aksi belum terlihat penuh.</div>
         <div class="card-body p-0">
             <div class="table-responsive coa-table-wrapper">
-                <table class="table table-dark table-hover align-middle mb-0 coa-table journal-table">
+                <table class="table table-hover align-middle mb-0 coa-table journal-table">
                     <thead>
                     <tr>
                         <th class="journal-bulk-check-col text-center"><input type="checkbox" class="form-check-input journal-bulk-select-all" id="journalBulkHeadCheckbox" aria-label="Tandai semua jurnal di halaman"></th>

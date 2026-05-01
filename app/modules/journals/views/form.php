@@ -118,15 +118,15 @@ $referenceJs = [
 .jf-page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
 .jf-toolbar { display: flex; flex-wrap: wrap; gap: .65rem; }
 .jf-card {
-  background: #fff;
-  border: 1px solid #dbe5f2;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
   border-radius: 22px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+  box-shadow: var(--shadow-xs);
   overflow: hidden;
 }
 .jf-card-head {
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e8eef7;
+  border-bottom: 1px solid var(--border-soft);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -134,9 +134,9 @@ $referenceJs = [
   flex-wrap: wrap;
 }
 .jf-card-body { padding: 1.1rem 1.25rem 1.25rem; }
-.jf-muted { color: #64748b !important; }
-.jf-inline { font-size: .85rem; color: #64748b; }
-.jf-preview { font-weight: 700; color: #1d4ed8; }
+.jf-muted { color: var(--text-muted) !important; }
+.jf-inline { font-size: .85rem; color: var(--text-muted); }
+.jf-preview { font-weight: 700; color: var(--primary); }
 .jf-template-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; }
 .jf-template-item {
   display: block;
@@ -151,20 +151,20 @@ $referenceJs = [
 .jf-template-item.is-active { border-color: #60a5fa; background: #eff6ff; }
 .jf-template-switch { display:flex; flex-wrap:wrap; gap:.65rem; }
 .jf-template-pill {
-  display:inline-flex; align-items:center; gap:.45rem; padding:.7rem .95rem; border:1px solid #dbe5f2;
-  border-radius:999px; background:#fbfdff; color:#334155; text-decoration:none; font-weight:600;
+  display:inline-flex; align-items:center; gap:.45rem; padding:.7rem .95rem; border:1px solid var(--border-soft);
+  border-radius:999px; background:var(--bg-panel-soft); color:var(--text-main); text-decoration:none; font-weight:600;
 }
 .jf-template-pill:hover { border-color:#93c5fd; background:#eff6ff; color:#1d4ed8; }
 .jf-template-pill.is-active { border-color:#60a5fa; background:#dbeafe; color:#1d4ed8; }
 .jf-pill-dot { width:.55rem; height:.55rem; border-radius:999px; background:currentColor; opacity:.75; }
-.jf-form-alignment-note { border-left:4px solid #60a5fa; background:#eff6ff; padding:.85rem 1rem; border-radius:14px; color:#1e3a8a; }
+.jf-form-alignment-note { border-left:4px solid var(--primary); background:var(--bg-panel-soft); padding:.85rem 1rem; border-radius:14px; color:var(--text-main); }
 .jf-main-grid { display: grid; gap: 1rem; }
 .jf-side-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 .jf-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .jf-stat {
-  border: 1px solid #dbe5f2;
+  border: 1px solid var(--border-soft);
   border-radius: 16px;
-  background: #fbfdff;
+  background: var(--bg-panel-soft);
   padding: .9rem 1rem;
 }
 .jf-stat .label {
@@ -172,43 +172,43 @@ $referenceJs = [
   font-size: .76rem;
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--text-muted);
   margin-bottom: .15rem;
 }
-.jf-stat .value { font-size: 1.08rem; font-weight: 700; color: #0f172a; }
+.jf-stat .value { font-size: 1.08rem; font-weight: 700; color: var(--text-main); }
 .jf-soft-note {
-  border: 1px dashed #cbd5e1;
-  background: #f8fafc;
+  border: 1px dashed var(--border-soft);
+  background: var(--bg-panel-soft);
   border-radius: 16px;
   padding: .85rem 1rem;
 }
 .jf-list { margin: 0; padding-left: 1rem; display: grid; gap: .35rem; }
 .jf-line-list { display: grid; gap: .85rem; }
 .jf-line-item {
-  border: 1px solid #dbe5f2;
+  border: 1px solid var(--border-soft);
   border-radius: 18px;
-  background: #fbfdff;
+  background: var(--bg-panel-soft);
   padding: 1rem;
 }
 .jf-line-top { display: flex; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: .8rem; flex-wrap: wrap; }
 .jf-line-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) 130px 130px; gap: .75rem; }
 .jf-account-stack { display: grid; gap: .45rem; }
 .jf-account-search { min-height: 40px; }
-.jf-account-hint { font-size: .76rem; color: #64748b; }
+.jf-account-hint { font-size: .76rem; color: var(--text-muted); }
 .jf-meta-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: .75rem;
   margin-top: .85rem;
   padding-top: .85rem;
-  border-top: 1px dashed #dbe5f2;
+  border-top: 1px dashed var(--border-soft);
 }
 .jf-meta-grid.is-hidden { display: none; }
 .jf-actions-row { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .jf-asset-panel {
   margin-top: .95rem;
   padding-top: .95rem;
-  border-top: 1px dashed #dbe5f2;
+  border-top: 1px dashed var(--border-soft);
   display: grid;
   gap: .85rem;
 }
@@ -222,14 +222,14 @@ $referenceJs = [
 }
 .jf-asset-fields.is-hidden { display: none; }
 .jf-asset-note {
-  border-left: 4px solid #38bdf8;
-  background: #f0f9ff;
-  color: #0f4c81;
+  border-left: 4px solid var(--info);
+  background: var(--bg-panel-soft);
+  color: var(--text-main);
   border-radius: 14px;
   padding: .75rem .9rem;
 }
 .jf-asset-unit-cost {
-  background: #f8fafc !important;
+  background: var(--bg-panel-soft) !important;
   font-weight: 700;
 }
 .jf-asset-item-list {
@@ -237,9 +237,9 @@ $referenceJs = [
   gap: .9rem;
 }
 .jf-asset-item {
-  border: 1px solid #dbe5f2;
+  border: 1px solid var(--border-soft);
   border-radius: 18px;
-  background: #fff;
+  background: var(--bg-panel);
   padding: .95rem;
 }
 .jf-asset-item-head {
@@ -254,7 +254,7 @@ $referenceJs = [
   font-size: .78rem;
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .jf-card .form-label,
@@ -274,9 +274,9 @@ $referenceJs = [
 .jf-card input[type="date"],
 .jf-card input[type="text"],
 .jf-card input[type="number"] {
-  background: #fff !important;
-  color: #0f172a !important;
-  border: 1px solid #cbd5e1 !important;
+  background: var(--bg-panel) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-soft) !important;
   box-shadow: none !important;
 }
 .jf-card .form-control:focus,
@@ -286,7 +286,7 @@ $referenceJs = [
   box-shadow: 0 0 0 .2rem rgba(96,165,250,.18) !important;
 }
 .jf-card .form-control::placeholder,
-.jf-card textarea::placeholder { color: #94a3b8 !important; }
+.jf-card textarea::placeholder { color: var(--text-muted) !important; }
 .jf-card .btn-outline-light {
   color: #334155 !important;
   border-color: #cbd5e1 !important;

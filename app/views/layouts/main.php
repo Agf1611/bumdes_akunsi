@@ -44,6 +44,7 @@ $isMobileNavActive = static function (array $needles) use ($currentPath): string
         })();
     </script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="<?= e(asset_url('css/app.css')) ?>" rel="stylesheet">
     <link href="<?= e(asset_url('css/soft-dashboard-v2.css')) ?>?v=<?= e($assetVersion('css/soft-dashboard-v2.css')) ?>" rel="stylesheet">
     <link href="<?= e(asset_url('css/ui-final-layer.css')) ?>?v=<?= e($assetVersion('css/ui-final-layer.css')) ?>" rel="stylesheet">
@@ -116,6 +117,7 @@ $isMobileNavActive = static function (array $needles) use ($currentPath): string
 <script>
     (function () {
         var storagePrefix = 'bumdes_scroll_restore:';
+        var storagePathPrefix = 'bumdes_scroll_restore_path:';
         var restoreTtlMs = 10 * 60 * 1000;
 
         function normalizeUrl(input) {
@@ -132,12 +134,23 @@ $isMobileNavActive = static function (array $needles) use ($currentPath): string
             return storagePrefix + normalizeUrl(window.location.href);
         }
 
+        function currentPathKey() {
+            try {
+                var url = new URL(window.location.href, window.location.origin);
+                return storagePathPrefix + url.origin + url.pathname;
+            } catch (error) {
+                return storagePathPrefix + window.location.pathname;
+            }
+        }
+
         function saveScrollPosition() {
             try {
-                sessionStorage.setItem(currentPageKey(), JSON.stringify({
+                var payload = JSON.stringify({
                     y: window.scrollY || window.pageYOffset || 0,
                     savedAt: Date.now()
-                }));
+                });
+                sessionStorage.setItem(currentPageKey(), payload);
+                sessionStorage.setItem(currentPathKey(), payload);
             } catch (error) {
                 return;
             }
@@ -149,7 +162,9 @@ $isMobileNavActive = static function (array $needles) use ($currentPath): string
             }
 
             try {
-                var raw = sessionStorage.getItem(currentPageKey());
+                var exactKey = currentPageKey();
+                var pathKey = currentPathKey();
+                var raw = sessionStorage.getItem(exactKey) || sessionStorage.getItem(pathKey);
                 if (!raw) {
                     return;
                 }
@@ -158,11 +173,13 @@ $isMobileNavActive = static function (array $needles) use ($currentPath): string
                 var y = Number(payload && payload.y ? payload.y : 0);
                 var savedAt = Number(payload && payload.savedAt ? payload.savedAt : 0);
                 if (!Number.isFinite(y) || y < 0) {
-                    sessionStorage.removeItem(currentPageKey());
+                    sessionStorage.removeItem(exactKey);
+                    sessionStorage.removeItem(pathKey);
                     return;
                 }
                 if (!Number.isFinite(savedAt) || (Date.now() - savedAt) > restoreTtlMs) {
-                    sessionStorage.removeItem(currentPageKey());
+                    sessionStorage.removeItem(exactKey);
+                    sessionStorage.removeItem(pathKey);
                     return;
                 }
 
@@ -174,10 +191,12 @@ $isMobileNavActive = static function (array $needles) use ($currentPath): string
                 window.addEventListener('load', function () {
                     setTimeout(applyScroll, 40);
                 }, { once: true });
-                sessionStorage.removeItem(currentPageKey());
+                sessionStorage.removeItem(exactKey);
+                sessionStorage.removeItem(pathKey);
             } catch (error) {
                 try {
                     sessionStorage.removeItem(currentPageKey());
+                    sessionStorage.removeItem(currentPathKey());
                 } catch (storageError) {
                     return;
                 }

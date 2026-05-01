@@ -336,18 +336,29 @@ body.app-shell .journal-page .journal-bulk-counter {
 body.app-shell .journal-page .journal-bulk-check-col,
 body.app-shell .journal-page .journal-table .col-actions {
     background: var(--ui-panel-strong) !important;
-    box-shadow: none !important;
+    box-shadow: -10px 0 20px rgba(15, 23, 42, 0.06) !important;
 }
 
 body.app-shell .journal-page .journal-table .col-actions {
-    position: static !important;
-    right: auto !important;
-    min-width: 76px !important;
-    width: 76px !important;
+    position: sticky !important;
+    right: 0 !important;
+    z-index: 3 !important;
+    min-width: 90px !important;
+    width: 90px !important;
 }
 
 body.app-shell .journal-page .journal-table .journal-bulk-check-col {
     box-shadow: none !important;
+}
+
+body.app-shell .journal-page .journal-table thead .col-actions {
+    z-index: 4 !important;
+}
+
+body.app-shell .journal-page .journal-table tbody tr:hover .col-actions,
+body.app-shell .journal-page .journal-table tbody tr:has(.journal-action-menu[open]) .col-actions,
+body.app-shell .journal-page .journal-table tbody tr.table-active .col-actions {
+    background: var(--ui-panel-muted) !important;
 }
 
 body.app-shell .coa-table tbody tr.table-action-row-open,

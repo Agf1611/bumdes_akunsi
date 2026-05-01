@@ -114,6 +114,7 @@ $isMobileNavActive = static function (array $needles) use ($currentPath): string
 <script src="<?= e(asset_url('js/theme.js')) ?>?v=<?= e($assetVersion('js/theme.js')) ?>"></script>
 <script src="<?= e(asset_url('js/workspace-tools.js')) ?>?v=<?= e($assetVersion('js/workspace-tools.js')) ?>"></script>
 <script src="<?= e(asset_url('js/report-filters.js')) ?>?v=<?= e($assetVersion('js/report-filters.js')) ?>"></script>
+<script src="<?= e(asset_url('js/ui-global-actions.js')) ?>?v=<?= e($assetVersion('js/ui-global-actions.js')) ?>"></script>
 <script>
     (function () {
         var storagePrefix = 'bumdes_scroll_restore:';

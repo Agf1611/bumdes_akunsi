@@ -8,6 +8,156 @@ body.auth-page .module-hero {
     box-shadow: var(--ui-shadow-sm);
 }
 
+body.app-shell .content-wrap .card,
+body.app-shell .content-wrap .dropdown-menu,
+body.app-shell .content-wrap .modal-content,
+body.app-shell .content-wrap .offcanvas,
+body.app-shell .content-wrap .alert {
+    background: var(--bg-panel);
+    border-color: var(--border-soft);
+    color: var(--text-main);
+}
+
+body.app-shell .content-wrap .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-main);
+    --bs-table-border-color: var(--border-soft);
+    --bs-table-hover-color: var(--text-main);
+    --bs-table-hover-bg: rgba(59, 130, 246, 0.06);
+    color: var(--text-main) !important;
+}
+
+body.app-shell .content-wrap .table thead th,
+body.app-shell .content-wrap .table tfoot th {
+    background: var(--bg-panel-soft) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-soft) !important;
+}
+
+body.app-shell .content-wrap .table td,
+body.app-shell .content-wrap .table th {
+    border-color: var(--border-soft) !important;
+}
+
+body.app-shell .content-wrap .form-control,
+body.app-shell .content-wrap .form-select,
+body.app-shell .content-wrap textarea,
+body.app-shell .content-wrap input[type="date"],
+body.app-shell .content-wrap input[type="text"],
+body.app-shell .content-wrap input[type="number"],
+body.app-shell .content-wrap input[type="search"],
+body.app-shell .content-wrap input[type="file"] {
+    background: var(--bg-panel) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-soft) !important;
+}
+
+body.app-shell .content-wrap .form-control::placeholder,
+body.app-shell .content-wrap textarea::placeholder {
+    color: var(--text-muted) !important;
+}
+
+body.app-shell .content-wrap .form-control:focus,
+body.app-shell .content-wrap .form-select:focus,
+body.app-shell .content-wrap textarea:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.16) !important;
+}
+
+body.app-shell .content-wrap .btn-outline-light,
+body.app-shell .content-wrap .btn-outline-secondary,
+body.app-shell .content-wrap .btn-outline-info,
+body.app-shell .content-wrap .btn-outline-danger,
+body.app-shell .content-wrap .btn-outline-success,
+body.app-shell .content-wrap .btn-outline-primary {
+    background: var(--bg-panel) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-soft) !important;
+}
+
+body.app-shell .content-wrap .btn-outline-light:hover,
+body.app-shell .content-wrap .btn-outline-secondary:hover,
+body.app-shell .content-wrap .btn-outline-primary:hover {
+    background: var(--bg-panel-soft) !important;
+    color: var(--primary-hover) !important;
+    border-color: var(--border-strong) !important;
+}
+
+body.app-shell .content-wrap .btn-outline-info:hover {
+    background: rgba(2, 132, 199, 0.1) !important;
+    color: var(--info) !important;
+    border-color: rgba(2, 132, 199, 0.25) !important;
+}
+
+body.app-shell .content-wrap .btn-outline-success:hover {
+    background: rgba(22, 163, 74, 0.1) !important;
+    color: var(--success) !important;
+    border-color: rgba(22, 163, 74, 0.25) !important;
+}
+
+body.app-shell .content-wrap .btn-outline-danger:hover {
+    background: rgba(220, 38, 38, 0.1) !important;
+    color: var(--danger) !important;
+    border-color: rgba(220, 38, 38, 0.24) !important;
+}
+
+body.app-shell .content-wrap .text-dark,
+body.app-shell .content-wrap .fw-semibold,
+body.app-shell .content-wrap .fw-bold,
+body.app-shell .content-wrap .h1,
+body.app-shell .content-wrap .h2,
+body.app-shell .content-wrap .h3,
+body.app-shell .content-wrap .h4,
+body.app-shell .content-wrap .h5,
+body.app-shell .content-wrap .h6 {
+    color: var(--text-main) !important;
+}
+
+body.app-shell .content-wrap .text-secondary,
+body.app-shell .content-wrap .small,
+body.app-shell .content-wrap .form-text,
+body.app-shell .content-wrap .text-muted {
+    color: var(--text-muted) !important;
+}
+
+body.app-shell .content-wrap .ui-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+body.app-shell .content-wrap .ui-action-btn__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+
+body.app-shell .content-wrap .ui-action-btn__icon i {
+    font-size: 0.98rem;
+    line-height: 1;
+}
+
+body.app-shell .content-wrap .ui-action-btn--compact {
+    min-height: 2.45rem;
+}
+
+body.app-shell .content-wrap .ui-action-btn--compact .ui-action-btn__icon {
+    min-width: 1rem;
+}
+
+body.app-shell .content-wrap .card,
+body.app-shell .content-wrap .btn,
+body.app-shell .content-wrap .dropdown-menu,
+body.app-shell .content-wrap .table,
+body.app-shell .content-wrap .form-control,
+body.app-shell .content-wrap .form-select {
+    will-change: auto;
+    backface-visibility: hidden;
+}
+
 :root[data-theme="dark"] body.app-shell .module-hero,
 :root[data-theme="dark"] body.auth-page .module-hero {
     background:
@@ -298,6 +448,17 @@ body.auth-page .form-select {
     body.app-shell .module-hero__content,
     body.auth-page .module-hero__content {
         padding: 1.3rem;
+    }
+
+    body.app-shell .content-wrap .ui-action-btn--compact {
+        width: 2.7rem;
+        height: 2.7rem;
+        padding: 0 !important;
+        border-radius: 14px;
+    }
+
+    body.app-shell .content-wrap .ui-action-btn--compact .ui-action-btn__label {
+        display: none;
     }
 
     body.auth-page .auth-form-card .card-body,

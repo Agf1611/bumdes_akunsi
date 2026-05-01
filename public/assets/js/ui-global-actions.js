@@ -77,6 +77,10 @@
             return true;
         }
 
+        if (element.matches('.table-action-trigger, .journal-action-trigger') || element.closest('.table-action-trigger, .journal-action-trigger')) {
+            return true;
+        }
+
         if (element.closest('#appSidebar, .app-topbar, .workspace-palette, .mobile-bottom-nav')) {
             return true;
         }
@@ -103,6 +107,34 @@
         }
 
         return !!element.closest('.module-hero__actions, .card-header, .card-body, .listing-controls-shell, .journal-action-panel, .table-action-panel, .journal-card__actions, .jf-toolbar, .user-action-group, .report-filter-card');
+    }
+
+    function enhanceActionTrigger(element) {
+        if (!(element instanceof HTMLElement) || element.dataset.uiActionTriggerReady === '1') {
+            return;
+        }
+
+        const label = extractLabel(element).trim() || 'Aksi';
+        element.dataset.uiActionTriggerReady = '1';
+        element.dataset.uiActionLabel = label;
+        element.classList.add('ui-action-btn', 'ui-action-btn--compact');
+        element.setAttribute('title', label);
+        element.setAttribute('aria-label', label);
+
+        if (!element.querySelector('.ui-action-btn__icon, .bi')) {
+            element.textContent = '';
+            const icon = document.createElement('span');
+            icon.className = 'ui-action-btn__icon';
+            icon.setAttribute('aria-hidden', 'true');
+            icon.innerHTML = '<i class="bi bi-three-dots"></i>';
+
+            const text = document.createElement('span');
+            text.className = 'ui-action-btn__label';
+            text.textContent = label;
+
+            element.appendChild(icon);
+            element.appendChild(text);
+        }
     }
 
     function applyIconify(element) {
@@ -154,6 +186,7 @@
         ].join(', ');
 
         scope.querySelectorAll(selector).forEach(applyIconify);
+        scope.querySelectorAll('.content-wrap .table-action-trigger').forEach(enhanceActionTrigger);
     }
 
     function initGlobalActionUi() {
@@ -173,6 +206,9 @@
             mutation.addedNodes.forEach(function (node) {
                 if (!(node instanceof HTMLElement)) {
                     return;
+                }
+                if (node.matches('.table-action-trigger')) {
+                    enhanceActionTrigger(node);
                 }
                 if (node.matches('.btn, .dropdown-item, .journal-action-panel a, .journal-action-panel button, .table-action-panel a, .table-action-panel button')) {
                     applyIconify(node);

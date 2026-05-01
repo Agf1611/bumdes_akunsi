@@ -225,7 +225,11 @@ body.app-shell .listing-controls-shell .form-control {
 
 body.app-shell .table-action-col {
     background: var(--ui-panel-strong) !important;
-    box-shadow: -10px 0 20px rgba(15, 23, 42, 0.06) !important;
+    box-shadow: none !important;
+    position: static !important;
+    right: auto !important;
+    min-width: 76px !important;
+    width: 76px !important;
 }
 
 body.app-shell .coa-table thead .table-action-col,
@@ -237,11 +241,20 @@ body.app-shell .journal-page .journal-table thead .journal-bulk-check-col {
 body.app-shell .table-action-trigger,
 body.app-shell .journal-page .journal-action-trigger {
     min-height: 38px;
+    min-width: 2.35rem !important;
+    width: 2.35rem !important;
+    height: 2.35rem !important;
+    padding: 0 !important;
     border-radius: 12px !important;
     background: var(--ui-panel-strong) !important;
     border-color: var(--ui-border) !important;
     color: var(--ui-text) !important;
     box-shadow: none !important;
+}
+
+body.app-shell .table-action-trigger .ui-action-btn__label,
+body.app-shell .journal-page .journal-action-trigger .ui-action-btn__label {
+    display: none !important;
 }
 
 body.app-shell .table-action-trigger:hover,
@@ -323,6 +336,34 @@ body.app-shell .journal-page .journal-bulk-counter {
 body.app-shell .journal-page .journal-bulk-check-col,
 body.app-shell .journal-page .journal-table .col-actions {
     background: var(--ui-panel-strong) !important;
+    box-shadow: none !important;
+}
+
+body.app-shell .journal-page .journal-table .col-actions {
+    position: static !important;
+    right: auto !important;
+    min-width: 76px !important;
+    width: 76px !important;
+}
+
+body.app-shell .journal-page .journal-table .journal-bulk-check-col {
+    box-shadow: none !important;
+}
+
+body.app-shell .coa-table tbody tr.table-action-row-open,
+body.app-shell .journal-page .journal-table tbody tr {
+    position: relative;
+    z-index: 1;
+}
+
+body.app-shell .coa-table tbody tr.table-action-row-open,
+body.app-shell .journal-page .journal-table tbody tr:has(.journal-action-menu[open]) {
+    z-index: 40;
+}
+
+body.app-shell .table-action-menu,
+body.app-shell .journal-page .journal-action-menu {
+    isolation: isolate;
 }
 
 body.app-shell .period-page .alert-info {

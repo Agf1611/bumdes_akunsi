@@ -4,6 +4,10 @@ final class Session {
     public static function start(array $app): void {
         if (session_status() === PHP_SESSION_ACTIVE) return;
         session_name($app['session_name']);
+        $maxLifetime = max((int) ($app['session_lifetime'] ?? 0), (int) ($app['remember_lifetime'] ?? 0));
+        if ($maxLifetime > 0) {
+            ini_set('session.gc_maxlifetime', (string) $maxLifetime);
+        }
         session_set_cookie_params([
             'lifetime' => $app['session_lifetime'],
             'path' => '/', 'domain' => '', 'secure' => self::isHttps(), 'httponly' => true, 'samesite' => 'Lax'
@@ -30,6 +34,18 @@ final class Session {
             setcookie(session_name(), '', time()-42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
         }
         session_destroy();
+    }
+    public static function persistCookie(int $lifetime): void {
+        if (session_status() !== PHP_SESSION_ACTIVE || $lifetime <= 0) return;
+        $params = session_get_cookie_params();
+        setcookie(session_name(), session_id(), [
+            'expires' => time() + $lifetime,
+            'path' => $params['path'] ?: '/',
+            'domain' => (string) ($params['domain'] ?? ''),
+            'secure' => (bool) ($params['secure'] ?? self::isHttps()),
+            'httponly' => true,
+            'samesite' => (string) ($params['samesite'] ?? 'Lax'),
+        ]);
     }
     private static function isHttps(): bool {
         return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? null) == 443);

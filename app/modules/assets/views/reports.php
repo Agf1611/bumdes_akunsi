@@ -1,17 +1,47 @@
 <?php declare(strict_types=1); ?>
-<?php $auditSummary = is_array($auditSummary ?? null) ? $auditSummary : []; ?>
+<?php
+$auditSummary = is_array($auditSummary ?? null) ? $auditSummary : [];
+$rows = is_array($rows ?? null) ? $rows : [];
+$categorySummary = [];
+foreach ($rows as $assetRow) {
+    $categoryKey = (string) (($assetRow['asset_group'] ?? '') . '|' . ($assetRow['category_name'] ?? 'Tanpa Kategori'));
+    if (!isset($categorySummary[$categoryKey])) {
+        $categorySummary[$categoryKey] = [
+            'group' => (string) ($assetRow['asset_group'] ?? 'FIXED'),
+            'category' => (string) ($assetRow['category_name'] ?? 'Tanpa Kategori'),
+            'count' => 0,
+            'quantity' => 0.0,
+            'cost' => 0.0,
+            'accumulated' => 0.0,
+            'book' => 0.0,
+        ];
+    }
+    $categorySummary[$categoryKey]['count']++;
+    $categorySummary[$categoryKey]['quantity'] += (float) ($assetRow['quantity'] ?? 1);
+    $categorySummary[$categoryKey]['cost'] += (float) ($assetRow['acquisition_cost'] ?? 0);
+    $categorySummary[$categoryKey]['accumulated'] += (float) ($assetRow['current_accumulated_depreciation'] ?? 0);
+    $categorySummary[$categoryKey]['book'] += (float) (($assetRow['current_book_value'] ?? $assetRow['acquisition_cost'] ?? 0) ?: 0);
+}
+uasort($categorySummary, static function (array $left, array $right): int {
+    $groupCompare = strcmp((string) $left['group'], (string) $right['group']);
+    if ($groupCompare !== 0) {
+        return $groupCompare;
+    }
+    return strcmp((string) $left['category'], (string) $right['category']);
+});
+?>
 <section class="asset-page asset-page--reports module-page">
 <div class="asset-hero-card mb-4">
     <div class="asset-hero-card__main">
         <div>
-            <div class="asset-hero-card__eyebrow">Laporan / Asset</div>
+            <div class="asset-hero-card__eyebrow">Asset</div>
             <h1 class="asset-hero-card__title">Laporan Aset</h1>
-            <p class="asset-hero-card__subtitle">Kelola, pantau, dan analisis seluruh aset BUMDes dengan tampilan yang lebih rapi dan mudah dibaca.</p>
         </div>
         <div class="asset-hero-card__actions">
             <a href="<?= e(base_url('/assets/reports/print?' . asset_filter_query($filters))) ?>" target="_blank" class="btn btn-outline-light">Print</a>
             <a href="<?= e(base_url('/assets/reports/pdf?' . asset_filter_query($filters))) ?>" target="_blank" class="btn btn-outline-light">PDF</a>
-            <a href="<?= e(base_url('/assets')) ?>" class="btn btn-primary">Kembali ke Master</a>
+            <a href="<?= e(base_url('/assets/reports/detailed-pdf?' . asset_filter_query($filters))) ?>" target="_blank" class="btn btn-outline-light">Rinci</a>
+            <a href="<?= e(base_url('/assets')) ?>" class="btn btn-primary">Master</a>
         </div>
     </div>
 
@@ -89,6 +119,41 @@
             <div class="asset-metric-card__value asset-metric-card__value--currency"><?= e(asset_currency((float) ($summary['total_book_value'] ?? 0))) ?></div>
             <div class="asset-metric-card__meta">Pembanding <?= e(asset_currency((float) ($summary['comparison_book_value'] ?? 0))) ?></div>
         </article>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4 asset-report-summary-card">
+    <div class="card-body p-4">
+        <div class="asset-section-head asset-section-head--inline mb-3">
+            <div>
+                <h2 class="asset-section-head__title">Ringkasan Kategori Aset</h2>
+                <p class="asset-section-head__subtitle">Dibaca cepat per kelompok aset: jumlah register, qty, nilai perolehan, akumulasi susut, dan nilai buku.</p>
+            </div>
+            <div class="asset-section-head__meta">Total <?= e((string) number_format(count($categorySummary), 0, ',', '.')) ?> kategori</div>
+        </div>
+        <?php if ($categorySummary === []): ?>
+            <div class="text-secondary">Belum ada kategori aset untuk filter yang dipilih.</div>
+        <?php else: ?>
+            <div class="asset-category-summary-grid">
+                <?php foreach ($categorySummary as $categoryRow): ?>
+                    <article class="asset-category-summary">
+                        <div class="asset-category-summary__top">
+                            <div>
+                                <div class="asset-category-summary__eyebrow"><?= e(asset_group_label((string) $categoryRow['group'])) ?></div>
+                                <div class="asset-category-summary__title"><?= e((string) $categoryRow['category']) ?></div>
+                            </div>
+                            <span><?= e((string) number_format((int) $categoryRow['count'], 0, ',', '.')) ?> aset</span>
+                        </div>
+                        <div class="asset-category-summary__metrics">
+                            <div><span>Qty</span><strong><?= e((string) number_format((float) $categoryRow['quantity'], 0, ',', '.')) ?></strong></div>
+                            <div><span>Perolehan</span><strong><?= e(asset_currency((float) $categoryRow['cost'])) ?></strong></div>
+                            <div><span>Akum. susut</span><strong><?= e(asset_currency((float) $categoryRow['accumulated'])) ?></strong></div>
+                            <div><span>Nilai buku</span><strong><?= e(asset_currency((float) $categoryRow['book'])) ?></strong></div>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 

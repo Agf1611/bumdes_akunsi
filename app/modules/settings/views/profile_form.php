@@ -317,39 +317,12 @@ $contactSummary = $contactSummaryParts !== [] ? implode(' · ', $contactSummaryP
 
 <div class="module-page profile-settings-page">
     <div class="row justify-content-center">
-        <div class="col-12 col-xl-11">
-            <section class="profile-hero mb-4">
-                <div class="d-flex flex-column flex-xl-row justify-content-between gap-4">
-                    <div class="pe-xl-4">
-                        <span class="profile-hero__eyebrow">Pengaturan Profil</span>
-                        <h1 class="profile-hero__title">Profil BUMDes yang lebih cepat diisi dan lebih mudah dicek</h1>
-                        <p class="profile-hero__text">Saya rapikan halaman ini agar urutan input lebih masuk akal: mulai dari identitas lembaga, kontak, periode aktif, penandatangan, lalu aturan kwitansi. Jadi saat mengedit, Anda tidak perlu lompat-lompat mencari data.</p>
-                    </div>
-                    <div class="profile-summary-grid flex-grow-1">
-                        <article class="profile-summary-card">
-                            <span class="profile-summary-card__label">Data Wajib</span>
-                            <span class="profile-summary-card__value"><?= e((string) $filledRequiredCount) ?>/<?= e((string) count($requiredKeys)) ?></span>
-                            <span class="profile-summary-card__meta">Nama lembaga, alamat, penandatangan, dan periode aktif</span>
-                        </article>
-                        <article class="profile-summary-card">
-                            <span class="profile-summary-card__label">Dokumen</span>
-                            <span class="profile-summary-card__value"><?= e((string) $documentCount) ?>/3</span>
-                            <span class="profile-summary-card__meta">Logo, tanda tangan direktur, dan tanda tangan bendahara</span>
-                        </article>
-                        <article class="profile-summary-card">
-                            <span class="profile-summary-card__label">Periode Aktif</span>
-                            <span class="profile-summary-card__value"><?= e(active_period_label($profileData['active_period_start'], $profileData['active_period_end'])) ?></span>
-                            <span class="profile-summary-card__meta">Dipakai otomatis untuk identitas periode aplikasi</span>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
+        <div class="col-12 col-xl-10">
             <form method="post" action="<?= e(base_url('/settings/profile')) ?>" enctype="multipart/form-data" novalidate>
                 <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
 
                 <div class="row g-4">
-                    <div class="col-12 col-xl-8">
+                    <div class="col-12">
                         <div class="d-grid gap-4">
                             <section class="profile-section-card">
                                 <div class="profile-section-head">
@@ -600,7 +573,7 @@ $contactSummary = $contactSummaryParts !== [] ? implode(' · ', $contactSummaryP
                         </div>
                     </div>
 
-                    <div class="col-12 col-xl-4">
+                    <div class="col-12 col-xl-4 d-none">
                         <div class="profile-sticky">
                             <div class="profile-aside-stack">
                                 <aside class="profile-side-card">
@@ -666,7 +639,7 @@ $contactSummary = $contactSummaryParts !== [] ? implode(' · ', $contactSummaryP
                 </div>
 
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mt-4 pt-3 border-top border-secondary-subtle">
-                    <div class="text-secondary small">Setelah disimpan, data profil ini langsung dipakai untuk identitas aplikasi, laporan, jurnal standar, dan kwitansi.</div>
+                    <div class="text-secondary small">Data profil dipakai untuk identitas aplikasi, laporan, jurnal standar, dan kwitansi.</div>
                     <div class="d-flex gap-2">
                         <a href="<?= e(base_url('/dashboard')) ?>" class="btn btn-outline-secondary">Kembali</a>
                         <button type="submit" class="btn btn-primary px-4">Simpan Profil</button>

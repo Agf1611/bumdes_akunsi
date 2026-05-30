@@ -46,7 +46,7 @@ $suggestionText = match ($selectedTemplateKey) {
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div>
             <h1 class="h3 mb-1">Transaksi Cepat</h1>
-            <p class="text-secondary mb-0">Isi ringkas, lihat preview debit/kredit, lalu simpan sebagai jurnal tanpa membuka form jurnal lengkap.</p>
+            <p class="text-secondary mb-0">Input transaksi, cek preview, lalu simpan sebagai jurnal.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a href="<?= e(base_url('/journals')) ?>" class="btn btn-outline-light">Kembali ke Jurnal</a>
@@ -59,7 +59,7 @@ $suggestionText = match ($selectedTemplateKey) {
             <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
                 <div>
                     <div class="fw-semibold">Pilih template transaksi</div>
-                    <div class="text-secondary small">Template hanya memandu alur dan instruksi akun. Engine jurnal yang dipakai tetap sama.</div>
+                    <div class="text-secondary small">Pilih alur transaksi.</div>
                 </div>
                 <form method="post" action="<?= e(base_url('/journals/quick/favorite-template')) ?>" class="m-0">
                     <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
@@ -100,11 +100,11 @@ $suggestionText = match ($selectedTemplateKey) {
                 <h2 class="h5 mb-1"><?= e((string) ($template['template_name'] ?? 'Transaksi Cepat')) ?></h2>
                 <div class="text-secondary small"><?= e((string) ($template['description'] ?? '')) ?></div>
             </div>
-            <div class="badge text-bg-light border">Preview nomor jurnal dibuat otomatis saat simpan</div>
+            <div class="badge text-bg-light border">Nomor otomatis saat simpan</div>
         </div>
         <div class="qj-card__body">
             <div class="qj-help mb-4">
-                <div class="fw-semibold mb-1">Panduan cepat</div>
+                <div class="fw-semibold mb-1">Akun</div>
                 <div class="small"><?= e($suggestionText) ?></div>
             </div>
 
@@ -139,7 +139,7 @@ $suggestionText = match ($selectedTemplateKey) {
                 <div class="col-md-8">
                     <label class="form-label">Tujuan / Keterangan</label>
                     <input type="text" name="description" class="form-control" value="<?= e((string) ($formData['description'] ?? '')) ?>" placeholder="Contoh: Pembayaran listrik kantor bulan April" required>
-                    <div class="form-text">Tulis keterangan singkat yang nanti dipakai sebagai deskripsi jurnal dan tujuan transaksi.</div>
+                    <div class="form-text">Dipakai sebagai deskripsi jurnal.</div>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Nama Pihak</label>
@@ -177,7 +177,7 @@ $suggestionText = match ($selectedTemplateKey) {
                             <option value="<?= e((string) ($component['id'] ?? '')) ?>" <?= (string) ($formData['cashflow_component_id'] ?? '') === (string) ($component['id'] ?? '') ? 'selected' : '' ?>><?= e((string) (($component['code'] ?? '') . ' - ' . ($component['name'] ?? ''))) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <div class="form-text">Pilih ini agar Laporan Arus Kas mengikuti komponen Kemendesa, bukan hanya tebakan dari akun lawan.</div>
+                    <div class="form-text">Opsional untuk klasifikasi arus kas.</div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Judul Lampiran</label>
@@ -187,7 +187,7 @@ $suggestionText = match ($selectedTemplateKey) {
                 <div class="col-12">
                     <label class="form-label">Lampiran Bukti</label>
                     <input type="file" name="attachment_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
-                    <div class="form-text"><?= !empty($attachmentFeatureStatus['enabled']) ? 'Jika file diisi, lampiran akan langsung menempel ke jurnal yang dibuat.' : 'Fitur lampiran database belum aktif, jadi file saat ini bersifat opsional dan akan diabaikan.' ?></div>
+                    <div class="form-text"><?= !empty($attachmentFeatureStatus['enabled']) ? 'File akan menempel ke jurnal.' : 'Lampiran belum aktif di database.' ?></div>
                 </div>
             </div>
 
@@ -207,10 +207,10 @@ $suggestionText = match ($selectedTemplateKey) {
         </div>
         <div class="qj-card__body">
             <?php if ($preview === null): ?>
-                <div class="text-center text-secondary py-4">Isi form transaksi cepat lalu klik <strong>Preview Jurnal</strong> untuk melihat hasil pembentukan jurnal otomatis.</div>
+                <div class="text-center text-secondary py-4">Isi form lalu klik <strong>Preview Jurnal</strong>.</div>
             <?php elseif (($preview['errors'] ?? []) !== []): ?>
                 <div class="alert alert-warning mb-0">
-                    <div class="fw-semibold mb-2">Preview belum bisa dibuat penuh karena masih ada input yang perlu diperbaiki.</div>
+                    <div class="fw-semibold mb-2">Input belum valid.</div>
                     <ul class="mb-0 ps-3">
                         <?php foreach (($preview['errors'] ?? []) as $error): ?>
                             <li><?= e((string) $error) ?></li>
@@ -237,7 +237,7 @@ $suggestionText = match ($selectedTemplateKey) {
 
                 <?php if (is_array($preview['receipt'] ?? null)): ?>
                     <div class="alert alert-info mt-3 mb-0">
-                        <div class="fw-semibold mb-1">Kwitansi / bukti transaksi akan ikut dibuat</div>
+                        <div class="fw-semibold mb-1">Kwitansi aktif</div>
                         <div class="small"><?= e((string) (($preview['receipt']['party_title'] ?? '') . ' ' . ($preview['receipt']['party_name'] ?? '-'))) ?> · <?= e((string) ($preview['receipt']['purpose'] ?? '-')) ?></div>
                     </div>
                 <?php endif; ?>

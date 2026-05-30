@@ -252,8 +252,8 @@ $selectedRoleCode = (string) ($roleCode ?? '');
         <div class="module-hero__content">
             <div>
                 <div class="module-hero__eyebrow">Pengguna</div>
-                <h1 class="module-hero__title">Pengelolaan Akun yang lebih rapi dan lebih enak dipakai</h1>
-                <p class="module-hero__text">Sekarang akun admin, bendahara, dan pimpinan bisa dikelola dari satu tempat. Saya rapikan tampilannya supaya edit akun, reset password, dan cek status login terasa lebih jelas.</p>
+                <h1 class="module-hero__title">Pengelolaan Akun</h1>
+                <p class="module-hero__text">Kelola akun admin, bendahara, dan pimpinan dari satu tempat.</p>
             </div>
             <div class="module-hero__actions">
                 <a href="<?= e(base_url('/user-accounts/create')) ?>" class="btn btn-primary user-hero-action">

@@ -79,6 +79,7 @@ $router->post('/assets/depreciation/rebuild', [AssetController::class, 'rebuildD
 $router->get('/assets/reports', [AssetController::class, 'reports'], [AuthMiddleware::class]);
 $router->get('/assets/reports/print', [AssetController::class, 'reportPrint'], [AuthMiddleware::class]);
 $router->get('/assets/reports/pdf', [AssetController::class, 'reportPdf'], [AuthMiddleware::class]);
+$router->get('/assets/reports/detailed-pdf', [AssetController::class, 'detailedReportPdf'], [AuthMiddleware::class]);
 
 $router->get('/periods/select-working', [PeriodController::class, 'selectWorking'], [AuthMiddleware::class]);
 $router->post('/periods/switch-working', [PeriodController::class, 'switchWorking'], [AuthMiddleware::class]);

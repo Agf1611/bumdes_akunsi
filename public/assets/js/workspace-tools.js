@@ -53,6 +53,10 @@
       return '#';
     }
 
+    if (/^[a-z][a-z0-9+.-]*:/i.test(value) && !/^https?:\/\//i.test(value)) {
+      return '#';
+    }
+
     if (/^(?:[a-z]+:)?\/\//i.test(value) || value.startsWith('#')) {
       return value;
     }
@@ -68,42 +72,67 @@
     return appBaseUrl + value;
   }
 
+  function createEmpty(message) {
+    const node = document.createElement('div');
+    node.className = 'workspace-palette__empty';
+    node.textContent = message;
+    return node;
+  }
+
+  function appendText(parent, className, value) {
+    const node = document.createElement('div');
+    node.className = className;
+    node.textContent = String(value || '');
+    parent.appendChild(node);
+    return node;
+  }
+
   function renderSection(label, items) {
     if (!Array.isArray(items) || items.length === 0) {
-      return '';
+      return null;
     }
-    return `
-      <section class="workspace-palette__section">
-        <div class="workspace-palette__section-head">${label}</div>
-        <div class="workspace-palette__items">
-          ${items.map(function (item) {
-            const title = String(item.title || item.label || '-');
-            const subtitle = item.subtitle ? `<div class="workspace-palette__item-subtitle">${String(item.subtitle)}</div>` : '';
-            const meta = item.meta ? `<div class="workspace-palette__item-meta">${String(item.meta)}</div>` : '';
-            const path = resolvePalettePath(item.path || '#');
-            return `
-              <a href="${path}" class="workspace-palette__item">
-                <div>
-                  <div class="workspace-palette__item-title">${title}</div>
-                  ${subtitle}
-                </div>
-                ${meta}
-              </a>
-            `;
-          }).join('')}
-        </div>
-      </section>
-    `;
+    const section = document.createElement('section');
+    section.className = 'workspace-palette__section';
+    appendText(section, 'workspace-palette__section-head', label);
+
+    const list = document.createElement('div');
+    list.className = 'workspace-palette__items';
+    items.forEach(function (item) {
+      const link = document.createElement('a');
+      link.href = resolvePalettePath(item.path || '#');
+      link.className = 'workspace-palette__item';
+
+      const textWrap = document.createElement('div');
+      appendText(textWrap, 'workspace-palette__item-title', item.title || item.label || '-');
+      if (item.subtitle) {
+        appendText(textWrap, 'workspace-palette__item-subtitle', item.subtitle);
+      }
+      link.appendChild(textWrap);
+
+      if (item.meta) {
+        appendText(link, 'workspace-palette__item-meta', item.meta);
+      }
+      list.appendChild(link);
+    });
+    section.appendChild(list);
+    return section;
+  }
+
+  function renderSections(sectionSpecs, emptyMessage) {
+    const nodes = sectionSpecs
+      .map(function (spec) {
+        return renderSection(spec.label, spec.items);
+      })
+      .filter(Boolean);
+    results.replaceChildren.apply(results, nodes.length ? nodes : [createEmpty(emptyMessage)]);
   }
 
   function renderBootstrapSections() {
-    const html = [
-      renderSection(sectionLabels.favorites, bootstrapPayload.favorites || []),
-      renderSection(sectionLabels.recent, bootstrapPayload.recent || []),
-      renderSection(sectionLabels.saved_filters, bootstrapPayload.saved_filters || [])
-    ].join('');
-
-    results.innerHTML = html || '<div class="workspace-palette__empty">Belum ada favorit, recent item, atau filter tersimpan untuk akun ini.</div>';
+    renderSections([
+      { label: sectionLabels.favorites, items: bootstrapPayload.favorites || [] },
+      { label: sectionLabels.recent, items: bootstrapPayload.recent || [] },
+      { label: sectionLabels.saved_filters, items: bootstrapPayload.saved_filters || [] }
+    ], 'Belum ada favorit, item terakhir, atau filter tersimpan.');
   }
 
   async function fetchSearch(query) {
@@ -118,10 +147,9 @@
   function renderSearchSections(payload) {
     const sections = payload && payload.results ? payload.results : {};
     const orderedKeys = ['menus', 'journals', 'accounts', 'periods', 'units', 'users'];
-    const html = orderedKeys.map(function (key) {
-      return renderSection(sectionLabels[key], sections[key] || []);
-    }).join('');
-    results.innerHTML = html || '<div class="workspace-palette__empty">Tidak ada hasil yang cocok.</div>';
+    renderSections(orderedKeys.map(function (key) {
+      return { label: sectionLabels[key], items: sections[key] || [] };
+    }), 'Tidak ada hasil yang cocok.');
   }
 
   let typingTimer = null;
@@ -137,7 +165,7 @@
         const payload = await fetchSearch(query);
         renderSearchSections(payload);
       } catch (error) {
-        results.innerHTML = '<div class="workspace-palette__empty">Pencarian belum bisa dijalankan sekarang.</div>';
+        results.replaceChildren(createEmpty('Pencarian belum bisa dijalankan sekarang.'));
       }
     }, 180);
   });

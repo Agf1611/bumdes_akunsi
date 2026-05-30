@@ -299,8 +299,8 @@ $allChecksPassed = $passedChecks === $totalChecks;
                 </div>
                 <div>
                     <span class="hero-badge mb-3">Installer resmi aplikasi BUMDes</span>
-                    <h1 class="hero-title h2 mb-2">Instalasi lebih rapi, terang, dan siap dipakai</h1>
-                    <p class="hero-desc mb-0">Gunakan halaman ini untuk memeriksa kebutuhan server, menghubungkan database, dan membuat akun admin pertama. Tampilan installer diperbarui agar lebih profesional, mudah dibaca, dan lebih nyaman digunakan di hosting maupun localhost.</p>
+                    <h1 class="hero-title h2 mb-2">Instalasi Aplikasi</h1>
+                    <p class="hero-desc mb-0">Periksa kebutuhan server, hubungkan database, dan buat akun admin pertama.</p>
                 </div>
             </div>
             <div class="hero-stats">

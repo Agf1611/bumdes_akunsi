@@ -2,18 +2,25 @@
 <?php $listing = listing_paginate($rows ?? []); $rows = $listing['items']; $listingPath = '/assets'; ?>
 <?php require APP_PATH . '/views/partials/table_action_menu.php'; ?>
 <?php $auditSummary = is_array($auditSummary ?? null) ? $auditSummary : []; ?>
+<?php $hasAssetAuditWarning = (($auditSummary['units_missing_register'] ?? []) !== [] || ($auditSummary['units_with_delta'] ?? []) !== []); ?>
 <section class="asset-page asset-page--index module-page">
 <div class="asset-hero-card mb-4">
     <div class="asset-hero-card__main">
         <div>
-            <div class="asset-hero-card__eyebrow">Laporan / Asset</div>
+            <div class="asset-hero-card__eyebrow">Asset</div>
             <h1 class="asset-hero-card__title">Master Aset</h1>
-            <p class="asset-hero-card__subtitle">Register aset BUMDes yang lebih rapi dengan qty, satuan, harga per unit, total nilai, lokasi, unit usaha, dan status sinkron jurnal.</p>
         </div>
         <div class="asset-hero-card__actions">
-            <a href="<?= e(base_url('/assets/template')) ?>" class="btn btn-outline-light">Unduh Template XLSX</a>
-            <a href="<?= e(base_url('/assets/export?' . asset_filter_query($filters))) ?>" class="btn btn-outline-light">Export XLSX</a>
-            <a href="<?= e(base_url('/assets/create')) ?>" class="btn btn-primary">Tambah Aset</a>
+            <a href="<?= e(base_url('/assets/reports?' . asset_filter_query($filters))) ?>" class="btn btn-outline-light">Laporan</a>
+            <a href="<?= e(base_url('/assets/create')) ?>" class="btn btn-primary">+ Aset</a>
+            <details class="asset-toolbox">
+                <summary class="btn btn-outline-light">Alat</summary>
+                <div class="asset-toolbox__panel">
+                    <a href="<?= e(base_url('/assets/template')) ?>">Template XLSX</a>
+                    <a href="<?= e(base_url('/assets/export?' . asset_filter_query($filters))) ?>">Export XLSX</a>
+                    <a href="<?= e(base_url('/assets/reports/detailed-pdf?' . asset_filter_query($filters))) ?>" target="_blank" rel="noopener">PDF Rinci</a>
+                </div>
+            </details>
         </div>
     </div>
 
@@ -119,7 +126,11 @@
     </div>
 <?php endif; ?>
 
-<div class="card shadow-sm mb-4 border-warning-subtle asset-audit-card">
+<details class="card shadow-sm mb-4 border-warning-subtle asset-audit-card asset-compact-panel" <?= $hasAssetAuditWarning ? 'open' : '' ?>>
+    <summary class="asset-compact-summary">
+        <span>Audit Sinkron Aset</span>
+        <small><?= $hasAssetAuditWarning ? 'Perlu dicek' : 'Aman' ?></small>
+    </summary>
     <div class="card-body p-4">
         <div class="asset-section-head asset-section-head--inline mb-3">
             <div>
@@ -152,44 +163,44 @@
             <div class="alert alert-success mb-0">Register aset per unit yang sudah terisi saat ini sudah sejalan dengan saldo akun aset tetap di jurnal.</div>
         <?php endif; ?>
     </div>
-</div>
+</details>
 
-<div class="card shadow-sm mb-4 asset-filter-card">
+<details class="card shadow-sm mb-4 asset-filter-card asset-compact-panel">
+    <summary class="asset-compact-summary">
+        <span>Import / Export</span>
+        <small>Template, export, dan upload data aset</small>
+    </summary>
     <div class="card-body p-4">
         <div class="asset-section-head asset-section-head--inline mb-3">
             <div>
                 <h2 class="asset-section-head__title">Import, Export, dan Struktur Template</h2>
-                <p class="asset-section-head__subtitle">Template aset sekarang fokus ke kebutuhan BUMDes: qty, satuan, harga per unit, total nilai, status sinkron jurnal, dan catatan yang mudah diaudit.</p>
+                <p class="asset-section-head__subtitle">Dipakai saat butuh upload massal atau unduh data aset.</p>
             </div>
             <div class="d-flex flex-wrap gap-2">
-                <a href="<?= e(base_url('/assets/template')) ?>" class="btn btn-outline-light">Unduh Template XLSX</a>
+                <a href="<?= e(base_url('/assets/template')) ?>" class="btn btn-outline-light">Template XLSX</a>
                 <a href="<?= e(base_url('/assets/export?' . asset_filter_query($filters))) ?>" class="btn btn-outline-light">Export XLSX</a>
             </div>
         </div>
         <form method="post" action="<?= e(base_url('/assets/import')) ?>" enctype="multipart/form-data" class="row g-3 align-items-end">
             <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
-            <div class="col-lg-7">
+            <div class="col-lg-9">
                 <label class="form-label">File Import Aset (.xlsx / .csv)</label>
                 <input type="file" class="form-control" name="asset_file" accept=".xlsx,.csv" required>
-                <div class="form-text text-secondary">Isi qty dan satuan dengan benar. Harga per unit akan dibaca dari total nilai perolehan dibagi qty. Untuk perolehan baru, isi akun lawan dan hubungkan ke jurnal bila sudah tersedia.</div>
+                <div class="form-text text-secondary">Upload data aset massal dari template.</div>
             </div>
-            <div class="col-lg-3">
-                <label class="form-label">Status Pengembangan</label>
-                <input type="text" class="form-control" value="Struktur qty/satuan siap. Sinkron otomatis dari jurnal butuh patch lanjutan modul jurnal." readonly>
-            </div>
-            <div class="col-lg-2 d-grid">
+            <div class="col-lg-3 d-grid">
                 <button type="submit" class="btn btn-primary">Import Aset</button>
             </div>
         </form>
     </div>
-</div>
+</details>
 
 <div class="card shadow-sm mb-4 asset-filter-card">
     <div class="card-body p-4">
         <div class="asset-section-head mb-3">
             <div>
                 <h2 class="asset-section-head__title">Filter Pencarian</h2>
-                <p class="asset-section-head__subtitle">Cari berdasarkan kode, unit usaha, kategori, sumber dana, kondisi, tanggal, dan status aset.</p>
+                <p class="asset-section-head__subtitle">Pilih filter yang diperlukan saja, lalu tampilkan daftar.</p>
             </div>
         </div>
         <form method="get" action="<?= e(base_url('/assets')) ?>" class="row g-3 align-items-end asset-filter-form">
@@ -204,7 +215,7 @@
             <div class="col-lg-2"><label class="form-label">Tanggal Perolehan Dari</label><input type="date" class="form-control" name="date_from" value="<?= e((string) ($filters['date_from'] ?? '')) ?>"></div>
             <div class="col-lg-2"><label class="form-label">Tanggal Perolehan s.d.</label><input type="date" class="form-control" name="date_to" value="<?= e((string) ($filters['date_to'] ?? '')) ?>"></div>
             <div class="col-lg-2"><label class="form-label">Nilai Buku per</label><input type="date" class="form-control" name="as_of_date" value="<?= e((string) ($filters['as_of_date'] ?? date('Y-m-d'))) ?>"></div>
-            <div class="col-lg-4 d-flex flex-wrap gap-2">
+            <div class="col-lg-4 d-flex flex-wrap gap-2 asset-filter-actions">
                 <button type="submit" class="btn btn-primary">Terapkan Filter</button>
                 <a href="<?= e(base_url('/assets')) ?>" class="btn btn-outline-light">Reset</a>
             </div>
@@ -227,18 +238,15 @@
                     <tr>
                         <th>Kode Aset</th>
                         <th>Nama / Kategori</th>
-                        <th class="text-end">Qty</th>
-                        <th>Satuan</th>
-                        <th class="text-end">Harga / Unit</th>
-                        <th class="text-end">Total Nilai</th>
-                        <th>Lokasi / Unit</th>
-                        <th>Status</th>
+                        <th>Qty / Satuan</th>
+                        <th class="text-end">Nilai</th>
+                        <th>Unit / Status</th>
                         <th class="text-end table-action-col">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                 <?php if (($rows ?? []) === []): ?>
-                    <tr><td colspan="9" class="text-center text-secondary py-5">Belum ada data aset untuk filter yang dipilih.</td></tr>
+                    <tr><td colspan="6" class="text-center text-secondary py-5">Belum ada data aset untuk filter yang dipilih.</td></tr>
                 <?php else: foreach ($rows as $row): ?>
                     <?php
                         $qty = (float) ($row['quantity'] ?? 1);
@@ -255,9 +263,10 @@
                             <div class="small text-secondary"><?= e((string) $row['category_name']) ?><?= (string) (($row['subcategory_name'] ?? '') !== '' ? ' · ' . $row['subcategory_name'] : '') ?></div>
                             <div class="small text-secondary mt-1">Dana: <?= e(asset_funding_label((string) ($row['source_of_funds'] ?? ''))) ?><?= (string) (($row['funding_source_detail'] ?? '') !== '' ? ' · ' . $row['funding_source_detail'] : '') ?></div>
                         </td>
-                        <td class="text-end fw-semibold"><?= e((string) number_format($qty, 0, ',', '.')) ?></td>
-                        <td><?= e($unitName) ?></td>
-                        <td class="text-end"><?= e(asset_currency($unitCost)) ?></td>
+                        <td>
+                            <div class="fw-semibold"><?= e((string) number_format($qty, 0, ',', '.')) ?> <?= e($unitName) ?></div>
+                            <div class="small text-secondary"><?= e(asset_currency($unitCost)) ?> / <?= e($unitName) ?></div>
+                        </td>
                         <td class="text-end fw-semibold">
                             <?= e(asset_currency((float) $row['acquisition_cost'])) ?>
                             <div class="small text-secondary"><?= e(asset_currency((float) ($row['current_book_value'] ?? $row['acquisition_cost']))) ?> nilai buku</div>
@@ -265,9 +274,7 @@
                         <td>
                             <div><?= e((string) (($row['location'] ?? '') !== '' ? $row['location'] : '-')) ?></div>
                             <div class="small text-secondary"><?= e((string) business_unit_label($row['business_unit_id'] ? ['unit_code' => $row['business_unit_code'] ?? ($row['unit_code'] ?? ''), 'unit_name' => $row['business_unit_name'] ?? ''] : null)) ?></div>
-                        </td>
-                        <td>
-                            <div class="d-flex flex-column gap-1">
+                            <div class="asset-status-inline mt-2">
                                 <span class="badge <?= e(asset_badge_class((string) $row['asset_status'])) ?>"><?= e(asset_status_label((string) $row['asset_status'])) ?></span>
                                 <span class="badge <?= e(asset_condition_badge_class((string) $row['condition_status'])) ?>"><?= e(asset_condition_label((string) $row['condition_status'])) ?></span>
                                 <span class="badge <?= e(asset_sync_badge_class((string) ($row['acquisition_sync_status'] ?? 'NONE'))) ?>"><?= e(asset_sync_status_label((string) ($row['acquisition_sync_status'] ?? 'NONE'))) ?></span>

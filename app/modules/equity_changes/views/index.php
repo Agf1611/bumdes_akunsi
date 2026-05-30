@@ -2,7 +2,7 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h1 class="h3 mb-1">Laporan Perubahan Ekuitas</h1>
-        <p class="text-secondary mb-0">Mutasi ekuitas untuk periode laporan, dengan saldo awal, mutasi periode, dan saldo akhir yang lebih mudah dibaca.</p>
+        <p class="text-secondary mb-0">Mutasi ekuitas, saldo awal, mutasi periode, dan saldo akhir.</p>
     </div>
     <?php if ($filters['date_to'] !== ''): ?>
         <div class="d-flex gap-2">

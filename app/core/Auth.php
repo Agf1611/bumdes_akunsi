@@ -3,13 +3,17 @@ declare(strict_types=1);
 final class Auth {
     public const KEY = 'auth_user';
     private const LAST_ACTIVITY_KEY = '_auth_last_activity';
-    public static function login(array $user): void {
+    public static function login(array $user, bool $remember = false): void {
         Session::regenerate();
         Session::put(self::KEY, [
             'id'=>(int)$user['id'], 'full_name'=>$user['full_name'], 'username'=>$user['username'],
-            'role_code'=>$user['role_code'], 'role_name'=>$user['role_name'], 'logged_in_at'=>date('Y-m-d H:i:s')
+            'role_code'=>$user['role_code'], 'role_name'=>$user['role_name'], 'logged_in_at'=>date('Y-m-d H:i:s'),
+            'remember_me'=>$remember
         ]);
         Session::touch(self::LAST_ACTIVITY_KEY);
+        if ($remember) {
+            Session::persistCookie((int) (app_config('remember_lifetime') ?? 2592000));
+        }
     }
     public static function logout(): void {
         Session::forget(self::KEY);
@@ -37,6 +41,10 @@ final class Auth {
     {
         $timeout = (int) (app_config('session_idle_timeout') ?? 0);
         if ($timeout <= 0) {
+            return false;
+        }
+        $user = Session::get(self::KEY);
+        if (is_array($user) && !empty($user['remember_me'])) {
             return false;
         }
         $lastActivity = (int) Session::get(self::LAST_ACTIVITY_KEY, 0);

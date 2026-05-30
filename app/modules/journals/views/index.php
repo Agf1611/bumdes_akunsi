@@ -11,6 +11,7 @@ $currentRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/journals', PHP_URL_
 $currentRequestQuery = parse_url($_SERVER['REQUEST_URI'] ?? '/journals', PHP_URL_QUERY);
 $journalBulkRedirect = $currentRequestPath . ($currentRequestQuery ? '?' . $currentRequestQuery : '');
 $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
+$importPanelOpen = $importSuccess !== '' || $importErrors !== [] || (($importResult['type'] ?? '') === 'JURNAL' && (int) ($importResult['imported'] ?? 0) > 0);
 ?>
 
 <style>
@@ -69,12 +70,30 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     gap: .5rem;
 }
 .journal-page .journal-toolbar-btn i,
+.journal-page .journal-panel-toggle i,
 .journal-page .journal-quick-btn i,
 .journal-page .journal-card-action i,
 .journal-page .journal-action-panel i,
 .journal-page .journal-action-trigger i {
     font-size: 1rem;
     line-height: 1;
+}
+.journal-page .journal-panel-toggle {
+    width: 2.45rem;
+    height: 2.45rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+}
+.journal-page .journal-panel-toggle.is-active {
+    background: var(--bg-panel-soft) !important;
+    border-color: rgba(37, 99, 235, .38) !important;
+    color: var(--primary) !important;
+}
+.journal-page .journal-tool-panel[hidden] {
+    display: none !important;
 }
 .journal-page .journal-wrap {
     display: -webkit-box;
@@ -209,6 +228,9 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     border-radius: 18px;
     background: var(--bg-panel);
 }
+.journal-page:not(.is-bulk-open) .journal-bulk-check-col {
+    display: none;
+}
 .journal-page .journal-bulk-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -316,13 +338,21 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
 }
 </style>
 
-<div class="journal-page">
+<div class="journal-page<?= $importPanelOpen ? ' is-import-open' : '' ?>">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
             <h1 class="h3 mb-1">Jurnal Umum</h1>
-            <p class="text-secondary mb-0">Kelola jurnal double-entry, cetak bukti transaksi, dan telusuri riwayat posting dengan lebih rapi.</p>
+            <p class="text-secondary mb-0">Daftar jurnal dan riwayat posting.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap journal-page-toolbar">
+            <button type="button" class="btn btn-outline-light journal-panel-toggle<?= $importPanelOpen ? ' is-active' : '' ?>" data-journal-panel-toggle="journalImportPanel" aria-expanded="<?= $importPanelOpen ? 'true' : 'false' ?>" title="Import / export jurnal" aria-label="Import / export jurnal">
+                <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+            </button>
+            <?php if (($journals ?? []) !== []): ?>
+                <button type="button" class="btn btn-outline-light journal-panel-toggle d-none d-lg-inline-flex" data-journal-panel-toggle="journalBulkPanel" aria-expanded="false" title="Aksi massal jurnal" aria-label="Aksi massal jurnal">
+                    <i class="bi bi-check2-square" aria-hidden="true"></i>
+                </button>
+            <?php endif; ?>
             <a href="<?= e(base_url('/journals/print-list?' . report_filters_query($filters ?? []))) ?>" target="_blank" class="btn btn-outline-info journal-toolbar-btn">
                 <i class="bi bi-printer" aria-hidden="true"></i>
                 <span>Cetak</span>
@@ -338,7 +368,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm mb-4 journal-tool-panel" id="journalImportPanel"<?= $importPanelOpen ? '' : ' hidden' ?>>
         <div class="card-body p-4">
             <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
                 <div>
@@ -452,7 +482,7 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
     </div>
 
     <?php if (($journals ?? []) !== []): ?>
-    <div class="card shadow-sm mb-4 journal-bulk-card d-none d-lg-block">
+    <div class="card shadow-sm mb-4 journal-bulk-card journal-tool-panel d-none d-lg-block" id="journalBulkPanel" hidden>
         <div class="card-body p-4">
             <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 mb-3">
                 <div>
@@ -705,6 +735,32 @@ $currentRoleCode = (string) (Auth::user()['role_code'] ?? '');
 
 <script>
 (function () {
+    const page = document.querySelector('.journal-page');
+    const panelButtons = Array.from(document.querySelectorAll('[data-journal-panel-toggle]'));
+    const syncBulkVisibility = function () {
+        const bulkPanel = document.getElementById('journalBulkPanel');
+        if (page && bulkPanel) {
+            page.classList.toggle('is-bulk-open', !bulkPanel.hidden);
+        }
+    };
+
+    panelButtons.forEach(function (button) {
+        const targetId = button.getAttribute('data-journal-panel-toggle');
+        const panel = targetId ? document.getElementById(targetId) : null;
+        if (!panel) {
+            return;
+        }
+
+        button.addEventListener('click', function () {
+            const willOpen = panel.hidden;
+            panel.hidden = !willOpen;
+            button.classList.toggle('is-active', willOpen);
+            button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            syncBulkVisibility();
+        });
+    });
+    syncBulkVisibility();
+
     const form = document.getElementById('journalBulkForm');
     if (!form) {
         return;

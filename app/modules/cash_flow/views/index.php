@@ -29,7 +29,7 @@ $sectionConfigs = [
             <div>
                 <div class="module-hero__eyebrow">Laporan Keuangan</div>
                 <h1 class="module-hero__title">Laporan Arus Kas</h1>
-                <p class="module-hero__text">Format ringkas seperti statement resmi: satu tabel utama, tidak mengulang saldo yang sama, dan mudah dibaca saat pemeriksaan.</p>
+                <p class="module-hero__text">Laporan arus kas masuk, arus kas keluar, dan saldo kas periode.</p>
             </div>
             <?php if (($filters['date_to'] ?? '') !== ''): ?>
                 <div class="module-hero__actions">

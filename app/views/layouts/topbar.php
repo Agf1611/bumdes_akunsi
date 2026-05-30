@@ -125,7 +125,7 @@ $canSaveFilter = array_key_exists($currentPath, $filterTargets) && ((string) par
                         </button>
                         <div class="dropdown-menu dropdown-menu-end topbar-dropdown topbar-dropdown--notify">
                             <div class="topbar-dropdown__title">Notifikasi Sistem</div>
-                            <div class="topbar-dropdown__copy">Belum ada notifikasi real-time. Gunakan shortcut berikut untuk pekerjaan yang paling sering dibuka.</div>
+                            <div class="topbar-dropdown__copy">Shortcut pekerjaan utama.</div>
                             <a class="dropdown-item" href="<?= e(base_url('/journals/quick')) ?>">Transaksi Cepat</a>
                             <a class="dropdown-item" href="<?= e(base_url('/periods')) ?>">Checklist Periode</a>
                             <?php if (Auth::hasRole('admin')): ?>
@@ -185,8 +185,8 @@ $canSaveFilter = array_key_exists($currentPath, $filterTargets) && ((string) par
             <button type="button" class="btn btn-sm btn-outline-light" data-close-palette>Tutup</button>
         </div>
         <div class="workspace-palette__body">
-            <input type="text" class="form-control workspace-palette__input" id="workspacePaletteInput" placeholder="Ketik nama menu, akun COA, nomor jurnal, periode, atau user...">
-            <div class="workspace-palette__hint">Gunakan Ctrl+K untuk membuka pencarian cepat dari halaman mana pun.</div>
+            <input type="text" class="form-control workspace-palette__input" id="workspacePaletteInput" placeholder="Cari menu, akun, jurnal, periode, atau user">
+            <div class="workspace-palette__hint">Ctrl+K untuk pencarian.</div>
             <div class="workspace-palette__sections" id="workspacePaletteResults"></div>
         </div>
     </div>

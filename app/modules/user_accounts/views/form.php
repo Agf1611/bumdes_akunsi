@@ -339,7 +339,7 @@ foreach (($roleOptions ?? []) as $roleOption) {
                     <div class="user-side-list">
                         <div>
                             <strong>Nama lengkap mudah dikenali</strong>
-                            <p>Gunakan nama asli pengguna supaya audit dan histori kerja lebih mudah dibaca.</p>
+                            <p>Gunakan nama asli pengguna untuk audit dan histori kerja.</p>
                         </div>
                         <div>
                             <strong>Username rapi dan konsisten</strong>

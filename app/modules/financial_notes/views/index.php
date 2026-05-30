@@ -30,7 +30,7 @@
 <?php else: ?>
     <div class="alert alert-primary border mb-4">
         <div class="fw-semibold mb-1">Format resmi CaLK BUM Desa</div>
-        <div class="small mb-0"><?= e(report_kepmendes_136_reference()) ?>. Bagian di bawah disusun agar mudah dibaca pemeriksa dan tetap terhubung ke saldo akun aplikasi.</div>
+        <div class="small mb-0"><?= e(report_kepmendes_136_reference()) ?>. Data terhubung ke saldo akun aplikasi.</div>
     </div>
 
     <div class="row g-4 mb-4">

@@ -23,7 +23,7 @@ $statusBadgeClass = $updateAvailable ? 'text-bg-warning' : 'text-bg-success';
             <div>
                 <div class="module-hero__eyebrow">Pengaturan</div>
                 <h1 class="module-hero__title">Update Aplikasi</h1>
-                <p class="module-hero__text">Halaman ini saya sederhanakan agar fokus ke update saja. Cukup cek update, lalu jalankan update jika memang tersedia versi baru.</p>
+                <p class="module-hero__text">Cek update aplikasi dan jalankan pembaruan jika tersedia.</p>
             </div>
             <div class="module-hero__actions" data-ui-no-iconify="1">
                 <form method="post" action="<?= e(base_url('/updates/check')) ?>" class="m-0">

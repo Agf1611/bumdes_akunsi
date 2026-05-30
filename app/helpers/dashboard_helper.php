@@ -37,7 +37,7 @@ function dashboard_compact_currency(float $amount): string
 
 function dashboard_month_label(string $monthKey): string
 {
-    $date = DateTimeImmutable::createFromFormat('Y-m', $monthKey);
+    $date = DateTimeImmutable::createFromFormat('!Y-m', $monthKey);
     if (!$date) {
         return $monthKey;
     }

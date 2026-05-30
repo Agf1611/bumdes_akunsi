@@ -674,6 +674,359 @@ final class AssetController extends Controller
         }
     }
 
+    public function detailedReportPdf(): void
+    {
+        try {
+            $filters = $this->assetFilters();
+            if ((string) ($filters['as_of_date'] ?? '') === '') {
+                $filters['as_of_date'] = date('Y-m-d');
+            }
+            $report = $this->model()->getReportData($filters);
+            $profile = app_profile();
+            $unit = selected_unit_from_filters($filters);
+            $unitLabel = business_unit_label($unit);
+            [$dateFrom, $dateTo] = $this->assetDetailedReportDateRange($filters, (string) $report['as_of_date']);
+            $periodLabel = format_id_date($dateFrom) . ' s.d. ' . format_id_date($dateTo);
+            $subtitle = $periodLabel . ' | Posisi aset per ' . format_id_date((string) $report['as_of_date']);
+            $journalSummary = $this->assetDetailedJournalSummary($filters, $dateFrom, $dateTo);
+            $expenseRows = $this->assetDetailedExpenseRows($filters, $dateFrom, $dateTo);
+            $categorySummary = $this->assetDetailedCategorySummary($report['rows']);
+            $livestockSummary = $this->assetDetailedLivestockSummary($report['rows']);
+
+            $pdf = new ReportPdf('L');
+            report_pdf_init($pdf, $profile, 'Laporan Rinci Aset dan Saldo', $subtitle, $unitLabel, true);
+
+            $this->assetDetailedPdfSection($pdf, 'Ringkasan Posisi');
+            $pdf->tableRow(
+                ['Register', 'Nilai Perolehan', 'Nilai Buku', 'Kas/Bank', 'Modal/Ekuitas', 'Pendapatan', 'Beban/Rugi'],
+                [24, 38, 38, 38, 38, 38, 38],
+                ['C', 'R', 'R', 'R', 'R', 'R', 'R'],
+                8,
+                true
+            );
+            $pdf->tableRow(
+                [
+                    (string) number_format((int) ($report['summary']['asset_count'] ?? 0), 0, ',', '.'),
+                    asset_currency((float) ($report['summary']['total_cost'] ?? 0)),
+                    asset_currency((float) ($report['summary']['total_book_value'] ?? 0)),
+                    asset_currency((float) ($journalSummary['cash_bank_balance'] ?? 0)),
+                    asset_currency((float) ($journalSummary['equity_balance'] ?? 0)),
+                    asset_currency((float) ($journalSummary['revenue_period'] ?? 0)),
+                    asset_currency((float) ($journalSummary['expense_period'] ?? 0)),
+                ],
+                [24, 38, 38, 38, 38, 38, 38],
+                ['C', 'R', 'R', 'R', 'R', 'R', 'R'],
+                8
+            );
+
+            if ($livestockSummary['count'] > 0) {
+                $this->assetDetailedPdfSection($pdf, 'Ringkasan Aset Biologis');
+                $pdf->tableRow(
+                    ['Jumlah Batch', 'Total Ekor', 'Total Kg Tercatat', 'Nilai Pembelian/Rawat', 'Catatan'],
+                    [34, 34, 40, 44, 100],
+                    ['C', 'R', 'R', 'R', 'L'],
+                    8,
+                    true
+                );
+                $kgNote = $livestockSummary['missing_kg_count'] > 0
+                    ? (string) $livestockSummary['missing_kg_count'] . ' baris belum mencatat kg.'
+                    : 'Semua baris domba yang memuat kg sudah terbaca.';
+                $pdf->tableRow(
+                    [
+                        (string) number_format((int) $livestockSummary['count'], 0, ',', '.'),
+                        $this->assetDetailedNumber((float) $livestockSummary['quantity']),
+                        $this->assetDetailedNumber((float) $livestockSummary['kg_total']) . ' kg',
+                        asset_currency((float) $livestockSummary['cost']),
+                        $kgNote,
+                    ],
+                    [34, 34, 40, 44, 100],
+                    ['C', 'R', 'R', 'R', 'L'],
+                    8
+                );
+            }
+
+            $this->assetDetailedPdfSection($pdf, 'Ringkasan Per Kategori');
+            $categoryWidths = [38, 54, 22, 28, 38, 38, 38];
+            $categoryAligns = ['L', 'L', 'C', 'R', 'R', 'R', 'R'];
+            $pdf->tableRow(['Kelompok', 'Kategori', 'Register', 'Qty', 'Perolehan', 'Akum. Susut', 'Nilai Buku'], $categoryWidths, $categoryAligns, 7.5, true);
+            if ($categorySummary === []) {
+                $pdf->tableRow(['-', 'Belum ada aset sesuai filter.', '-', '-', '-', '-', '-'], $categoryWidths, ['C', 'L', 'C', 'C', 'C', 'C', 'C'], 7.5);
+            } else {
+                foreach ($categorySummary as $row) {
+                    $pdf->tableRow([
+                        asset_group_label((string) $row['group']),
+                        (string) $row['category'],
+                        (string) number_format((int) $row['count'], 0, ',', '.'),
+                        $this->assetDetailedNumber((float) $row['quantity']),
+                        asset_currency((float) $row['cost']),
+                        asset_currency((float) $row['accumulated']),
+                        asset_currency((float) $row['book']),
+                    ], $categoryWidths, $categoryAligns, 7.5);
+                }
+            }
+
+            if ($livestockSummary['rows'] !== []) {
+                $this->assetDetailedPdfSection($pdf, 'Detail Domba dan Aset Biologis');
+                $livestockWidths = [18, 32, 70, 22, 24, 34, 34, 18];
+                $livestockAligns = ['C', 'L', 'L', 'R', 'R', 'R', 'L', 'C'];
+                $pdf->tableRow(['Tanggal', 'Kode', 'Nama', 'Qty', 'Kg', 'Nilai', 'Ref', 'Status'], $livestockWidths, $livestockAligns, 7, true);
+                foreach ($livestockSummary['rows'] as $row) {
+                    $pdf->tableRow([
+                        format_id_date((string) ($row['acquisition_date'] ?? '')),
+                        report_compact_text((string) ($row['asset_code'] ?? ''), 18),
+                        report_compact_text((string) ($row['asset_name'] ?? ''), 44),
+                        $this->assetDetailedNumber((float) ($row['quantity'] ?? 0)) . ' ' . (string) ($row['unit_name'] ?? ''),
+                        $this->assetDetailedKgLabel($this->assetDetailedExtractKg($row)),
+                        asset_currency((float) ($row['acquisition_cost'] ?? 0)),
+                        report_compact_text((string) (($row['reference_no'] ?? '') ?: ($row['linked_journal_no'] ?? '')), 22),
+                        asset_status_label((string) ($row['asset_status'] ?? '')),
+                    ], $livestockWidths, $livestockAligns, 7);
+                }
+            }
+
+            $this->assetDetailedPdfSection($pdf, 'Daftar Aset Rinci');
+            $assetWidths = [18, 30, 58, 34, 22, 26, 34, 34, 18, 30];
+            $assetAligns = ['C', 'L', 'L', 'L', 'R', 'L', 'R', 'R', 'C', 'L'];
+            $assetHeader = ['Tanggal', 'Kode', 'Nama Aset', 'Kategori', 'Qty', 'Satuan', 'Perolehan', 'Nilai Buku', 'Status', 'Referensi'];
+            $assetHeaderPrinter = function (ReportPdf $pdfObj) use ($profile, $subtitle, $unitLabel, $assetWidths, $assetAligns, $assetHeader): void {
+                report_pdf_init($pdfObj, $profile, 'Laporan Rinci Aset dan Saldo', $subtitle, $unitLabel, true);
+                $this->assetDetailedPdfSection($pdfObj, 'Daftar Aset Rinci');
+                $pdfObj->tableRow($assetHeader, $assetWidths, $assetAligns, 7, true);
+            };
+            $pdf->tableRow($assetHeader, $assetWidths, $assetAligns, 7, true);
+            if ($report['rows'] === []) {
+                $pdf->tableRow(['-', '-', 'Tidak ada aset sesuai filter.', '-', '-', '-', '-', '-', '-', '-'], $assetWidths, ['C','C','L','C','C','C','C','C','C','C'], 7, false, $assetHeaderPrinter);
+            } else {
+                foreach ($report['rows'] as $row) {
+                    $pdf->tableRow([
+                        format_id_date((string) ($row['acquisition_date'] ?? '')),
+                        report_compact_text((string) ($row['asset_code'] ?? ''), 18),
+                        report_compact_text((string) ($row['asset_name'] ?? ''), 38),
+                        report_compact_text((string) ($row['category_name'] ?? '-'), 24),
+                        $this->assetDetailedNumber((float) ($row['quantity'] ?? 0)),
+                        report_compact_text((string) ($row['unit_name'] ?? 'unit'), 12),
+                        asset_currency((float) ($row['acquisition_cost'] ?? 0)),
+                        asset_currency((float) (($row['current_book_value'] ?? $row['acquisition_cost'] ?? 0) ?: 0)),
+                        asset_status_label((string) ($row['asset_status'] ?? '')),
+                        report_compact_text((string) (($row['reference_no'] ?? '') ?: ($row['linked_journal_no'] ?? '')), 22),
+                    ], $assetWidths, $assetAligns, 7, false, $assetHeaderPrinter);
+                }
+            }
+
+            if ($expenseRows !== []) {
+                $this->assetDetailedPdfSection($pdf, 'Beban/Rugi Periode');
+                $expenseWidths = [20, 28, 32, 62, 78, 32];
+                $expenseAligns = ['C', 'L', 'L', 'L', 'L', 'R'];
+                $pdf->tableRow(['Tanggal', 'No Jurnal', 'Akun', 'Nama Akun', 'Keterangan', 'Nominal'], $expenseWidths, $expenseAligns, 7, true);
+                foreach ($expenseRows as $row) {
+                    $nominal = (float) ($row['debit'] ?? 0) - (float) ($row['credit'] ?? 0);
+                    $pdf->tableRow([
+                        format_id_date((string) ($row['journal_date'] ?? '')),
+                        report_compact_text((string) ($row['journal_no'] ?? ''), 18),
+                        report_compact_text((string) ($row['account_code'] ?? ''), 18),
+                        report_compact_text((string) ($row['account_name'] ?? ''), 38),
+                        report_compact_text((string) (($row['line_description'] ?? '') ?: ($row['description'] ?? '')), 52),
+                        asset_currency($nominal),
+                    ], $expenseWidths, $expenseAligns, 7);
+                }
+            }
+
+            report_pdf_footer_note($pdf, $profile);
+            $filenameUnit = $unit ? strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', (string) ($unit['unit_code'] ?? 'unit'))) : 'semua-unit';
+            $pdf->output('laporan-rinci-aset-' . trim((string) $filenameUnit, '-') . '.pdf');
+        } catch (Throwable $e) {
+            log_error($e);
+            http_response_code(500);
+            render_error_page(500, 'File PDF laporan aset rinci belum dapat dibuat.', $e);
+        }
+    }
+
+    private function assetDetailedReportDateRange(array $filters, string $asOfDate): array
+    {
+        $dateTo = trim((string) ($filters['date_to'] ?? ''));
+        if ($dateTo === '') {
+            $dateTo = $asOfDate !== '' ? $asOfDate : date('Y-m-d');
+        }
+
+        $dateFrom = trim((string) ($filters['date_from'] ?? ''));
+        if ($dateFrom === '') {
+            $year = substr($dateTo, 0, 4);
+            $dateFrom = preg_match('/^\d{4}$/', $year) === 1 ? $year . '-01-01' : date('Y-01-01');
+        }
+
+        return [$dateFrom, $dateTo];
+    }
+
+    private function assetDetailedJournalSummary(array $filters, string $dateFrom, string $dateTo): array
+    {
+        $db = Database::getInstance(db_config());
+        $unitId = (int) ($filters['unit_id'] ?? 0);
+        $unitWhere = $unitId > 0 ? ' AND h.business_unit_id = :unit_id' : '';
+
+        $cumulativeSql = "SELECT
+                COALESCE(SUM(CASE WHEN a.account_type = 'ASSET' AND a.account_category = 'CURRENT_ASSET' AND (LOWER(a.account_name) LIKE '%kas%' OR LOWER(a.account_name) LIKE '%bank%') THEN l.debit - l.credit ELSE 0 END), 0) AS cash_bank_balance,
+                COALESCE(SUM(CASE WHEN a.account_type = 'EQUITY' THEN l.credit - l.debit ELSE 0 END), 0) AS equity_balance
+            FROM journal_lines l
+            INNER JOIN journal_headers h ON h.id = l.journal_id
+            INNER JOIN coa_accounts a ON a.id = l.coa_id
+            WHERE h.journal_date <= :date_to" . $unitWhere;
+        $stmt = $db->prepare($cumulativeSql);
+        $stmt->bindValue(':date_to', $dateTo, PDO::PARAM_STR);
+        if ($unitId > 0) {
+            $stmt->bindValue(':unit_id', $unitId, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        $cumulative = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $periodSql = "SELECT
+                COALESCE(SUM(CASE WHEN a.account_type = 'REVENUE' THEN l.credit - l.debit ELSE 0 END), 0) AS revenue_period,
+                COALESCE(SUM(CASE WHEN a.account_type = 'EXPENSE' THEN l.debit - l.credit ELSE 0 END), 0) AS expense_period
+            FROM journal_lines l
+            INNER JOIN journal_headers h ON h.id = l.journal_id
+            INNER JOIN coa_accounts a ON a.id = l.coa_id
+            WHERE h.journal_date >= :date_from AND h.journal_date <= :date_to" . $unitWhere;
+        $stmt = $db->prepare($periodSql);
+        $stmt->bindValue(':date_from', $dateFrom, PDO::PARAM_STR);
+        $stmt->bindValue(':date_to', $dateTo, PDO::PARAM_STR);
+        if ($unitId > 0) {
+            $stmt->bindValue(':unit_id', $unitId, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        $period = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'cash_bank_balance' => (float) ($cumulative['cash_bank_balance'] ?? 0),
+            'equity_balance' => (float) ($cumulative['equity_balance'] ?? 0),
+            'revenue_period' => (float) ($period['revenue_period'] ?? 0),
+            'expense_period' => (float) ($period['expense_period'] ?? 0),
+        ];
+    }
+
+    private function assetDetailedExpenseRows(array $filters, string $dateFrom, string $dateTo): array
+    {
+        $db = Database::getInstance(db_config());
+        $unitId = (int) ($filters['unit_id'] ?? 0);
+        $unitWhere = $unitId > 0 ? ' AND h.business_unit_id = :unit_id' : '';
+        $sql = "SELECT h.journal_date, h.journal_no, h.description, a.account_code, a.account_name, l.line_description, l.debit, l.credit
+            FROM journal_lines l
+            INNER JOIN journal_headers h ON h.id = l.journal_id
+            INNER JOIN coa_accounts a ON a.id = l.coa_id
+            WHERE a.account_type = 'EXPENSE'
+              AND h.journal_date >= :date_from
+              AND h.journal_date <= :date_to" . $unitWhere . "
+            ORDER BY h.journal_date ASC, h.id ASC, l.line_no ASC";
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(':date_from', $dateFrom, PDO::PARAM_STR);
+        $stmt->bindValue(':date_to', $dateTo, PDO::PARAM_STR);
+        if ($unitId > 0) {
+            $stmt->bindValue(':unit_id', $unitId, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    private function assetDetailedCategorySummary(array $rows): array
+    {
+        $summary = [];
+        foreach ($rows as $row) {
+            $key = (string) (($row['asset_group'] ?? 'FIXED') . '|' . ($row['category_name'] ?? 'Tanpa Kategori'));
+            if (!isset($summary[$key])) {
+                $summary[$key] = [
+                    'group' => (string) ($row['asset_group'] ?? 'FIXED'),
+                    'category' => (string) ($row['category_name'] ?? 'Tanpa Kategori'),
+                    'count' => 0,
+                    'quantity' => 0.0,
+                    'cost' => 0.0,
+                    'accumulated' => 0.0,
+                    'book' => 0.0,
+                ];
+            }
+            $summary[$key]['count']++;
+            $summary[$key]['quantity'] += (float) ($row['quantity'] ?? 1);
+            $summary[$key]['cost'] += (float) ($row['acquisition_cost'] ?? 0);
+            $summary[$key]['accumulated'] += (float) ($row['current_accumulated_depreciation'] ?? 0);
+            $summary[$key]['book'] += (float) (($row['current_book_value'] ?? $row['acquisition_cost'] ?? 0) ?: 0);
+        }
+        uasort($summary, static function (array $left, array $right): int {
+            $groupCompare = strcmp((string) $left['group'], (string) $right['group']);
+            return $groupCompare !== 0 ? $groupCompare : strcmp((string) $left['category'], (string) $right['category']);
+        });
+        return array_values($summary);
+    }
+
+    private function assetDetailedLivestockSummary(array $rows): array
+    {
+        $summary = ['count' => 0, 'quantity' => 0.0, 'kg_total' => 0.0, 'missing_kg_count' => 0, 'cost' => 0.0, 'rows' => []];
+        foreach ($rows as $row) {
+            if (!$this->assetDetailedIsLivestockRow($row)) {
+                continue;
+            }
+            $summary['count']++;
+            $summary['cost'] += (float) ($row['acquisition_cost'] ?? 0);
+            $unitName = strtolower(trim((string) ($row['unit_name'] ?? '')));
+            if ($unitName === 'ekor') {
+                $summary['quantity'] += (float) ($row['quantity'] ?? 0);
+            }
+            $kg = $this->assetDetailedExtractKg($row);
+            if ($kg === null) {
+                $summary['missing_kg_count']++;
+            } else {
+                $summary['kg_total'] += $kg;
+            }
+            $summary['rows'][] = $row;
+        }
+        return $summary;
+    }
+
+    private function assetDetailedIsLivestockRow(array $row): bool
+    {
+        $text = strtolower(trim(implode(' ', [
+            (string) ($row['asset_group'] ?? ''),
+            (string) ($row['category_code'] ?? ''),
+            (string) ($row['category_name'] ?? ''),
+            (string) ($row['asset_name'] ?? ''),
+            (string) ($row['subcategory_name'] ?? ''),
+            (string) ($row['description'] ?? ''),
+            (string) ($row['notes'] ?? ''),
+        ])));
+        return str_contains($text, 'biological') || str_contains($text, 'biologis') || str_contains($text, 'domba') || str_contains($text, 'ternak');
+    }
+
+    private function assetDetailedExtractKg(array $row): ?float
+    {
+        $text = implode(' ', [
+            (string) ($row['asset_name'] ?? ''),
+            (string) ($row['subcategory_name'] ?? ''),
+            (string) ($row['description'] ?? ''),
+            (string) ($row['notes'] ?? ''),
+        ]);
+        if (preg_match('/(\d+(?:[.,]\d+)?)\s*kg/i', $text, $match) !== 1) {
+            return null;
+        }
+        return (float) str_replace(',', '.', (string) $match[1]);
+    }
+
+    private function assetDetailedPdfSection(ReportPdf $pdf, string $title): void
+    {
+        if ($pdf->willOverflow(24)) {
+            $pdf->addPage();
+        }
+        $pdf->ln(3);
+        $pdf->text(12, $pdf->getCursorY(), $title, 'B', 10);
+        $pdf->ln(6);
+    }
+
+    private function assetDetailedNumber(float $value): string
+    {
+        $formatted = number_format($value, 2, ',', '.');
+        return rtrim(rtrim($formatted, '0'), ',');
+    }
+
+    private function assetDetailedKgLabel(?float $value): string
+    {
+        return $value === null ? '-' : $this->assetDetailedNumber($value) . ' kg';
+    }
+
     private function saveAsset(?int $id): void
     {
         if (!verify_csrf((string) post('_token'))) {
@@ -1365,7 +1718,7 @@ final class AssetController extends Controller
             ['Offset account code', 'Isi hanya bila aset baru perlu akun lawan perolehan. Untuk OPENING boleh dikosongkan. Kolom ini penting untuk menyiapkan sinkronisasi jurnal perolehan aset ke depan.'],
             ['Penyusutan', 'Jika depreciation_allowed = 1, isi useful_life_months dan depreciation_start_date. Jika tidak disusutkan, isi 0 lalu kosongkan umur manfaat.'],
             ['Update data lama', 'Jika asset_code sudah ada, import akan memperbarui aset tersebut. Jika belum ada, sistem akan membuat aset baru. Gunakan kode aset yang stabil agar mutasi, kartu aset, dan rencana sinkronisasi jurnal tetap rapi.'],
-            ['Sinkron jurnal', 'Menu aset sekarang menyiapkan qty, satuan, akun lawan, mode entry, dan link jurnal agar sinkronisasi perolehan aset dari jurnal lebih mudah di tahap berikutnya. Untuk sinkron penuh otomatis dari menu jurnal masih perlu patch lanjutan di modul jurnal.'],
+            ['Sinkron jurnal', 'Menu aset menyiapkan qty, satuan, akun lawan, mode entry, dan link jurnal untuk sinkronisasi perolehan aset. Sinkron penuh otomatis dari menu jurnal masih perlu patch lanjutan.'],
             ['Hapus aset', 'Aset dapat dihapus dari menu aset hanya jika belum tertaut jurnal, belum punya penyusutan terposting, dan belum punya mutasi berjurnal.'],
         ];
     }

@@ -158,12 +158,12 @@ $icon = static function (string $name): string {
     return $icons[$name] ?? $icons['spark'];
 };
 
-$chartWidth = 640;
-$chartHeight = 260;
-$paddingLeft = 22;
-$paddingRight = 20;
-$paddingTop = 20;
-$paddingBottom = 38;
+$chartWidth = 980;
+$chartHeight = 286;
+$paddingLeft = 58;
+$paddingRight = 18;
+$paddingTop = 18;
+$paddingBottom = 36;
 $plotWidth = max($chartWidth - $paddingLeft - $paddingRight, 1);
 $plotHeight = max($chartHeight - $paddingTop - $paddingBottom, 1);
 $pointCount = max(count($trendSeries), 1);
@@ -171,6 +171,37 @@ $stepX = $pointCount > 1 ? $plotWidth / ($pointCount - 1) : 0;
 $gridLevels = 4;
 $revenuePoints = [];
 $expensePoints = [];
+$revenueCoords = [];
+$expenseCoords = [];
+
+$buildSmoothPath = static function (array $points): string {
+    $count = count($points);
+    if ($count === 0) {
+        return '';
+    }
+    if ($count === 1) {
+        return 'M ' . $points[0]['x'] . ' ' . $points[0]['y'];
+    }
+
+    $path = 'M ' . $points[0]['x'] . ' ' . $points[0]['y'];
+    for ($i = 0; $i < $count - 1; $i++) {
+        $current = $points[$i];
+        $next = $points[$i + 1];
+        $controlX = ($current['x'] + $next['x']) / 2;
+        $path .= ' C ' . $controlX . ' ' . $current['y'] . ', ' . $controlX . ' ' . $next['y'] . ', ' . $next['x'] . ' ' . $next['y'];
+    }
+    return $path;
+};
+
+$buildAreaPath = static function (array $points, float $baseline) use ($buildSmoothPath): string {
+    if ($points === []) {
+        return '';
+    }
+    $line = $buildSmoothPath($points);
+    $last = $points[array_key_last($points)];
+    $first = $points[0];
+    return $line . ' L ' . $last['x'] . ' ' . $baseline . ' L ' . $first['x'] . ' ' . $baseline . ' Z';
+};
 
 foreach ($trendSeries as $index => $point) {
     $x = $paddingLeft + ($stepX * $index);
@@ -178,14 +209,20 @@ foreach ($trendSeries as $index => $point) {
     $expenseY = $paddingTop + ($plotHeight - ((((float) ($point['total_expense'] ?? 0)) / $trendMax) * $plotHeight));
     $revenuePoints[] = number_format($x, 2, '.', '') . ',' . number_format($revenueY, 2, '.', '');
     $expensePoints[] = number_format($x, 2, '.', '') . ',' . number_format($expenseY, 2, '.', '');
+    $revenueCoords[] = ['x' => round($x, 2), 'y' => round($revenueY, 2)];
+    $expenseCoords[] = ['x' => round($x, 2), 'y' => round($expenseY, 2)];
 }
+$revenueLinePath = $buildSmoothPath($revenueCoords);
+$expenseLinePath = $buildSmoothPath($expenseCoords);
+$revenueAreaPath = $buildAreaPath($revenueCoords, $paddingTop + $plotHeight);
+$expenseAreaPath = $buildAreaPath($expenseCoords, $paddingTop + $plotHeight);
 ?>
 <div class="dashboard-shell dashboard-shell--executive">
     <section class="dashboard-welcome">
         <div>
             <div class="dashboard-welcome__eyebrow">Ringkasan Eksekutif</div>
             <h1 class="dashboard-welcome__title"><?= e($greeting) ?>, <?= e($displayName) ?>!</h1>
-            <p class="dashboard-welcome__text">Berikut ringkasan keuangan <?= e($profile['bumdes_name'] ?: 'BUMDes') ?> untuk <?= e($dateContext) ?>. Tampilan ini difokuskan agar cepat dipindai, nyaman dibaca, dan tidak melelahkan saat dipakai harian.</p>
+            <p class="dashboard-welcome__text">Ringkasan keuangan <?= e($profile['bumdes_name'] ?: 'BUMDes') ?> untuk <?= e($dateContext) ?>.</p>
         </div>
         <div class="dashboard-welcome__actions">
             <a href="<?= e(base_url('/journals/create')) ?>" class="btn btn-primary">Tambah Jurnal</a>
@@ -273,11 +310,12 @@ foreach ($trendSeries as $index => $point) {
     </section>
 
     <section class="dashboard-main-grid">
+        <div class="dashboard-left-stack">
         <article class="dashboard-panel dashboard-panel--chart">
             <div class="dashboard-panel__head">
                 <div>
                     <h2 class="dashboard-panel__title">Tren Pendapatan & Beban</h2>
-                    <p class="dashboard-panel__meta">Enam bulan terakhir dari jurnal yang tersimpan di sistem.</p>
+                    <p class="dashboard-panel__meta">Tren per bulan dari jurnal yang tersimpan.</p>
                 </div>
                 <div class="dashboard-legend">
                     <span class="dashboard-legend__item"><span class="dashboard-legend__dot dashboard-legend__dot--revenue"></span>Pendapatan</span>
@@ -286,25 +324,54 @@ foreach ($trendSeries as $index => $point) {
             </div>
             <div class="dashboard-line-chart">
                 <?php if ($trendSeries !== []): ?>
-                    <svg viewBox="0 0 <?= e((string) $chartWidth) ?> <?= e((string) $chartHeight) ?>" class="dashboard-line-chart__svg" aria-hidden="true">
+                    <svg viewBox="0 0 <?= e((string) $chartWidth) ?> <?= e((string) $chartHeight) ?>" class="dashboard-line-chart__svg" role="img" aria-label="Grafik tren pendapatan dan beban bulanan">
+                        <defs>
+                            <linearGradient id="dashboardRevenueArea" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#7c5cff" stop-opacity="0.28"></stop>
+                                <stop offset="100%" stop-color="#7c5cff" stop-opacity="0.02"></stop>
+                            </linearGradient>
+                            <linearGradient id="dashboardExpenseArea" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#ef4b78" stop-opacity="0.20"></stop>
+                                <stop offset="100%" stop-color="#ef4b78" stop-opacity="0.02"></stop>
+                            </linearGradient>
+                        </defs>
                         <?php for ($level = 0; $level <= $gridLevels; $level++): ?>
                             <?php
                             $y = $paddingTop + (($plotHeight / $gridLevels) * $level);
                             $valueLabel = dashboard_compact_currency((($gridLevels - $level) / $gridLevels) * $trendMax);
                             ?>
                             <line x1="<?= e((string) $paddingLeft) ?>" y1="<?= e((string) $y) ?>" x2="<?= e((string) ($chartWidth - $paddingRight)) ?>" y2="<?= e((string) $y) ?>" class="dashboard-line-chart__grid"></line>
-                            <text x="0" y="<?= e((string) ($y + 4)) ?>" class="dashboard-line-chart__axis"><?= e($valueLabel) ?></text>
+                            <text x="<?= e((string) ($paddingLeft - 10)) ?>" y="<?= e((string) ($y + 4)) ?>" text-anchor="end" class="dashboard-line-chart__axis"><?= e($valueLabel) ?></text>
                         <?php endfor; ?>
-                        <polyline points="<?= e(implode(' ', $expensePoints)) ?>" class="dashboard-line-chart__path dashboard-line-chart__path--expense"></polyline>
-                        <polyline points="<?= e(implode(' ', $revenuePoints)) ?>" class="dashboard-line-chart__path dashboard-line-chart__path--revenue"></polyline>
+                        <path d="<?= e($revenueAreaPath) ?>" class="dashboard-line-chart__area dashboard-line-chart__area--revenue"></path>
+                        <path d="<?= e($expenseAreaPath) ?>" class="dashboard-line-chart__area dashboard-line-chart__area--expense"></path>
+                        <path d="<?= e($expenseLinePath) ?>" class="dashboard-line-chart__path dashboard-line-chart__path--expense"></path>
+                        <path d="<?= e($revenueLinePath) ?>" class="dashboard-line-chart__path dashboard-line-chart__path--revenue"></path>
                         <?php foreach ($trendSeries as $index => $point): ?>
                             <?php
                             $x = $paddingLeft + ($stepX * $index);
                             $revenueY = $paddingTop + ($plotHeight - ((((float) ($point['total_revenue'] ?? 0)) / $trendMax) * $plotHeight));
                             $expenseY = $paddingTop + ($plotHeight - ((((float) ($point['total_expense'] ?? 0)) / $trendMax) * $plotHeight));
+                            $revenueValue = (float) ($point['total_revenue'] ?? 0);
+                            $expenseValue = (float) ($point['total_expense'] ?? 0);
+                            $monthLabel = dashboard_month_label((string) ($point['month_key'] ?? ''));
+                            $revenueLabelY = max(14, $revenueY - 12);
+                            $expenseLabelY = min($chartHeight - 14, $expenseY + 20);
                             ?>
-                            <circle cx="<?= e((string) $x) ?>" cy="<?= e((string) $expenseY) ?>" r="4" class="dashboard-line-chart__point dashboard-line-chart__point--expense"></circle>
-                            <circle cx="<?= e((string) $x) ?>" cy="<?= e((string) $revenueY) ?>" r="4" class="dashboard-line-chart__point dashboard-line-chart__point--revenue"></circle>
+                            <g class="dashboard-line-chart__point-group">
+                                <title><?= e($monthLabel . ' - Beban: ' . dashboard_currency_whole($expenseValue)) ?></title>
+                                <circle cx="<?= e((string) $x) ?>" cy="<?= e((string) $expenseY) ?>" r="4" class="dashboard-line-chart__point dashboard-line-chart__point--expense"></circle>
+                                <?php if ($expenseValue > 0): ?>
+                                    <text x="<?= e((string) $x) ?>" y="<?= e((string) $expenseLabelY) ?>" text-anchor="middle" class="dashboard-line-chart__value dashboard-line-chart__value--expense"><?= e(dashboard_compact_currency($expenseValue)) ?></text>
+                                <?php endif; ?>
+                            </g>
+                            <g class="dashboard-line-chart__point-group">
+                                <title><?= e($monthLabel . ' - Pendapatan: ' . dashboard_currency_whole($revenueValue)) ?></title>
+                                <circle cx="<?= e((string) $x) ?>" cy="<?= e((string) $revenueY) ?>" r="4.5" class="dashboard-line-chart__point dashboard-line-chart__point--revenue"></circle>
+                                <?php if ($revenueValue > 0): ?>
+                                    <text x="<?= e((string) $x) ?>" y="<?= e((string) $revenueLabelY) ?>" text-anchor="middle" class="dashboard-line-chart__value dashboard-line-chart__value--revenue"><?= e(dashboard_compact_currency($revenueValue)) ?></text>
+                                <?php endif; ?>
+                            </g>
                         <?php endforeach; ?>
                     </svg>
                     <div class="dashboard-line-chart__labels">
@@ -321,32 +388,6 @@ foreach ($trendSeries as $index => $point) {
             </div>
         </article>
 
-        <aside class="dashboard-panel dashboard-panel--summary">
-            <div class="dashboard-panel__head">
-                <div>
-                    <h2 class="dashboard-panel__title">Posisi Keuangan</h2>
-                    <p class="dashboard-panel__meta">Ringkasan saldo utama pada periode yang sedang dipakai.</p>
-                </div>
-            </div>
-            <div class="dashboard-summary-list">
-                <?php foreach ($summaryRows as $row): ?>
-                    <div class="dashboard-summary-list__row<?= !empty($row['strong']) ? ' is-strong' : '' ?>">
-                        <span><?= e((string) $row['label']) ?></span>
-                        <strong><?= e((string) $row['value']) ?></strong>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            <div class="dashboard-summary-note">
-                <span class="dashboard-summary-note__icon"><?= $icon('spark') ?></span>
-                <div>
-                    <strong>Unit aktif</strong>
-                    <span><?= e($selectedUnitLabel) ?></span>
-                </div>
-            </div>
-        </aside>
-    </section>
-
-    <section class="dashboard-lower-grid">
         <article class="dashboard-panel dashboard-panel--journals">
             <div class="dashboard-panel__head">
                 <div>
@@ -391,9 +432,52 @@ foreach ($trendSeries as $index => $point) {
                 <span>Menampilkan <?= e((string) count($recentJournals)) ?> jurnal terbaru</span>
                 <a href="<?= e(base_url('/journals')) ?>" class="dashboard-inline-link">Buka modul jurnal</a>
             </div>
+            <div class="dashboard-journal-utility-grid">
+                <?php foreach ($utilityColumns as $column): ?>
+                    <article class="dashboard-panel--utility">
+                        <div class="dashboard-panel__head">
+                            <h2 class="dashboard-panel__title"><?= e((string) $column['title']) ?></h2>
+                        </div>
+                        <?php if ($column['items'] === []): ?>
+                            <div class="dashboard-utility-empty"><?= e((string) $column['empty']) ?></div>
+                        <?php else: ?>
+                            <div class="dashboard-utility-list">
+                                <?php foreach ($column['items'] as $item): ?>
+                                    <a href="<?= e(base_url((string) $item['path'])) ?>" class="dashboard-utility-list__item"><?= e((string) $item['label']) ?></a>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </article>
+                <?php endforeach; ?>
+            </div>
         </article>
+        </div>
 
         <div class="dashboard-side-stack">
+            <aside class="dashboard-panel dashboard-panel--summary">
+                <div class="dashboard-panel__head">
+                    <div>
+                        <h2 class="dashboard-panel__title">Posisi Keuangan</h2>
+                        <p class="dashboard-panel__meta">Ringkasan saldo utama periode aktif.</p>
+                    </div>
+                </div>
+                <div class="dashboard-summary-list">
+                    <?php foreach ($summaryRows as $row): ?>
+                        <div class="dashboard-summary-list__row<?= !empty($row['strong']) ? ' is-strong' : '' ?>">
+                            <span><?= e((string) $row['label']) ?></span>
+                            <strong><?= e((string) $row['value']) ?></strong>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="dashboard-summary-note">
+                    <span class="dashboard-summary-note__icon"><?= $icon('spark') ?></span>
+                    <div>
+                        <strong>Unit aktif</strong>
+                        <span><?= e($selectedUnitLabel) ?></span>
+                    </div>
+                </div>
+            </aside>
+
             <article class="dashboard-panel dashboard-panel--reports">
                 <div class="dashboard-panel__head">
                     <div>
@@ -442,22 +526,4 @@ foreach ($trendSeries as $index => $point) {
         </div>
     </section>
 
-    <section class="dashboard-utility-grid">
-        <?php foreach ($utilityColumns as $column): ?>
-            <article class="dashboard-panel dashboard-panel--utility">
-                <div class="dashboard-panel__head">
-                    <h2 class="dashboard-panel__title"><?= e((string) $column['title']) ?></h2>
-                </div>
-                <?php if ($column['items'] === []): ?>
-                    <div class="dashboard-utility-empty"><?= e((string) $column['empty']) ?></div>
-                <?php else: ?>
-                    <div class="dashboard-utility-list">
-                        <?php foreach ($column['items'] as $item): ?>
-                            <a href="<?= e(base_url((string) $item['path'])) ?>" class="dashboard-utility-list__item"><?= e((string) $item['label']) ?></a>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </article>
-        <?php endforeach; ?>
-    </section>
 </div>

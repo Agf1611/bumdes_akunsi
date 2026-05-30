@@ -1353,6 +1353,24 @@ final class AssetModel
         }
         $filters['as_of_date'] = $asOfDate;
         $rows = $this->getAssets($filters);
+        usort($rows, static function (array $left, array $right): int {
+            $groupCompare = strcmp((string) ($left['asset_group'] ?? ''), (string) ($right['asset_group'] ?? ''));
+            if ($groupCompare !== 0) {
+                return $groupCompare;
+            }
+
+            $categoryCompare = strcmp((string) ($left['category_name'] ?? ''), (string) ($right['category_name'] ?? ''));
+            if ($categoryCompare !== 0) {
+                return $categoryCompare;
+            }
+
+            $codeCompare = strcmp((string) ($left['asset_code'] ?? ''), (string) ($right['asset_code'] ?? ''));
+            if ($codeCompare !== 0) {
+                return $codeCompare;
+            }
+
+            return strcmp((string) ($left['acquisition_date'] ?? ''), (string) ($right['acquisition_date'] ?? ''));
+        });
         $summary = [
             'asset_count' => 0,
             'active_count' => 0,

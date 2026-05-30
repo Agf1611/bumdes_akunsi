@@ -13,6 +13,13 @@
 !/storage/journal_attachments/.gitkeep
 /storage/bank_reconciliations/*
 !/storage/bank_reconciliations/.gitkeep
+/storage/reports/*
+!/storage/reports/.gitkeep
+/storage/security/*
+!/storage/security/.gitkeep
+
+# Local tools
+/tools/composer.phar
 
 # Uploads
 /public/uploads/profiles/*

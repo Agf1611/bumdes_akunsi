@@ -24,6 +24,7 @@ final class AuthController extends Controller
             'errorMessage' => get_flash('error'),
             'successMessage' => get_flash('success'),
             'mfaEnabled' => (bool) (auth_config('mfa')['enabled'] ?? false),
+            'profile' => app_profile(),
         ], 'auth');
     }
 
@@ -32,9 +33,10 @@ final class AuthController extends Controller
         $username = trim((string) post('username'));
         $password = (string) post('password');
         $otpCode = trim((string) post('otp_code', ''));
+        $remember = (string) post('remember_me', '') === '1';
         $token = (string) post('_token');
 
-        with_old_input(['username' => $username]);
+        with_old_input(['username' => $username, 'remember_me' => $remember ? '1' : '']);
         if (!verify_csrf($token)) {
             http_response_code(419);
             render_error_page(419, 'Sesi keamanan formulir telah berakhir. Silakan muat ulang halaman dan coba lagi.');
@@ -127,9 +129,9 @@ final class AuthController extends Controller
         clear_old_input();
         AuthRateLimiter::clear($username, $ipAddress);
         $this->authModel()->updateLastLogin((int) $user['id']);
-        Auth::login($user);
+        Auth::login($user, $remember);
         initialize_working_year_session();
-        $loginMessage = 'Login berhasil. Selamat datang, ' . $user['full_name'] . '.';
+        $loginMessage = 'Login berhasil.';
         if ((string) ($user['role_code'] ?? '') === 'admin') {
             try {
                 $profile = app_profile();
@@ -145,7 +147,6 @@ final class AuthController extends Controller
                         'entity_id' => (string) (($dailyBackup['file']['name'] ?? '') ?: ($dailyBackup['file']['file_name'] ?? '')),
                         'after' => $dailyBackup,
                     ]);
-                    $loginMessage .= ' Backup harian otomatis juga dibuat untuk menjaga baseline recovery.';
                 }
             } catch (Throwable $backupError) {
                 log_error($backupError);

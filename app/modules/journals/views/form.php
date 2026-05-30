@@ -112,11 +112,85 @@ $referenceJs = [
     'cashflow_components' => array_values($referenceOptions['cashflow_components'] ?? []),
     'entry_tags' => $entryTags,
 ];
+$printTemplateValue = (string) ($formData['print_template'] ?? 'standard');
+$receiptHasData = false;
+foreach ($receiptData as $receiptKey => $receiptValue) {
+    if ($receiptKey === 'party_title') {
+        continue;
+    }
+    if (trim((string) $receiptValue) !== '') {
+        $receiptHasData = true;
+        break;
+    }
+}
+$receiptPanelOpen = $printTemplateValue === 'receipt' || $receiptHasData;
+$templatePanelOpen = !$header && is_array($activeQuickTemplate);
+$validationPanelOpen = $header !== null;
+$draftPanelOpen = false;
+$lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
+    foreach (['line_description', 'partner_id', 'inventory_item_id', 'raw_material_id', 'asset_id', 'saving_account_id', 'cashflow_component_id', 'entry_tag'] as $key) {
+        if ($key === 'entry_tag' && trim((string) ($row[$key] ?? '')) === '') {
+            continue;
+        }
+        if (trim((string) ($row[$key] ?? '')) !== '') {
+            return true;
+        }
+    }
+    return $assetFormEnabled;
+};
 ?>
 <style>
-.jf-shell { max-width: 1240px; margin: 0 auto; display: grid; gap: 1rem; }
+.jf-shell { max-width: 1240px; margin: 0 auto; display: grid; gap: .9rem; }
 .jf-page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
 .jf-toolbar { display: flex; flex-wrap: wrap; gap: .65rem; }
+.jf-compact-head {
+  padding: 1rem 1.25rem !important;
+  border-radius: 22px !important;
+}
+.jf-compact-title {
+  display: grid;
+  gap: .18rem;
+}
+.jf-compact-title .module-hero__eyebrow {
+  margin-bottom: 0;
+}
+.jf-compact-title .module-hero__title {
+  margin-bottom: 0;
+}
+.jf-panel-toggle {
+  min-width: 2.45rem;
+  height: 2.45rem;
+  padding: 0 .82rem;
+  border-radius: 14px;
+  position: relative;
+}
+.jf-panel-toggle.is-active,
+.jf-panel-toggle[aria-expanded="true"] {
+  background: var(--bg-panel-soft) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+.jf-panel-toggle__badge {
+  position: absolute;
+  top: -.28rem;
+  right: -.28rem;
+  width: .72rem;
+  height: .72rem;
+  border-radius: 999px;
+  background: var(--warning, #f59e0b);
+  border: 2px solid var(--bg-panel);
+}
+.jf-panel-toggle__badge[hidden],
+.jf-tool-panel[hidden] {
+  display: none !important;
+}
+.jf-tool-panel {
+  animation: jfPanelIn .18s ease both;
+}
+@keyframes jfPanelIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .jf-card {
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
@@ -154,12 +228,11 @@ $referenceJs = [
   display:inline-flex; align-items:center; gap:.45rem; padding:.7rem .95rem; border:1px solid var(--border-soft);
   border-radius:999px; background:var(--bg-panel-soft); color:var(--text-main); text-decoration:none; font-weight:600;
 }
-.jf-template-pill:hover { border-color:#93c5fd; background:#eff6ff; color:#1d4ed8; }
-.jf-template-pill.is-active { border-color:#60a5fa; background:#dbeafe; color:#1d4ed8; }
+.jf-template-pill:hover { border-color:var(--primary); background:var(--bg-panel); color:var(--primary); }
+.jf-template-pill.is-active { border-color:var(--primary); background:var(--bg-panel-soft); color:var(--primary); }
 .jf-pill-dot { width:.55rem; height:.55rem; border-radius:999px; background:currentColor; opacity:.75; }
-.jf-form-alignment-note { border-left:4px solid var(--primary); background:var(--bg-panel-soft); padding:.85rem 1rem; border-radius:14px; color:var(--text-main); }
 .jf-main-grid { display: grid; gap: 1rem; }
-.jf-side-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.jf-side-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 1rem; }
 .jf-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .jf-stat {
   border: 1px solid var(--border-soft);
@@ -183,28 +256,71 @@ $referenceJs = [
   padding: .85rem 1rem;
 }
 .jf-list { margin: 0; padding-left: 1rem; display: grid; gap: .35rem; }
-.jf-line-list { display: grid; gap: .85rem; }
+.jf-line-list { display: grid; gap: .65rem; }
 .jf-line-item {
   border: 1px solid var(--border-soft);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--bg-panel-soft);
-  padding: 1rem;
+  padding: .78rem .9rem;
 }
-.jf-line-top { display: flex; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: .8rem; flex-wrap: wrap; }
-.jf-line-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) 130px 130px; gap: .75rem; }
-.jf-account-stack { display: grid; gap: .45rem; }
-.jf-account-search { min-height: 40px; }
-.jf-account-hint { font-size: .76rem; color: var(--text-muted); }
-.jf-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: .75rem;
-  margin-top: .85rem;
-  padding-top: .85rem;
+.jf-line-top { display: flex; justify-content: space-between; align-items: center; gap: .55rem; margin-bottom: .55rem; flex-wrap: wrap; }
+.jf-line-top .fw-semibold { font-size: .92rem; }
+.jf-line-grid { display: grid; grid-template-columns: minmax(280px, 1fr) 132px 132px; gap: .55rem; align-items: end; }
+.jf-line-grid > div,
+.jf-meta-grid > div,
+.jf-detail-main { min-width: 0; }
+.jf-account-stack { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: .45rem; align-items: end; }
+.jf-account-search { min-height: 38px; }
+.jf-account-hint { display: none; font-size: .74rem; color: var(--text-muted); }
+.jf-line-details {
+  margin-top: .65rem;
+  padding-top: .65rem;
   border-top: 1px dashed var(--border-soft);
+  display: grid;
+  gap: .65rem;
 }
-.jf-meta-grid.is-hidden { display: none; }
+.jf-line-details.is-hidden { display: none; }
+.jf-detail-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .35rem;
+}
+.jf-meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; }
+.toggle-meta-btn.is-active {
+  background: var(--bg-panel) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
 .jf-actions-row { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.jf-compact-status {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+.jf-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .5rem .75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel-soft);
+  color: var(--text-main);
+  font-weight: 700;
+}
+.jf-status-pill.is-balanced {
+  border-color: rgba(16, 185, 129, .34);
+  color: var(--success, #059669);
+}
+.jf-status-pill.is-unbalanced {
+  border-color: rgba(245, 158, 11, .34);
+  color: var(--warning, #d97706);
+}
+.jf-status-mini {
+  font-size: .82rem;
+  color: var(--text-muted);
+}
 .jf-asset-panel {
   margin-top: .95rem;
   padding-top: .95rem;
@@ -320,12 +436,42 @@ $referenceJs = [
   width: 2.1rem;
   height: 2.1rem;
 }
+.jf-line-item .form-label {
+  margin-bottom: .32rem;
+  font-size: .78rem;
+}
+.jf-line-item .form-control,
+.jf-line-item .form-select {
+  min-height: 38px;
+  padding-top: .45rem;
+  padding-bottom: .45rem;
+}
+.jf-line-item .jf-toolbar {
+  gap: .42rem;
+}
+.jf-line-item .jf-btn-icon {
+  min-height: 2.1rem;
+  padding: .38rem .62rem;
+  font-size: .84rem;
+}
+.jf-line-item .jf-btn-square {
+  width: 2.1rem;
+  height: 2.1rem;
+}
+.jf-print-body.is-hidden { display: none; }
+.jf-action-card {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 2;
+}
 
 @media (max-width: 1199px) {
   .jf-side-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 899px) {
-  .jf-line-grid { grid-template-columns: 1fr 1fr; }
+  .jf-line-grid { grid-template-columns: minmax(0, 1fr) minmax(120px, .5fr) minmax(120px, .5fr); }
+  .jf-account-stack { grid-template-columns: 1fr; }
+  .jf-account-hint { display: block; }
   .jf-meta-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 767px) {
@@ -340,18 +486,38 @@ $referenceJs = [
   .module-hero__actions.jf-toolbar .btn {
     width: 100%;
   }
+  .jf-line-item { padding: .85rem; }
+  .jf-action-card { position: static; }
 }
 </style>
 
 <div class="jf-shell">
-  <div class="jf-page-head module-hero mb-2">
+  <div class="jf-page-head module-hero jf-compact-head mb-1">
     <div class="module-hero__content">
-      <div>
+      <div class="jf-compact-title">
         <div class="module-hero__eyebrow">Jurnal Umum</div>
         <h1 class="module-hero__title"><?= e($title ?? 'Form Jurnal Umum') ?></h1>
-        <p class="module-hero__text">Form jurnal lengkap untuk transaksi yang memerlukan kontrol detail penuh, dengan validasi inti yang tetap aman dipakai lintas jenis usaha.</p>
       </div>
       <div class="module-hero__actions jf-toolbar">
+        <?php if (!$header): ?>
+          <button type="button" class="btn btn-outline-secondary jf-btn-icon jf-panel-toggle <?= $templatePanelOpen ? 'is-active' : '' ?>" data-jf-panel-toggle="journal-template-panel" aria-expanded="<?= $templatePanelOpen ? 'true' : 'false' ?>" title="Template transaksi" aria-label="Template transaksi">
+            <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>
+            <span>Template</span>
+          </button>
+        <?php endif; ?>
+        <button type="button" class="btn btn-outline-secondary jf-btn-icon jf-panel-toggle <?= $receiptPanelOpen ? 'is-active' : '' ?>" data-jf-panel-toggle="receipt-card" aria-expanded="<?= $receiptPanelOpen ? 'true' : 'false' ?>" title="Cetak / kwitansi" aria-label="Cetak / kwitansi">
+          <i class="bi bi-receipt" aria-hidden="true"></i>
+          <span>Kwitansi</span>
+        </button>
+        <button type="button" class="btn btn-outline-secondary jf-btn-icon jf-panel-toggle <?= $validationPanelOpen ? 'is-active' : '' ?>" data-jf-panel-toggle="journal-validation-panel" aria-expanded="<?= $validationPanelOpen ? 'true' : 'false' ?>" title="Ringkasan dan validasi" aria-label="Ringkasan dan validasi">
+          <i class="bi bi-clipboard-check" aria-hidden="true"></i>
+          <span>Validasi</span>
+        </button>
+        <button type="button" class="btn btn-outline-secondary jf-btn-icon jf-panel-toggle <?= $draftPanelOpen ? 'is-active' : '' ?>" data-jf-panel-toggle="journal-draft-panel" aria-expanded="<?= $draftPanelOpen ? 'true' : 'false' ?>" title="Draft browser" aria-label="Draft browser">
+          <i class="bi bi-floppy" aria-hidden="true"></i>
+          <span>Draft</span>
+          <span class="jf-panel-toggle__badge" id="draft-available-badge" hidden></span>
+        </button>
         <?php if ($duplicateUrl !== ''): ?>
           <a href="<?= e($duplicateUrl) ?>" class="btn btn-outline-secondary jf-btn-icon">
             <i class="bi bi-copy" aria-hidden="true"></i>
@@ -370,16 +536,11 @@ $referenceJs = [
     </div>
   </div>
 
-  <div class="alert alert-info mb-4">
-    <div class="fw-semibold mb-1">Bantuan pengisian</div>
-    <div class="small">Gunakan form ini jika Anda perlu kontrol detail penuh atas baris jurnal. Untuk pemasukan, pengeluaran, setoran bank, atau koreksi sederhana, pakai <a href="<?= e(base_url('/journals/quick')) ?>" class="alert-link">Transaksi Cepat</a> agar input lebih sedikit tetapi hasil jurnal tetap sama validnya.</div>
-  </div>
-
   <?php if (!$header): ?>
-  <section class="jf-card">
+  <section class="jf-card jf-tool-panel" id="journal-template-panel" <?= $templatePanelOpen ? '' : 'hidden' ?>>
     <div class="jf-card-body d-grid gap-3">
       <?php if (is_array($activeQuickTemplate)): ?>
-        <div class="alert alert-info border-0 shadow-sm mb-0">Mode cepat aktif: <strong><?= e((string) ($activeQuickTemplate['template_name'] ?? 'Template jurnal')) ?></strong></div>
+        <div class="alert alert-info border-0 shadow-sm mb-0">Template aktif: <strong><?= e((string) ($activeQuickTemplate['template_name'] ?? 'Template jurnal')) ?></strong></div>
       <?php endif; ?>
       <div>
         <div class="fw-semibold mb-2">Template transaksi cepat</div>
@@ -390,9 +551,6 @@ $referenceJs = [
             <a class="jf-template-pill <?= $isActiveTemplate ? 'is-active' : '' ?>" href="<?= e(base_url('/journals/create?template=' . urlencode((string) $templateKey))) ?>"><span class="jf-pill-dot"></span><?= e((string) ($template['label'] ?? $templateKey)) ?></a>
           <?php endforeach; ?>
         </div>
-      </div>
-      <div class="jf-form-alignment-note small">
-        Kolom inti form ini sama dengan template import jurnal: <strong>tanggal jurnal, periode, keterangan, akun, uraian baris, debit, dan kredit</strong>. Kolom lain seperti unit usaha, template cetak, dan referensi adalah tambahan opsional.
       </div>
     </div>
   </section>
@@ -405,7 +563,7 @@ $referenceJs = [
       <div class="jf-card-head">
         <div>
           <h2 class="h5 mb-1">Informasi Jurnal</h2>
-          <div class="jf-inline">Nomor jurnal final akan dibuat otomatis saat disimpan.</div>
+          <div class="jf-inline">Nomor otomatis saat disimpan.</div>
         </div>
         <span class="badge text-bg-light border">Preview nomor: <span id="journal-number-preview" class="jf-preview"><?= e($journalNoPreviewCurrent) ?></span></span>
       </div>
@@ -433,34 +591,42 @@ $referenceJs = [
               <?php endforeach; ?>
             </select>
           </div>
-          <div class="col-md-4">
-            <label class="form-label">Template Cetak</label>
-            <select name="print_template" id="print_template" class="form-select">
-              <?php foreach (journal_print_template_options() as $value => $label): ?>
-                <option value="<?= e($value) ?>" <?= (string) ($formData['print_template'] ?? 'standard') === (string) $value ? 'selected' : '' ?>><?= e($label) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="col-md-8">
+          <div class="col-12">
             <label class="form-label">Keterangan Jurnal</label>
-            <textarea name="description" id="description" rows="2" class="form-control" maxlength="255" required><?= e((string) ($formData['description'] ?? '')) ?></textarea>
+            <textarea name="description" id="description" rows="2" class="form-control" maxlength="255" placeholder="Contoh: Pembelian modem pelanggan" required><?= e((string) ($formData['description'] ?? '')) ?></textarea>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="jf-card" id="receipt-card" <?= (string) ($formData['print_template'] ?? 'standard') === 'receipt' ? '' : 'style="display:none"' ?>>
+    <section class="jf-card jf-tool-panel" id="receipt-card" <?= $receiptPanelOpen ? '' : 'hidden' ?>>
       <div class="jf-card-head">
         <div>
-          <h2 class="h5 mb-1">Bukti Transaksi / Kwitansi</h2>
-          <div class="jf-inline">Isi hanya bila jurnal ini akan dicetak sebagai bukti transaksi.</div>
+          <h2 class="h5 mb-1">Cetak/Kwitansi</h2>
+          <div class="jf-inline">Template cetak dan data kwitansi.</div>
         </div>
-        <?php if (!($receiptFeatureStatus['enabled'] ?? false)): ?>
-          <span class="badge text-bg-warning">Fitur database belum lengkap</span>
-        <?php endif; ?>
+        <div class="jf-toolbar">
+          <?php if (!($receiptFeatureStatus['enabled'] ?? false)): ?>
+            <span class="badge text-bg-warning">Database kwitansi belum aktif</span>
+          <?php endif; ?>
+          <button type="button" class="btn btn-sm btn-outline-secondary jf-btn-icon" id="toggle-receipt-options">
+            <i class="bi bi-printer" aria-hidden="true"></i>
+            <span>Tutup/Buka detail</span>
+          </button>
+        </div>
       </div>
-      <div class="jf-card-body">
+      <div class="jf-card-body jf-print-body" id="receipt-options-body">
         <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Template Cetak</label>
+            <select name="print_template" id="print_template" class="form-select">
+              <?php foreach (journal_print_template_options() as $value => $label): ?>
+                <option value="<?= e($value) ?>" <?= $printTemplateValue === (string) $value ? 'selected' : '' ?>><?= e($label) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <div class="row g-3 mt-1" id="receipt-fields" <?= $printTemplateValue === 'receipt' ? '' : 'style="display:none"' ?>>
           <div class="col-md-4">
             <label class="form-label">Label Pihak</label>
             <select name="party_title" class="form-select">
@@ -501,7 +667,7 @@ $referenceJs = [
       <div class="jf-card-head">
         <div>
           <h2 class="h5 mb-1">Baris Jurnal</h2>
-          <div class="jf-inline">Minimal 2 baris. Setiap baris cukup isi debit atau kredit. Klik <strong>Referensi &amp; Arus Kas</strong> bila jurnal perlu dihubungkan ke persediaan, aset, simpanan, atau Komponen Laporan Arus Kas.</div>
+          <div class="jf-inline">Isi akun dan nominal. Buka Detail hanya jika perlu referensi tambahan.</div>
         </div>
         <div class="jf-toolbar">
           <button type="button" class="btn btn-sm btn-outline-secondary jf-btn-icon" id="add-line-btn">
@@ -534,13 +700,15 @@ $referenceJs = [
                     'description' => '',
                 ]];
             }
+            $lineDetailOpen = $lineHasDetails($row, $assetFormEnabled);
             ?>
             <div class="jf-line-item" data-line-item>
               <div class="jf-line-top">
                 <div class="fw-semibold">Baris <span class="line-number"><?= $index + 1 ?></span></div>
                 <div class="jf-toolbar">
-                  <button type="button" class="btn btn-sm btn-outline-info toggle-meta-btn jf-btn-square" title="Buka referensi dan arus kas" aria-label="Buka referensi dan arus kas">
+                  <button type="button" class="btn btn-sm btn-outline-info toggle-meta-btn jf-btn-icon <?= $lineDetailOpen ? 'is-active' : '' ?>" title="Detail baris" aria-label="Detail baris">
                     <i class="bi bi-sliders" aria-hidden="true"></i>
+                    <span>Detail</span>
                   </button>
                   <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn jf-btn-square" title="Hapus baris jurnal" aria-label="Hapus baris jurnal">
                     <i class="bi bi-trash" aria-hidden="true"></i>
@@ -563,10 +731,6 @@ $referenceJs = [
                   </div>
                 </div>
                 <div>
-                  <label class="form-label">Uraian Baris</label>
-                  <input type="text" name="line_description[]" class="form-control" maxlength="255" value="<?= e((string) ($row['line_description'] ?? '')) ?>">
-                </div>
-                <div>
                   <label class="form-label">Debit</label>
                   <input type="number" step="0.01" min="0" inputmode="decimal" name="debit[]" class="form-control text-end amount-input debit-input" value="<?= e((string) ($row['debit_raw'] ?? '')) ?>">
                 </div>
@@ -575,7 +739,12 @@ $referenceJs = [
                   <input type="number" step="0.01" min="0" inputmode="decimal" name="credit[]" class="form-control text-end amount-input credit-input" value="<?= e((string) ($row['credit_raw'] ?? '')) ?>">
                 </div>
               </div>
-              <div class="jf-meta-grid is-hidden journal-meta-grid">
+              <div class="jf-line-details <?= $lineDetailOpen ? '' : 'is-hidden' ?>" data-line-details>
+                <div class="jf-detail-main">
+                  <label class="form-label small jf-muted">Uraian Baris</label>
+                  <input type="text" name="line_description[]" class="form-control" maxlength="255" value="<?= e((string) ($row['line_description'] ?? '')) ?>" placeholder="Kosongkan untuk memakai keterangan jurnal">
+                </div>
+              <div class="jf-meta-grid journal-meta-grid">
                 <div>
                   <label class="form-label small jf-muted">Mitra</label>
                   <select name="partner_id[]" class="form-select form-select-sm partner-select">
@@ -665,14 +834,14 @@ $referenceJs = [
                   <div class="jf-asset-item-list asset-item-list"></div>
                 </div>
               </div>
+              </div>
             </div>
           <?php endforeach; ?>
         </div>
       </div>
     </section>
 
-    <section class="jf-side-grid">
-      <div class="jf-card">
+    <section class="jf-card jf-tool-panel" id="journal-validation-panel" <?= $validationPanelOpen ? '' : 'hidden' ?>>
         <div class="jf-card-head"><h2 class="h5 mb-0">Ringkasan &amp; Validasi</h2></div>
         <div class="jf-card-body d-grid gap-3">
           <div class="jf-summary-grid">
@@ -687,23 +856,15 @@ $referenceJs = [
             <ul class="jf-list" id="journal-validation-list"></ul>
           </div>
         </div>
-      </div>
+    </section>
 
-      <div class="jf-card">
-        <div class="jf-card-head"><h2 class="h5 mb-0">Dampak ke Modul Lain</h2></div>
-        <div class="jf-card-body">
-          <ul class="jf-list" id="journal-impact-list"></ul>
-        </div>
-      </div>
-
-      <div class="jf-card">
-        <div class="jf-card-head"><h2 class="h5 mb-0">Draft Browser</h2></div>
+    <section class="jf-card jf-tool-panel" id="journal-draft-panel" <?= $draftPanelOpen ? '' : 'hidden' ?>>
+        <div class="jf-card-head"><h2 class="h5 mb-0">Draft</h2></div>
         <div class="jf-card-body d-grid gap-3">
-          <div class="jf-inline">Draft hanya tersimpan di browser perangkat ini. Cocok untuk input yang belum selesai.</div>
           <div class="jf-toolbar">
             <button type="button" class="btn btn-outline-secondary jf-btn-icon" id="save-draft-btn">
               <i class="bi bi-floppy" aria-hidden="true"></i>
-              <span>Simpan</span>
+              <span>Simpan Draft</span>
             </button>
             <button type="button" class="btn btn-outline-secondary jf-btn-icon" id="load-draft-btn">
               <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
@@ -716,13 +877,17 @@ $referenceJs = [
           </div>
           <div class="small jf-muted" id="draft-status">Belum ada status draft.</div>
         </div>
-      </div>
     </section>
+    <ul class="d-none" id="journal-impact-list" hidden></ul>
 
-    <section class="jf-card">
+    <section class="jf-card jf-action-card">
       <div class="jf-card-body">
         <div class="jf-actions-row">
-          <div class="jf-inline">Saat disimpan, jurnal akan memengaruhi modul sesuai akun dan referensi yang dipilih.</div>
+          <div class="jf-compact-status">
+            <span class="jf-status-pill is-unbalanced" id="compact-balance-status">Belum seimbang</span>
+            <span class="jf-status-mini">Debit: <strong id="compact-total-debit">Rp 0</strong></span>
+            <span class="jf-status-mini">Kredit: <strong id="compact-total-credit">Rp 0</strong></span>
+          </div>
           <div class="jf-toolbar">
             <button type="submit" class="btn btn-primary jf-btn-icon" id="submit-btn">
               <i class="bi bi-check2-circle" aria-hidden="true"></i>
@@ -744,8 +909,9 @@ $referenceJs = [
     <div class="jf-line-top">
       <div class="fw-semibold">Baris <span class="line-number">0</span></div>
       <div class="jf-toolbar">
-        <button type="button" class="btn btn-sm btn-outline-info toggle-meta-btn jf-btn-square" title="Buka referensi dan arus kas" aria-label="Buka referensi dan arus kas">
+        <button type="button" class="btn btn-sm btn-outline-info toggle-meta-btn jf-btn-icon" title="Detail baris" aria-label="Detail baris">
           <i class="bi bi-sliders" aria-hidden="true"></i>
+          <span>Detail</span>
         </button>
         <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn jf-btn-square" title="Hapus baris jurnal" aria-label="Hapus baris jurnal">
           <i class="bi bi-trash" aria-hidden="true"></i>
@@ -762,10 +928,6 @@ $referenceJs = [
         </div>
       </div>
       <div>
-        <label class="form-label">Uraian Baris</label>
-        <input type="text" name="line_description[]" class="form-control" maxlength="255">
-      </div>
-      <div>
         <label class="form-label">Debit</label>
         <input type="number" step="0.01" min="0" inputmode="decimal" name="debit[]" class="form-control text-end amount-input debit-input">
       </div>
@@ -774,38 +936,44 @@ $referenceJs = [
         <input type="number" step="0.01" min="0" inputmode="decimal" name="credit[]" class="form-control text-end amount-input credit-input">
       </div>
     </div>
-    <div class="jf-meta-grid is-hidden journal-meta-grid">
-      <div><label class="form-label small jf-muted">Mitra</label><select name="partner_id[]" class="form-select form-select-sm partner-select"></select></div>
-      <div><label class="form-label small jf-muted">Persediaan</label><select name="inventory_item_id[]" class="form-select form-select-sm inventory-select"></select></div>
-      <div><label class="form-label small jf-muted">Bahan Baku</label><select name="raw_material_id[]" class="form-select form-select-sm raw-material-select"></select></div>
-      <div><label class="form-label small jf-muted">Aset</label><select name="asset_id[]" class="form-select form-select-sm asset-select"></select></div>
-      <div><label class="form-label small jf-muted">Simpanan</label><select name="saving_account_id[]" class="form-select form-select-sm saving-select"></select></div>
-      <div><label class="form-label small jf-muted">Komponen Laporan Arus Kas</label><select name="cashflow_component_id[]" class="form-select form-select-sm cashflow-select"></select></div>
-      <div><label class="form-label small jf-muted">Tag Entri</label><select name="entry_tag[]" class="form-select form-select-sm entry-tag-select"></select></div>
-    </div>
-    <div class="jf-asset-panel is-hidden" data-asset-panel>
-      <input type="hidden" name="asset_form_enabled[]" class="asset-form-enabled-input" value="0">
-      <input type="hidden" name="asset_form_items[]" class="asset-form-items-input" value="[]">
-      <div class="jf-asset-head">
-        <div>
-          <div class="fw-semibold">Sinkron Asset Tetap</div>
-          <div class="jf-inline">Aktifkan jika baris debit ini adalah perolehan asset tetap baru.</div>
-        </div>
-        <label class="form-check form-switch mb-0">
-          <input type="checkbox" class="form-check-input asset-form-toggle">
-          <span class="form-check-label">Buat / perbarui asset</span>
-        </label>
+    <div class="jf-line-details is-hidden" data-line-details>
+      <div class="jf-detail-main">
+        <label class="form-label small jf-muted">Uraian Baris</label>
+        <input type="text" name="line_description[]" class="form-control" maxlength="255" placeholder="Kosongkan untuk memakai keterangan jurnal">
       </div>
-      <div class="small jf-muted asset-existing-note"></div>
-      <div class="asset-form-fields is-hidden" data-asset-fields>
-        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-2">
-          <div class="jf-inline">Tambahkan beberapa item asset jika transaksi ini berisi tipe atau merek berbeda.</div>
-          <button type="button" class="btn btn-sm btn-outline-secondary add-asset-item-btn jf-btn-icon">
-            <i class="bi bi-plus-circle" aria-hidden="true"></i>
-            <span>Item Asset</span>
-          </button>
+      <div class="jf-meta-grid journal-meta-grid">
+        <div><label class="form-label small jf-muted">Mitra</label><select name="partner_id[]" class="form-select form-select-sm partner-select"></select></div>
+        <div><label class="form-label small jf-muted">Persediaan</label><select name="inventory_item_id[]" class="form-select form-select-sm inventory-select"></select></div>
+        <div><label class="form-label small jf-muted">Bahan Baku</label><select name="raw_material_id[]" class="form-select form-select-sm raw-material-select"></select></div>
+        <div><label class="form-label small jf-muted">Aset</label><select name="asset_id[]" class="form-select form-select-sm asset-select"></select></div>
+        <div><label class="form-label small jf-muted">Simpanan</label><select name="saving_account_id[]" class="form-select form-select-sm saving-select"></select></div>
+        <div><label class="form-label small jf-muted">Komponen Laporan Arus Kas</label><select name="cashflow_component_id[]" class="form-select form-select-sm cashflow-select"></select></div>
+        <div><label class="form-label small jf-muted">Tag Entri</label><select name="entry_tag[]" class="form-select form-select-sm entry-tag-select"></select></div>
+      </div>
+      <div class="jf-asset-panel is-hidden" data-asset-panel>
+        <input type="hidden" name="asset_form_enabled[]" class="asset-form-enabled-input" value="0">
+        <input type="hidden" name="asset_form_items[]" class="asset-form-items-input" value="[]">
+        <div class="jf-asset-head">
+          <div>
+            <div class="fw-semibold">Sinkron Asset Tetap</div>
+            <div class="jf-inline">Aktifkan jika baris debit ini adalah perolehan asset tetap baru.</div>
+          </div>
+          <label class="form-check form-switch mb-0">
+            <input type="checkbox" class="form-check-input asset-form-toggle">
+            <span class="form-check-label">Buat / perbarui asset</span>
+          </label>
         </div>
-        <div class="jf-asset-item-list asset-item-list"></div>
+        <div class="small jf-muted asset-existing-note"></div>
+        <div class="asset-form-fields is-hidden" data-asset-fields>
+          <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-2">
+            <div class="jf-inline">Tambahkan beberapa item asset jika transaksi ini berisi tipe atau merek berbeda.</div>
+            <button type="button" class="btn btn-sm btn-outline-secondary add-asset-item-btn jf-btn-icon">
+              <i class="bi bi-plus-circle" aria-hidden="true"></i>
+              <span>Item Asset</span>
+            </button>
+          </div>
+          <div class="jf-asset-item-list asset-item-list"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -900,12 +1068,44 @@ $referenceJs = [
   const periodSelect = document.getElementById('period_id');
   const templateSelect = document.getElementById('print_template');
   const receiptCard = document.getElementById('receipt-card');
+  const receiptFields = document.getElementById('receipt-fields');
+  const receiptOptionsBody = document.getElementById('receipt-options-body');
+  const toggleReceiptOptionsBtn = document.getElementById('toggle-receipt-options');
   const addLineBtn = document.getElementById('add-line-btn');
   const duplicateLastLineBtn = document.getElementById('duplicate-last-line-btn');
   const previewEl = document.getElementById('journal-number-preview');
   const validationList = document.getElementById('journal-validation-list');
   const impactList = document.getElementById('journal-impact-list');
   const draftStatus = document.getElementById('draft-status');
+  const draftBadge = document.getElementById('draft-available-badge');
+  const panelButtons = Array.from(document.querySelectorAll('[data-jf-panel-toggle]'));
+  const compactStatus = document.getElementById('compact-balance-status');
+  const compactDebit = document.getElementById('compact-total-debit');
+  const compactCredit = document.getElementById('compact-total-credit');
+
+  function panelForButton(button) {
+    const targetId = button ? button.getAttribute('data-jf-panel-toggle') : '';
+    return targetId ? document.getElementById(targetId) : null;
+  }
+
+  function setPanelOpen(panel, open) {
+    if (!panel) return;
+    panel.hidden = !open;
+    panelButtons.forEach((button) => {
+      if (panelForButton(button) !== panel) return;
+      button.classList.toggle('is-active', open);
+      button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    if (open && panel.id === 'receipt-card') {
+      receiptOptionsBody?.classList.remove('is-hidden');
+    }
+  }
+
+  panelButtons.forEach((button) => {
+    const panel = panelForButton(button);
+    if (!panel) return;
+    button.addEventListener('click', () => setPanelOpen(panel, panel.hidden));
+  });
 
   function formatRupiah(num) {
     return 'Rp ' + Number(num || 0).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 2});
@@ -1146,9 +1346,10 @@ $referenceJs = [
     const debitValue = item.querySelector('.debit-input')?.value || '';
     const note = item.querySelector('.asset-existing-note');
     const userChoice = toggle ? String(toggle.dataset.userChoice || '') : '';
+    const detailsOpen = !item.querySelector('[data-line-details]')?.classList.contains('is-hidden');
 
     if (toggle && enabledInput) {
-      if (shouldSuggest && !hasLinkedAsset && !hasManualValues && enabledInput.value !== '1' && userChoice !== 'off') {
+      if (detailsOpen && shouldSuggest && !hasLinkedAsset && !hasManualValues && enabledInput.value !== '1' && userChoice !== 'off') {
         toggle.checked = true;
         enabledInput.value = '1';
       }
@@ -1223,7 +1424,49 @@ $referenceJs = [
     document.getElementById('summary-total-debit').textContent = formatRupiah(debit);
     document.getElementById('summary-total-credit').textContent = formatRupiah(credit);
     document.getElementById('summary-difference').textContent = formatRupiah(Math.abs(diff));
-    document.getElementById('summary-balance-status').textContent = Math.abs(diff) < 0.005 && debit > 0 && credit > 0 ? 'Seimbang' : 'Belum seimbang';
+    const balanced = Math.abs(diff) < 0.005 && debit > 0 && credit > 0;
+    document.getElementById('summary-balance-status').textContent = balanced ? 'Seimbang' : 'Belum seimbang';
+    if (compactStatus) {
+      compactStatus.textContent = balanced ? 'Seimbang' : 'Belum seimbang';
+      compactStatus.classList.toggle('is-balanced', balanced);
+      compactStatus.classList.toggle('is-unbalanced', !balanced);
+    }
+    if (compactDebit) compactDebit.textContent = formatRupiah(debit);
+    if (compactCredit) compactCredit.textContent = formatRupiah(credit);
+  }
+
+  function lineHasDetailValues(item) {
+    return !!(
+      item.querySelector('input[name="line_description[]"]')?.value.trim() ||
+      item.querySelector('.partner-select')?.value ||
+      item.querySelector('.inventory-select')?.value ||
+      item.querySelector('.raw-material-select')?.value ||
+      item.querySelector('.asset-select')?.value ||
+      item.querySelector('.saving-select')?.value ||
+      item.querySelector('.cashflow-select')?.value ||
+      item.querySelector('.entry-tag-select')?.value ||
+      item.querySelector('.asset-form-enabled-input')?.value === '1'
+    );
+  }
+
+  function setLineDetailsOpen(item, open) {
+    const details = item.querySelector('[data-line-details]');
+    const button = item.querySelector('.toggle-meta-btn');
+    if (details) details.classList.toggle('is-hidden', !open);
+    if (button) button.classList.toggle('is-active', open);
+  }
+
+  function fillBlankLineDescriptions() {
+    const description = document.getElementById('description')?.value.trim() || '';
+    if (!description) return;
+    Array.from(lineList.querySelectorAll('[data-line-item]')).forEach((item) => {
+      const account = item.querySelector('.account-select')?.value || '';
+      const lineDescription = item.querySelector('input[name="line_description[]"]');
+      const hasAmount = parseAmount(item.querySelector('.debit-input')?.value) > 0 || parseAmount(item.querySelector('.credit-input')?.value) > 0;
+      if (account && hasAmount && lineDescription && !lineDescription.value.trim()) {
+        lineDescription.value = description;
+      }
+    });
   }
 
   function computeValidation() {
@@ -1272,13 +1515,16 @@ $referenceJs = [
     if (debitLines === 0 || creditLines === 0) issues.push('Harus ada minimal satu baris debit dan satu baris kredit.');
     if (Math.abs(debit - credit) >= 0.005) issues.push('Total debit harus sama dengan total kredit.');
 
-    validationList.innerHTML = issues.length
-      ? issues.map((msg) => `<li>${msg}</li>`).join('')
-      : '<li>Form sudah siap disimpan. Pastikan akun, nominal, dan referensi sudah benar.</li>';
+    if (validationList) {
+      validationList.innerHTML = issues.length
+        ? issues.map((msg) => `<li>${msg}</li>`).join('')
+        : '<li>Form siap disimpan.</li>';
+    }
     return issues;
   }
 
   function computeImpact() {
+    if (!impactList) return;
     const items = Array.from(lineList.querySelectorAll('[data-line-item]'));
     const effects = new Set();
     let hasCash = false;
@@ -1319,8 +1565,16 @@ $referenceJs = [
   }
 
   function updateReceiptPanel() {
-    if (!templateSelect || !receiptCard) return;
-    receiptCard.style.display = templateSelect.value === 'receipt' ? '' : 'none';
+    if (!templateSelect) return;
+    if (receiptFields) {
+      receiptFields.style.display = templateSelect.value === 'receipt' ? '' : 'none';
+    }
+    if (receiptOptionsBody && templateSelect.value === 'receipt') {
+      receiptOptionsBody.classList.remove('is-hidden');
+    }
+    if (receiptCard && templateSelect.value === 'receipt') {
+      setPanelOpen(receiptCard, true);
+    }
   }
 
   function updateAll() {
@@ -1352,6 +1606,7 @@ $referenceJs = [
     renderAssetItems(node, Array.isArray(data.asset_form?.items) ? data.asset_form.items : [defaultAssetItem()]);
     syncAccountSearchInput(node);
     syncManagedAssetPanel(node);
+    setLineDetailsOpen(node, lineHasDetailValues(node));
     return node;
   }
 
@@ -1413,6 +1668,7 @@ $referenceJs = [
   function saveDraft() {
     localStorage.setItem(draftKey, JSON.stringify({ saved_at: new Date().toISOString(), data: collectFormData() }));
     draftStatus.textContent = 'Draft tersimpan di browser pada ' + new Date().toLocaleString('id-ID');
+    if (draftBadge) draftBadge.hidden = false;
   }
 
   function loadDraft() {
@@ -1433,6 +1689,7 @@ $referenceJs = [
   function clearDraft() {
     localStorage.removeItem(draftKey);
     draftStatus.textContent = 'Draft browser dihapus.';
+    if (draftBadge) draftBadge.hidden = true;
   }
 
   lineList.querySelectorAll('[data-line-item]').forEach(hydrateLineItem);
@@ -1471,7 +1728,8 @@ $referenceJs = [
     const item = event.target.closest('[data-line-item]');
     if (!item) return;
     if (event.target.closest('.toggle-meta-btn')) {
-      item.querySelector('.journal-meta-grid')?.classList.toggle('is-hidden');
+      const details = item.querySelector('[data-line-details]');
+      setLineDetailsOpen(item, details ? details.classList.contains('is-hidden') : true);
     }
     if (event.target.closest('.remove-line-btn')) {
       if (lineList.querySelectorAll('[data-line-item]').length <= 2) return;
@@ -1544,6 +1802,9 @@ $referenceJs = [
   });
   periodSelect?.addEventListener('change', updateAll);
   templateSelect?.addEventListener('change', updateAll);
+  toggleReceiptOptionsBtn?.addEventListener('click', () => {
+    receiptOptionsBody?.classList.toggle('is-hidden');
+  });
   document.getElementById('journal_date')?.addEventListener('change', updateAll);
   document.getElementById('description')?.addEventListener('input', updateAll);
 
@@ -1552,10 +1813,12 @@ $referenceJs = [
   document.getElementById('clear-draft-btn')?.addEventListener('click', clearDraft);
 
   form.addEventListener('submit', (event) => {
+    fillBlankLineDescriptions();
     const issues = computeValidation();
     if (issues.length > 0) {
       event.preventDefault();
-      validationList.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setPanelOpen(document.getElementById('journal-validation-panel'), true);
+      validationList?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   });
 
@@ -1565,9 +1828,11 @@ $referenceJs = [
       const parsed = JSON.parse(existingDraft);
       if (parsed?.saved_at) {
         draftStatus.textContent = 'Draft tersedia dari ' + new Date(parsed.saved_at).toLocaleString('id-ID');
+        if (draftBadge) draftBadge.hidden = false;
       }
     } catch (error) {
       draftStatus.textContent = 'Draft browser tersedia.';
+      if (draftBadge) draftBadge.hidden = false;
     }
   }
 })();

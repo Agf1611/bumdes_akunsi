@@ -212,7 +212,7 @@ $selectedCategoryId = (string) ($formData['category_id'] ?? '');
 
             <div class="col-12 border-top pt-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                 <div class="small text-secondary">
-                    Form ini sudah menyiapkan struktur qty, satuan, dan tautan jurnal. Sinkron otomatis penuh dari jurnal ke aset bisa dibuat di tahap berikutnya tanpa mengubah ulang register yang sudah ada.
+                    Isi qty, satuan, nilai perolehan, dan tautan jurnal aset.
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <a href="<?= e($row ? base_url('/assets/detail?id=' . (int) $row['id']) : base_url('/assets')) ?>" class="btn btn-outline-light">Batal</a>

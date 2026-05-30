@@ -1,30 +1,30 @@
 <?php declare(strict_types=1); ?>
-<div class="row align-items-center g-4 g-xl-5 py-3 py-lg-4 auth-layout-grid">
-    <div class="col-12 col-lg-6 col-xl-7 d-none d-lg-block">
-        <section class="auth-visual-card h-100">
-            <div class="auth-visual-card__eyebrow">Aplikasi Akuntansi BUMDes</div>
-            <h1 class="auth-visual-card__title">Kelola transaksi dan laporan keuangan dalam satu workspace yang rapi.</h1>
-            <p class="auth-visual-card__lead">Masuk ke aplikasi untuk mengelola chart of accounts, jurnal umum, buku besar, dan laporan keuangan dengan tampilan yang lebih nyaman dibaca di desktop maupun mobile.</p>
-
-            <div class="auth-feature-list mt-4">
-                <div class="auth-feature-item">Navigasi lebih bersih dan fokus pada kebutuhan operasional harian.</div>
-                <div class="auth-feature-item">Mode light dan dark lebih nyaman untuk digunakan sepanjang hari.</div>
-                <div class="auth-feature-item">Cetak laporan tetap jelas dan proporsional saat dibawa ke dokumen fisik.</div>
-            </div>
-        </section>
-    </div>
-
-    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto">
+<?php
+$profile = is_array($profile ?? null) ? $profile : app_profile();
+$logoPath = trim((string) ($profile['logo_path'] ?? ''));
+$bumdesName = trim((string) ($profile['bumdes_name'] ?? '')) ?: (string) app_config('name');
+$appTitle = (string) app_config('name');
+?>
+<div class="row align-items-center justify-content-center py-3 py-lg-4 auth-layout-grid">
+    <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4 mx-auto">
         <section class="card auth-card auth-form-card border-0 shadow-lg">
             <div class="card-body p-4 p-lg-5">
-                <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
-                    <div>
-                        <div class="auth-mini-badge">Login</div>
-                        <h2 class="auth-form-title mt-3 mb-2">Masuk ke Dashboard</h2>
-                        <p class="text-secondary mb-0">Gunakan akun resmi Anda untuk mengakses aplikasi akuntansi BUMDes.</p>
+                <div class="auth-login-head mb-4">
+                    <div class="auth-login-brand">
+                        <div class="auth-login-logo">
+                            <?php if ($logoPath !== ''): ?>
+                                <img src="<?= e(upload_url($logoPath)) ?>" alt="Logo BUMDes">
+                            <?php else: ?>
+                                <span><?= e(strtoupper(substr($bumdesName, 0, 1))) ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <div class="auth-login-app"><?= e($appTitle) ?></div>
+                            <h1 class="auth-form-title mb-0"><?= e($bumdesName) ?></h1>
+                        </div>
                     </div>
                     <button type="button" class="topbar-pill topbar-pill--theme d-none d-sm-inline-flex" id="themeToggle" aria-label="Ubah tema" title="Ubah tema">
-                        <span class="theme-toggle-icon" id="themeToggleIcon">☀️</span>
+                        <span class="theme-toggle-icon" id="themeToggleIcon">*</span>
                         <span class="theme-toggle-text" id="themeToggleText">Light</span>
                     </button>
                 </div>
@@ -53,10 +53,26 @@
 
                     <div class="mb-4">
                         <label for="password" class="form-label">Password</label>
-                        <input type="password" name="password" id="password" class="form-control form-control-lg" autocomplete="current-password" placeholder="Masukkan password" required>
-                        <div class="form-check mt-3">
-                            <input class="form-check-input" type="checkbox" value="1" id="togglePasswordVisibility">
-                            <label class="form-check-label text-secondary" for="togglePasswordVisibility">Tampilkan sandi</label>
+                        <div class="auth-password-wrap">
+                            <input type="password" name="password" id="password" class="form-control form-control-lg" autocomplete="current-password" placeholder="Masukkan password" required>
+                            <button type="button" class="auth-password-toggle" id="togglePasswordVisibility" aria-label="Tampilkan sandi" aria-pressed="false">
+                                <svg class="auth-eye auth-eye--show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg class="auth-eye auth-eye--hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M3 3l18 18"></path>
+                                    <path d="M10.6 10.6A2 2 0 0 0 13.4 13.4"></path>
+                                    <path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.8 17.8 0 0 1-2.9 3.8"></path>
+                                    <path d="M6.6 6.8C3.6 8.8 2 12 2 12s3.5 7 10 7a10.8 10.8 0 0 0 4.5-1"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="auth-login-options mt-3">
+                            <label class="form-check auth-remember-check">
+                                <input class="form-check-input" type="checkbox" name="remember_me" value="1" id="remember_me" <?= old('remember_me') === '1' ? 'checked' : '' ?>>
+                                <span class="form-check-label">Ingat saya</span>
+                            </label>
                         </div>
                     </div>
 
@@ -68,7 +84,7 @@
                         </div>
                     <?php endif; ?>
 
-                    <button type="submit" class="btn btn-primary btn-lg w-100 ui-btn-primary">Masuk ke Aplikasi</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 ui-btn-primary">Masuk</button>
                 </form>
             </div>
         </section>
@@ -83,8 +99,11 @@
         return;
     }
 
-    toggle.addEventListener('change', function () {
-        passwordInput.setAttribute('type', toggle.checked ? 'text' : 'password');
+    toggle.addEventListener('click', function () {
+        var isVisible = passwordInput.getAttribute('type') === 'text';
+        passwordInput.setAttribute('type', isVisible ? 'password' : 'text');
+        toggle.setAttribute('aria-pressed', isVisible ? 'false' : 'true');
+        toggle.setAttribute('aria-label', isVisible ? 'Tampilkan sandi' : 'Sembunyikan sandi');
     });
 })();
 </script>

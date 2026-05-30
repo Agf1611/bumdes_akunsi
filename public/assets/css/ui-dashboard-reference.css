@@ -2909,3 +2909,50 @@ body.route-assets .listing-controls-shell .form-select {
         border-left: 0 !important;
     }
 }
+
+/* Asset page: force the summary cards to stay horizontal on desktop. */
+body.route-assets .asset-metric-grid {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    align-items: stretch;
+    gap: 12px !important;
+}
+
+body.route-assets .asset-metric-card,
+body.route-assets .asset-metric-card--wide {
+    grid-column: auto !important;
+    min-width: 0;
+    min-height: 112px;
+}
+
+body.route-assets .asset-metric-card {
+    padding: 14px 14px 13px;
+}
+
+body.route-assets .asset-metric-card__value {
+    margin-top: 12px;
+    font-size: clamp(1.35rem, 1.7vw, 1.85rem);
+}
+
+body.route-assets .asset-metric-card__value--currency {
+    font-size: clamp(1.05rem, 1.25vw, 1.45rem);
+    letter-spacing: -0.04em;
+}
+
+@media (max-width: 1199.98px) {
+    body.route-assets .asset-metric-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.route-assets .asset-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    body.route-assets .asset-metric-card {
+        min-height: auto;
+        padding: 10px;
+    }
+}

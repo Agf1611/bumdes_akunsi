@@ -48,10 +48,10 @@ final class TrialBalanceController extends Controller
             report_pdf_init($pdf, $profile, 'Neraca Saldo', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
             $widths = [20, 62, 20, 28, 28, 28];
             $headerPrinter = static function (ReportPdf $pdfObj) use ($profile, $viewData, $selectedPeriod, $unitLabel, $widths): void {
-                report_pdf_init($pdfObj, $profile, 'Neraca Saldo', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
+                report_pdf_header($pdfObj, $profile, 'Neraca Saldo', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
                 $pdfObj->tableRow(['Kode', 'Nama Akun', 'Tipe', 'Debit', 'Kredit', 'Saldo'], $widths, ['L','L','C','R','R','R'], 7.5, true);
             };
-            $headerPrinter($pdf);
+            $pdf->tableRow(['Kode', 'Nama Akun', 'Tipe', 'Debit', 'Kredit', 'Saldo'], $widths, ['L','L','C','R','R','R'], 7.5, true);
 
             if ($viewData['rows'] === []) {
                 $pdf->tableRow(['-', 'Tidak ada data neraca saldo untuk filter yang dipilih.', '-', '-', '-', '-'], $widths, ['C','L','C','C','C','C'], 7.5, false, $headerPrinter);

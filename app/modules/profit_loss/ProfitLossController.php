@@ -46,7 +46,7 @@ final class ProfitLossController extends Controller
 
             $widths = [14, 96, 40, 40];
             $headerPrinter = static function (ReportPdf $pdfObj) use ($profile, $viewData, $selectedPeriod, $unitLabel, $widths): void {
-                report_pdf_init($pdfObj, $profile, 'Laporan Laba Rugi', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
+                report_pdf_header($pdfObj, $profile, 'Laporan Laba Rugi', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
                 $pdfObj->tableRow([
                     'No',
                     'Uraian',
@@ -54,7 +54,12 @@ final class ProfitLossController extends Controller
                     (string) $viewData['report']['comparison_column_label'],
                 ], $widths, ['C', 'L', 'R', 'R'], 8.0, true);
             };
-            $headerPrinter($pdf);
+            $pdf->tableRow([
+                'No',
+                'Uraian',
+                (string) $viewData['report']['current_column_label'],
+                (string) $viewData['report']['comparison_column_label'],
+            ], $widths, ['C', 'L', 'R', 'R'], 8.0, true);
 
             foreach ($viewData['statement_rows'] as $row) {
                 $pdf->tableRow([

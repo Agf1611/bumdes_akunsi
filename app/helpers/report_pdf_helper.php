@@ -10,6 +10,11 @@ function report_pdf_init(ReportPdf $pdf, array $profile, string $title, string $
     $pdf->enablePageFooter($footerLeft, $footerCenter);
     $pdf->addPage();
 
+    report_pdf_header($pdf, $profile, $title, $periodLabel, $unitLabel, $asOf);
+}
+
+function report_pdf_header(ReportPdf $pdf, array $profile, string $title, string $periodLabel, string $unitLabel = 'Semua Unit', bool $asOf = false): void
+{
     $logoPath = public_path((string) ($profile['logo_path'] ?? ''));
     if ($logoPath !== '' && is_file($logoPath)) {
         $pdf->image($logoPath, 12, 10, 24);

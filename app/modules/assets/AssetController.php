@@ -641,7 +641,7 @@ final class AssetController extends Controller
             $widths = [20, 42, 30, 24, 18, 24, 24, 24, 24, 24, 18];
             $aligns = ['L','L','L','L','C','R','R','R','R','R','C'];
             $headerPrinter = static function (ReportPdf $pdfObj) use ($profile, $subtitle, $unitLabel, $widths, $aligns): void {
-                report_pdf_init($pdfObj, $profile, 'Laporan Aset', $subtitle, $unitLabel, true);
+                report_pdf_header($pdfObj, $profile, 'Laporan Aset', $subtitle, $unitLabel, true);
                 $pdfObj->tableRow(['Kode', 'Nama Aset', 'Kategori', 'Unit', 'Tgl', 'Perolehan', 'Akm. Susut', 'Nilai Buku', 'Pembanding', 'Selisih', 'Status'], $widths, $aligns, 7, true);
             };
             $pdf->tableRow(['Kode', 'Nama Aset', 'Kategori', 'Unit', 'Tgl', 'Perolehan', 'Akm. Susut', 'Nilai Buku', 'Pembanding', 'Selisih', 'Status'], $widths, $aligns, 7, true);
@@ -789,7 +789,7 @@ final class AssetController extends Controller
             $assetAligns = ['C', 'L', 'L', 'L', 'R', 'L', 'R', 'R', 'C', 'L'];
             $assetHeader = ['Tanggal', 'Kode', 'Nama Aset', 'Kategori', 'Qty', 'Satuan', 'Perolehan', 'Nilai Buku', 'Status', 'Referensi'];
             $assetHeaderPrinter = function (ReportPdf $pdfObj) use ($profile, $subtitle, $unitLabel, $assetWidths, $assetAligns, $assetHeader): void {
-                report_pdf_init($pdfObj, $profile, 'Laporan Rinci Aset dan Saldo', $subtitle, $unitLabel, true);
+                report_pdf_header($pdfObj, $profile, 'Laporan Rinci Aset dan Saldo', $subtitle, $unitLabel, true);
                 $this->assetDetailedPdfSection($pdfObj, 'Daftar Aset Rinci');
                 $pdfObj->tableRow($assetHeader, $assetWidths, $assetAligns, 7, true);
             };

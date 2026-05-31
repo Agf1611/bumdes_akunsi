@@ -63,7 +63,7 @@ final class LedgerController extends Controller
 
             $widths = [20, 32, 82, 30, 30, 30, 38];
             $headerPrinter = static function (ReportPdf $pdfObj) use ($profile, $viewData, $selectedPeriod, $unitLabel, $widths): void {
-                report_pdf_init($pdfObj, $profile, 'Buku Besar', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
+                report_pdf_header($pdfObj, $profile, 'Buku Besar', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
                 report_pdf_note($pdfObj, 'Akun: ' . $viewData['selectedAccount']['account_code'] . ' - ' . $viewData['selectedAccount']['account_name'] . '.');
                 $pdfObj->tableRow(['Tanggal', 'No. Jurnal', 'Unit', 'Keterangan', 'Debit', 'Kredit', 'Saldo'], $widths, ['L', 'L', 'L', 'L', 'R', 'R', 'R'], 8, true);
             };

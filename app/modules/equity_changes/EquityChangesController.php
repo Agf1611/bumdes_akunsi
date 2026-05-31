@@ -47,7 +47,7 @@ final class EquityChangesController extends Controller
 
             $widths = [24, 60, 28, 28, 28];
             $headerPrinter = static function (ReportPdf $pdfObj) use ($profile, $viewData, $selectedPeriod, $unitLabel, $widths): void {
-                report_pdf_init($pdfObj, $profile, 'Laporan Perubahan Ekuitas', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
+                report_pdf_header($pdfObj, $profile, 'Laporan Perubahan Ekuitas', report_period_label($viewData['filters'], $selectedPeriod), $unitLabel);
                 $pdfObj->tableRow(['Kode', 'Nama Akun', 'Saldo Awal', 'Mutasi', 'Saldo Akhir'], $widths, ['L', 'L', 'R', 'R', 'R'], 8.5, true);
             };
             $pdf->tableRow(['Kode', 'Nama Akun', 'Saldo Awal', 'Mutasi', 'Saldo Akhir'], $widths, ['L', 'L', 'R', 'R', 'R'], 8.5, true);

@@ -47,7 +47,7 @@ final class ReportPdf
 
     public function addPage(): void
     {
-        if ($this->currentContent !== '') {
+        if ($this->hasPageBodyContent($this->currentContent)) {
             $this->pages[] = [
                 'content' => $this->currentContent,
                 'images' => array_values(array_unique($this->currentPageImages)),
@@ -206,7 +206,7 @@ final class ReportPdf
 
     public function output(string $filename = 'report.pdf'): never
     {
-        if ($this->currentContent !== '') {
+        if ($this->hasPageBodyContent($this->currentContent)) {
             $this->pages[] = ['content' => $this->currentContent, 'images' => array_values(array_unique($this->currentPageImages))];
             $this->currentContent = '';
             $this->currentPageImages = [];
@@ -317,6 +317,12 @@ final class ReportPdf
         $content .= $this->buildFooterTextCommand($this->pageWidthMm - $this->marginRight, $y, $pageText, 'R');
 
         return $content;
+    }
+
+    private function hasPageBodyContent(string $content): bool
+    {
+        $normalized = trim($content);
+        return $normalized !== '' && $normalized !== '0.5 w';
     }
 
     private function buildFooterTextCommand(float $x, float $y, string $text, string $align = 'L', float $size = 8.2): string

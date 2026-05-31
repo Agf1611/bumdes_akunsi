@@ -50,10 +50,10 @@ final class BalanceSheetController extends Controller
 
             $widths = [18, 88, 34];
             $headerPrinter = static function (ReportPdf $pdfObj) use ($profile, $viewData, $selectedPeriod, $unitLabel, $widths): void {
-                report_pdf_init($pdfObj, $profile, 'Laporan Neraca', report_period_label($viewData['filters'], $selectedPeriod, true), $unitLabel, true);
+                report_pdf_header($pdfObj, $profile, 'Laporan Neraca', report_period_label($viewData['filters'], $selectedPeriod, true), $unitLabel, true);
                 $pdfObj->tableRow(['Kode', 'Nama Akun', 'Saldo Akhir'], $widths, ['L', 'L', 'R'], 8.0, true);
             };
-            $headerPrinter($pdf);
+            $pdf->tableRow(['Kode', 'Nama Akun', 'Saldo Akhir'], $widths, ['L', 'L', 'R'], 8.0, true);
 
             foreach ([
                 'Aset' => $report['asset_rows'] ?? [],

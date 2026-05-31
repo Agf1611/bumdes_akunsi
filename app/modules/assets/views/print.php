@@ -98,16 +98,22 @@ render_print_header(
 );
 ?>
 <style>
-@page{size:A4 landscape;margin:11mm 10mm 11mm 10mm}
+@page{size:A4 landscape;margin:8mm 8mm 9mm 8mm}
+html,body{height:auto!important;overflow:visible!important}
+.report-letterhead{margin-bottom:6px!important}
+.report-letterhead .report-org-name{font-size:16px!important}
+.report-letterhead .report-org-meta,.report-letterhead .report-subtitle{font-size:8.2px!important;line-height:1.12!important}
+.report-title{font-size:12px!important}
+.print-sheet{max-width:none!important;width:100%!important;margin:0!important;break-after:auto!important;page-break-after:auto!important}
 .asset-print-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0 0 10px}
 .asset-print-summary-card{border:1px solid #b8c2cc;border-radius:8px;padding:7px 9px;background:#fafbfd}
 .asset-print-summary-card .label{font-size:8px;font-weight:700;color:#5b6472;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
 .asset-print-summary-card .value{font-size:12px;font-weight:800;color:#111827}
-.asset-print-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:8.2px;line-height:1.14;margin-bottom:0}
+.asset-print-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:7.8px;line-height:1.1;margin-bottom:0;break-after:auto;page-break-after:auto}
 .asset-print-table thead{display:table-header-group}
 .asset-print-table tfoot{display:table-row-group}
 .asset-print-table tr{page-break-inside:avoid;break-inside:avoid}
-.asset-print-table th,.asset-print-table td{border:1px solid #aeb8c3;padding:3px 4px;vertical-align:top;word-wrap:break-word;overflow-wrap:anywhere}
+.asset-print-table th,.asset-print-table td{border:1px solid #aeb8c3;padding:2.4px 3px;vertical-align:top;word-wrap:break-word;overflow-wrap:anywhere}
 .asset-print-table thead th{background:#eef2f6;font-weight:800;text-transform:uppercase;letter-spacing:.02em;text-align:center}
 .asset-col-no{width:3%}
 .asset-col-code{width:8.5%}
@@ -130,10 +136,17 @@ render_print_header(
 .asset-nowrap{white-space:nowrap}
 .asset-status{font-size:7.8px;font-weight:700;text-transform:uppercase;text-align:center}
 .asset-total-row th{background:#f8fafc;font-weight:800}
-.asset-notes{margin-top:4mm;font-size:8.2px;color:#4b5563}
-.asset-signature-wrap{margin-top:5mm}
+.asset-notes{margin-top:2.5mm;font-size:7.8px;color:#4b5563}
+.asset-signature-wrap{margin-top:2.5mm;break-inside:avoid;page-break-inside:avoid}
+.asset-signature-wrap .report-signature-block{margin-top:0!important;break-inside:avoid;page-break-inside:avoid}
+.asset-signature-wrap .signature-image-wrap{margin-top:2mm!important;margin-bottom:2mm!important}
+.asset-signature-wrap .signature-spacer{height:18mm!important}
 @media print{
   .asset-print-summary{gap:6px;margin-bottom:8px}
+  .asset-print-table{font-size:7.5px}
+  .asset-print-table th,.asset-print-table td{padding:2px 2.5px}
+  .asset-signature-wrap{margin-top:2mm}
+  .asset-signature-wrap .report-signature-block{break-before:avoid!important;page-break-before:avoid!important}
 }
 </style>
 

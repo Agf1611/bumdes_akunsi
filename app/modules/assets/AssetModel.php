@@ -362,15 +362,19 @@ final class AssetModel
 
     private function resolveCategoryForJournalDetail(array $detail): ?array
     {
-        $coaId = (int) ($detail['coa_id'] ?? 0);
-        $byCoa = $coaId > 0 ? $this->findActiveCategoryByAssetCoaId($coaId) : null;
-        if ($byCoa) {
-            return $byCoa;
-        }
-
         $text = strtolower(trim(((string) ($detail['account_name'] ?? '')) . ' ' . ((string) ($detail['line_description'] ?? ''))));
-        $fallbackCode = 'EQUIPMENT';
-        if (preg_match('/modem|router|mikrotik|switch|starlink|ups|kabel|fo|wifi|odp|olt|patchcord|splitter|instalasi/', $text)) {
+        $fallbackCode = '';
+        if (preg_match('/modem|\\bont\\b|\\bcpe\\b/', $text)) {
+            $fallbackCode = 'WIFI_MODEM';
+        } elseif (preg_match('/router|mikrotik|access\\s*point|\\bap\\b/', $text)) {
+            $fallbackCode = 'WIFI_ROUTER';
+        } elseif (preg_match('/server|mini\\s*pc|rack|nas|ups/', $text)) {
+            $fallbackCode = 'WIFI_SERVER';
+        } elseif (preg_match('/switch|hub|olt|starlink|gateway/', $text)) {
+            $fallbackCode = 'WIFI_ACTIVE_NETWORK';
+        } elseif (preg_match('/kabel|\\bfo\\b|odp|patchcord|splitter|konektor|instalasi|tiang/', $text)) {
+            $fallbackCode = 'WIFI_CABLE_INSTALL';
+        } elseif (preg_match('/wifi|jaringan/', $text)) {
             $fallbackCode = 'NETWORK';
         } elseif (preg_match('/mesin|genset|pompa/', $text)) {
             $fallbackCode = 'MACHINE';
@@ -380,7 +384,17 @@ final class AssetModel
             $fallbackCode = 'IT';
         }
 
-        return $this->findCategoryByCode($fallbackCode) ?: $this->findCategoryByCode('OTHER');
+        if ($fallbackCode !== '') {
+            return $this->findCategoryByCode($fallbackCode) ?: $this->findCategoryByCode('OTHER');
+        }
+
+        $coaId = (int) ($detail['coa_id'] ?? 0);
+        $byCoa = $coaId > 0 ? $this->findActiveCategoryByAssetCoaId($coaId) : null;
+        if ($byCoa) {
+            return $byCoa;
+        }
+
+        return $this->findCategoryByCode('EQUIPMENT') ?: $this->findCategoryByCode('OTHER');
     }
 
     public function findActiveCategoryByAssetCoaId(int $coaId): ?array

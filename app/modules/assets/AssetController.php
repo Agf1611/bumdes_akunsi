@@ -1713,7 +1713,7 @@ final class AssetController extends Controller
             ['Kolom qty & satuan', 'Isi quantity dengan jumlah barang dalam satu register aset. Isi unit_name seperti unit, pcs, roll, set, meter, atau paket agar laporan aset BUMDes lebih mudah diaudit. Harga per unit dihitung otomatis dari total nilai perolehan dibagi qty.'],
             ['Tanggal wajib', 'Kolom acquisition_date, opening_as_of_date, dan depreciation_start_date harus memakai format YYYY-MM-DD, misalnya 2026-01-01.'],
             ['Entry mode', 'OPENING dipakai untuk saldo awal saat migrasi. ACQUISITION dipakai untuk aset baru yang dibeli setelah sistem berjalan.'],
-            ['Category code', 'Gunakan kode kategori persis seperti sheet REFERENSI_KODE. Untuk aset WIFI/ISP biasanya paling cocok NETWORK, IT, EQUIPMENT, atau MACHINE tergantung sifat aset.'],
+            ['Category code', 'Gunakan kode kategori persis seperti sheet REFERENSI_KODE. Untuk aset WIFI/ISP gunakan WIFI_MODEM, WIFI_ROUTER, WIFI_SERVER, WIFI_ACTIVE_NETWORK, WIFI_CABLE_INSTALL, atau WIFI_TOOLS agar laporan rinci lebih mudah dibaca.'],
             ['Business unit code', 'Boleh dikosongkan bila aset tidak terikat unit usaha tertentu. Jika diisi, gunakan kode unit persis seperti sheet REFERENSI_KODE.'],
             ['Offset account code', 'Isi hanya bila aset baru perlu akun lawan perolehan. Untuk OPENING boleh dikosongkan. Kolom ini penting untuk menyiapkan sinkronisasi jurnal perolehan aset ke depan.'],
             ['Penyusutan', 'Jika depreciation_allowed = 1, isi useful_life_months dan depreciation_start_date. Jika tidak disusutkan, isi 0 lalu kosongkan umur manfaat.'],

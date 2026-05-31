@@ -3,7 +3,7 @@
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
     <div>
         <h1 class="h3 mb-1"><?= e($title ?? 'Form Kategori Aset') ?></h1>
-        <p class="text-secondary mb-0">Gunakan kategori universal seperti Perangkat Teknologi, Peralatan Jaringan, Peralatan Peternakan, dan Aset Biologis.</p>
+        <p class="text-secondary mb-0">Gunakan kategori yang mudah dibaca laporan, misalnya Modem / ONT Pelanggan, Router dan Access Point, Peralatan Server Lokal, Peralatan Peternakan, dan Aset Biologis.</p>
     </div>
     <a href="<?= e(base_url('/assets/categories')) ?>" class="btn btn-outline-light">Kembali</a>
 </div>
@@ -23,7 +23,7 @@
         <div class="col-lg-6"><label class="form-label">Akun Beban Penyusutan</label><select class="form-select" name="depreciation_expense_coa_id"><option value="">Pilih akun beban penyusutan</option><?php foreach (($coaOptions ?? []) as $coa): ?><option value="<?= e((string) $coa['id']) ?>" <?= (string) $formData['depreciation_expense_coa_id'] === (string) $coa['id'] ? 'selected' : '' ?>><?= e($coa['account_code'] . ' - ' . $coa['account_name']) ?></option><?php endforeach; ?></select></div>
         <div class="col-lg-6"><label class="form-label">Akun Laba Pelepasan</label><select class="form-select" name="disposal_gain_coa_id"><option value="">Pilih akun laba pelepasan</option><?php foreach (($coaOptions ?? []) as $coa): ?><option value="<?= e((string) $coa['id']) ?>" <?= (string) $formData['disposal_gain_coa_id'] === (string) $coa['id'] ? 'selected' : '' ?>><?= e($coa['account_code'] . ' - ' . $coa['account_name']) ?></option><?php endforeach; ?></select></div>
         <div class="col-lg-6"><label class="form-label">Akun Rugi Pelepasan</label><select class="form-select" name="disposal_loss_coa_id"><option value="">Pilih akun rugi pelepasan</option><?php foreach (($coaOptions ?? []) as $coa): ?><option value="<?= e((string) $coa['id']) ?>" <?= (string) $formData['disposal_loss_coa_id'] === (string) $coa['id'] ? 'selected' : '' ?>><?= e($coa['account_code'] . ' - ' . $coa['account_name']) ?></option><?php endforeach; ?></select></div>
-        <div class="col-12"><label class="form-label">Deskripsi</label><textarea class="form-control" rows="4" name="description" maxlength="1000" placeholder="Contoh: Peralatan Jaringan untuk router, switch, ODP, kabel FO; Peralatan Peternakan untuk timbangan, alat pakan, mesin pencacah."><?= e((string) $formData['description']) ?></textarea></div>
+        <div class="col-12"><label class="form-label">Deskripsi</label><textarea class="form-control" rows="4" name="description" maxlength="1000" placeholder="Contoh: Modem / ONT untuk CPE pelanggan; Router dan Access Point untuk Mikrotik/AP; Peralatan Server Lokal untuk server, mini PC, rack, NAS, dan UPS."><?= e((string) $formData['description']) ?></textarea></div>
         <div class="col-12 d-flex justify-content-end gap-2 pt-2 border-top border-secondary-subtle"><a href="<?= e(base_url('/assets/categories')) ?>" class="btn btn-outline-light">Batal</a><button type="submit" class="btn btn-primary">Simpan Kategori</button></div>
     </form>
 </div></div>

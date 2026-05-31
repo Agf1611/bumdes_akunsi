@@ -190,6 +190,48 @@ WHERE NOT EXISTS (SELECT 1 FROM asset_categories WHERE category_code = 'IT');
 INSERT INTO asset_categories (category_code, category_name, asset_group, default_useful_life_months, default_depreciation_method, depreciation_allowed, description, is_active)
 SELECT 'NETWORK', 'Peralatan Jaringan', 'FIXED', 36, 'STRAIGHT_LINE', 1, 'Router, access point, switch, ODP, FO, tiang jaringan, alat instalasi.', 1
 WHERE NOT EXISTS (SELECT 1 FROM asset_categories WHERE category_code = 'NETWORK');
+INSERT INTO asset_categories (category_code, category_name, asset_group, default_useful_life_months, default_depreciation_method, depreciation_allowed, asset_coa_id, accumulated_depreciation_coa_id, depreciation_expense_coa_id, description, is_active)
+SELECT 'WIFI_MODEM', 'Modem / ONT Pelanggan', 'FIXED', 36, 'STRAIGHT_LINE', 1,
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.20' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.23' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '5.2.25' LIMIT 1),
+       'Modem, ONT, CPE, dan perangkat terminasi pelanggan pada unit WiFi/ISP.', 1
+WHERE NOT EXISTS (SELECT 1 FROM asset_categories WHERE category_code = 'WIFI_MODEM');
+INSERT INTO asset_categories (category_code, category_name, asset_group, default_useful_life_months, default_depreciation_method, depreciation_allowed, asset_coa_id, accumulated_depreciation_coa_id, depreciation_expense_coa_id, description, is_active)
+SELECT 'WIFI_ROUTER', 'Router dan Access Point', 'FIXED', 36, 'STRAIGHT_LINE', 1,
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.21' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.24' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '5.2.26' LIMIT 1),
+       'Router core, Mikrotik, access point, dan perangkat routing WiFi.', 1
+WHERE NOT EXISTS (SELECT 1 FROM asset_categories WHERE category_code = 'WIFI_ROUTER');
+INSERT INTO asset_categories (category_code, category_name, asset_group, default_useful_life_months, default_depreciation_method, depreciation_allowed, asset_coa_id, accumulated_depreciation_coa_id, depreciation_expense_coa_id, description, is_active)
+SELECT 'WIFI_SERVER', 'Peralatan Server Lokal', 'FIXED', 48, 'STRAIGHT_LINE', 1,
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.20' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.23' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '5.2.25' LIMIT 1),
+       'Server lokal, mini PC, rack, NAS, UPS server, dan perangkat pendukung pusat kontrol jaringan.', 1
+WHERE NOT EXISTS (SELECT 1 FROM asset_categories WHERE category_code = 'WIFI_SERVER');
+INSERT INTO asset_categories (category_code, category_name, asset_group, default_useful_life_months, default_depreciation_method, depreciation_allowed, asset_coa_id, accumulated_depreciation_coa_id, depreciation_expense_coa_id, description, is_active)
+SELECT 'WIFI_ACTIVE_NETWORK', 'OLT, Switch, dan Gateway Jaringan', 'FIXED', 36, 'STRAIGHT_LINE', 1,
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.20' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.23' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '5.2.25' LIMIT 1),
+       'OLT, switch, hub, Starlink/gateway, dan perangkat aktif jaringan lain.', 1
+WHERE NOT EXISTS (SELECT 1 FROM asset_categories WHERE category_code = 'WIFI_ACTIVE_NETWORK');
+INSERT INTO asset_categories (category_code, category_name, asset_group, default_useful_life_months, default_depreciation_method, depreciation_allowed, asset_coa_id, accumulated_depreciation_coa_id, depreciation_expense_coa_id, description, is_active)
+SELECT 'WIFI_CABLE_INSTALL', 'Kabel, ODP, Splitter, dan Instalasi FO', 'FIXED', 60, 'STRAIGHT_LINE', 1,
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.22' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.25' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '5.2.25' LIMIT 1),
+       'Kabel FO/LAN, ODP, splitter, patchcord, konektor, tiang, dan instalasi jaringan.', 1
+WHERE NOT EXISTS (SELECT 1 FROM asset_categories WHERE category_code = 'WIFI_CABLE_INSTALL');
+INSERT INTO asset_categories (category_code, category_name, asset_group, default_useful_life_months, default_depreciation_method, depreciation_allowed, asset_coa_id, accumulated_depreciation_coa_id, depreciation_expense_coa_id, description, is_active)
+SELECT 'WIFI_TOOLS', 'Alat Kerja Instalasi Jaringan', 'FIXED', 48, 'STRAIGHT_LINE', 1,
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.05' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '1.2.10' LIMIT 1),
+       (SELECT id FROM coa_accounts WHERE account_code = '5.2.13' LIMIT 1),
+       'Toolkit FO, tangga, harness, splicer, OTDR, dan alat kerja teknisi jaringan.', 1
+WHERE NOT EXISTS (SELECT 1 FROM asset_categories WHERE category_code = 'WIFI_TOOLS');
 INSERT INTO asset_categories (category_code, category_name, asset_group, default_useful_life_months, default_depreciation_method, depreciation_allowed, description, is_active)
 SELECT 'LIVESTOCK_EQUIP', 'Peralatan Peternakan', 'FIXED', 60, 'STRAIGHT_LINE', 1, 'Timbangan ternak, alat pakan, alat minum, alat kebersihan, mesin pencacah pakan.', 1
 WHERE NOT EXISTS (SELECT 1 FROM asset_categories WHERE category_code = 'LIVESTOCK_EQUIP');

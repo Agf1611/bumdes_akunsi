@@ -1475,3 +1475,138 @@ html[data-theme="dark"] body.app-shell .cash-flow-statement-table-screen .statem
     background: rgba(30, 41, 59, 0.86);
     color: #f8fafc;
 }
+
+/* Login hardening: keep uploaded BUMDes logos and password controls contained. */
+body.auth-page .auth-shell {
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+body.auth-page .auth-shell-inner {
+    width: 100%;
+}
+
+body.auth-page .auth-layout-grid {
+    min-height: auto;
+}
+
+body.auth-page .auth-form-card {
+    width: min(100%, 440px);
+    margin-inline: auto;
+    overflow: hidden;
+}
+
+body.auth-page .auth-form-card .card-body {
+    padding: clamp(1.35rem, 3vw, 2rem) !important;
+}
+
+body.auth-page .auth-login-head {
+    position: relative;
+    display: block;
+}
+
+body.auth-page .auth-login-brand {
+    display: block;
+    padding-right: 0;
+}
+
+body.auth-page .auth-login-brand > div:last-child {
+    min-width: 0;
+}
+
+body.auth-page .auth-login-logo {
+    width: 64px !important;
+    height: 64px !important;
+    flex: 0 0 64px !important;
+    contain: paint;
+}
+
+body.auth-page .auth-login-logo img {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    padding: 7px !important;
+}
+
+body.auth-page #themeToggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+body.auth-page .auth-login-app {
+    margin-top: 0.95rem;
+}
+
+body.auth-page .auth-form-title {
+    max-width: 100%;
+    font-size: clamp(1.55rem, 4vw, 2rem) !important;
+    letter-spacing: -0.045em;
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+}
+
+body.auth-page .auth-password-wrap {
+    position: relative;
+}
+
+body.auth-page .auth-password-wrap .form-control {
+    padding-right: 3.25rem !important;
+}
+
+body.auth-page .auth-password-toggle {
+    top: 50% !important;
+    right: 0.45rem !important;
+    z-index: 2;
+    display: inline-grid !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    padding: 0 !important;
+    transform: translateY(-50%) !important;
+}
+
+body.auth-page .auth-eye {
+    display: block;
+    width: 19px !important;
+    height: 19px !important;
+}
+
+body.auth-page .auth-eye--hide,
+body.auth-page .auth-password-toggle[aria-pressed="true"] .auth-eye--show {
+    display: none !important;
+}
+
+body.auth-page .auth-password-toggle[aria-pressed="true"] .auth-eye--hide {
+    display: block !important;
+}
+
+@media (max-width: 575.98px) {
+    body.auth-page .auth-shell-inner {
+        padding: 1rem !important;
+    }
+
+    body.auth-page .auth-login-head {
+        gap: 0.8rem;
+    }
+
+    body.auth-page .auth-login-brand {
+        gap: 0.75rem;
+    }
+
+    body.auth-page .auth-login-logo {
+        width: 56px !important;
+        height: 56px !important;
+        flex-basis: 56px !important;
+    }
+
+    body.auth-page .auth-form-title {
+        font-size: 1.45rem !important;
+        line-height: 1.12;
+    }
+}

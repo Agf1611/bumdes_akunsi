@@ -52,8 +52,25 @@ function app_url_base(): string
         return rtrim($configured, '/');
     }
 
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $forwardedProto = trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+    if ($forwardedProto !== '') {
+        $forwardedProto = trim(explode(',', $forwardedProto)[0]);
+    }
+
+    $scheme = $forwardedProto !== ''
+        ? strtolower($forwardedProto)
+        : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
+    if (!in_array($scheme, ['http', 'https'], true)) {
+        $scheme = 'http';
+    }
+
+    $forwardedHost = trim((string) ($_SERVER['HTTP_X_FORWARDED_HOST'] ?? ''));
+    if ($forwardedHost !== '') {
+        $forwardedHost = trim(explode(',', $forwardedHost)[0]);
+    }
+    $host = $forwardedHost !== '' ? $forwardedHost : (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    $host = preg_replace('/[^A-Za-z0-9.:\-\[\]]/', '', $host) ?: 'localhost';
+
     $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
     $baseDir = rtrim(dirname($scriptName), '/');
     if ($baseDir === '/public') {
@@ -103,7 +120,14 @@ function public_url(string $path = ''): string
 
 function asset_url(string $path): string
 {
-    return public_url('/assets/' . ltrim($path, '/'));
+    $relativePath = 'assets/' . ltrim($path, '/');
+    $url = public_url('/' . $relativePath);
+    $filePath = public_path($relativePath);
+    if (is_file($filePath)) {
+        $url .= (str_contains($url, '?') ? '&' : '?') . 'v=' . (string) filemtime($filePath);
+    }
+
+    return $url;
 }
 
 function upload_url(?string $relativePath): string

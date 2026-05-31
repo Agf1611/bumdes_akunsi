@@ -60,6 +60,9 @@ final class ReportDrilldownController extends Controller
                 LEFT JOIN business_units bu ON bu.id = j.business_unit_id
                 WHERE 1=1";
         $params = [];
+        if ($hasWorkflowStatus) {
+            $sql .= " AND COALESCE(j.workflow_status, 'POSTED') = 'POSTED'";
+        }
 
         if (!empty($filters['period_id']) && empty($filters['period_to_id'])) {
             $sql .= ' AND j.period_id = :period_id';

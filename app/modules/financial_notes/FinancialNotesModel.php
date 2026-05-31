@@ -35,7 +35,7 @@ final class FinancialNotesModel
                     COALESCE(SUM(CASE WHEN h.journal_date <= ? THEN l.credit ELSE 0 END), 0) AS closing_total_credit
                 FROM coa_accounts a
                 LEFT JOIN journal_lines l ON l.coa_id = a.id
-                LEFT JOIN journal_headers h ON h.id = l.journal_id
+                LEFT JOIN journal_headers h ON h.id = l.journal_id" . journal_posted_sql($this->db, 'h') . "
                 WHERE a.is_active = 1
                   AND a.is_header = 0
                   AND a.account_type = ?";
@@ -90,7 +90,7 @@ final class FinancialNotesModel
                     COALESCE(SUM(CASE WHEN h.journal_date >= ? AND h.journal_date <= ? THEN l.credit ELSE 0 END), 0) AS period_credit
                 FROM coa_accounts a
                 LEFT JOIN journal_lines l ON l.coa_id = a.id
-                LEFT JOIN journal_headers h ON h.id = l.journal_id
+                LEFT JOIN journal_headers h ON h.id = l.journal_id" . journal_posted_sql($this->db, 'h') . "
                 WHERE a.is_active = 1
                   AND a.is_header = 0
                   AND a.account_type = ?";

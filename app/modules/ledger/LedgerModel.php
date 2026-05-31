@@ -69,7 +69,7 @@ final class LedgerModel
         $sql = 'SELECT COALESCE(SUM(l.debit), 0) AS total_debit, COALESCE(SUM(l.credit), 0) AS total_credit
                 FROM journal_lines l
                 INNER JOIN journal_headers h ON h.id = l.journal_id
-                WHERE l.coa_id = :account_id AND h.journal_date < :date_from';
+                WHERE l.coa_id = :account_id' . journal_posted_sql($this->db, 'h') . ' AND h.journal_date < :date_from';
         if ($unitId > 0 && $unitFilterReady) {
             $sql .= ' AND h.business_unit_id = :unit_id';
         }
@@ -101,7 +101,7 @@ final class LedgerModel
                        ' . $selectUnit . '
                 FROM journal_lines l
                 INNER JOIN journal_headers h ON h.id = l.journal_id' . $joinUnit . '
-                WHERE l.coa_id = :account_id';
+                WHERE l.coa_id = :account_id' . journal_posted_sql($this->db, 'h');
         $params = [':account_id' => $accountId];
         if ($dateFrom !== null && $dateFrom !== '') {
             $sql .= ' AND h.journal_date >= :date_from';

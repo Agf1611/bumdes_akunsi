@@ -160,7 +160,7 @@ final class YearEndClosingService
                     COALESCE(SUM(CASE WHEN h.journal_date <= :date_to THEN l.credit ELSE 0 END), 0) AS total_credit
                 FROM coa_accounts a
                 LEFT JOIN journal_lines l ON l.coa_id = a.id
-                LEFT JOIN journal_headers h ON h.id = l.journal_id
+                LEFT JOIN journal_headers h ON h.id = l.journal_id" . journal_posted_sql($this->db, 'h') . "
                 WHERE a.is_active = 1
                   AND a.is_header = 0
                   AND a.account_type IN ('ASSET', 'LIABILITY', 'EQUITY')
@@ -184,6 +184,7 @@ final class YearEndClosingService
                 WHERE a.is_active = 1
                   AND a.is_header = 0
                   AND a.account_type IN ('REVENUE', 'EXPENSE')
+                  " . journal_posted_sql($this->db, 'h') . "
                   AND h.journal_date >= :date_from
                   AND h.journal_date <= :date_to";
         $stmt = $this->db->prepare($sql);
@@ -339,8 +340,15 @@ final class YearEndClosingService
         $journalNo = $this->generateJournalNumber($periodId);
         $totals = $this->summarizeOpeningLines($lines);
 
-        $stmt = $this->db->prepare('INSERT INTO journal_headers (journal_no, journal_date, description, period_id, total_debit, total_credit, created_by, updated_by, created_at, updated_at) VALUES (:journal_no, :journal_date, :description, :period_id, :total_debit, :total_credit, :created_by, :updated_by, NOW(), NOW())');
-        $stmt->execute([
+        $workflowColumns = journal_has_workflow_status_column($this->db)
+            ? ', workflow_status, posted_at, posted_by'
+            : '';
+        $workflowValues = journal_has_workflow_status_column($this->db)
+            ? ", 'POSTED', NOW(), :posted_by"
+            : '';
+
+        $stmt = $this->db->prepare('INSERT INTO journal_headers (journal_no, journal_date, description, period_id, total_debit, total_credit, created_by, updated_by' . $workflowColumns . ', created_at, updated_at) VALUES (:journal_no, :journal_date, :description, :period_id, :total_debit, :total_credit, :created_by, :updated_by' . $workflowValues . ', NOW(), NOW())');
+        $params = [
             ':journal_no' => $journalNo,
             ':journal_date' => $journalDate,
             ':description' => $description,
@@ -349,7 +357,11 @@ final class YearEndClosingService
             ':total_credit' => (float) $totals['credit'],
             ':created_by' => $userId,
             ':updated_by' => $userId,
-        ]);
+        ];
+        if ($workflowColumns !== '') {
+            $params[':posted_by'] = $userId;
+        }
+        $stmt->execute($params);
         $journalId = (int) $this->db->lastInsertId();
 
         $lineStmt = $this->db->prepare('INSERT INTO journal_lines (journal_id, line_no, coa_id, line_description, debit, credit, created_at) VALUES (:journal_id, :line_no, :coa_id, :line_description, :debit, :credit, NOW())');

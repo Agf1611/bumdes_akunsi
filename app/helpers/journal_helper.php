@@ -54,6 +54,49 @@ function journal_workflow_badge_class(?string $status): string
     };
 }
 
+function journal_has_workflow_status_column(PDO $db): bool
+{
+    static $cache = [];
+
+    $cacheKey = (string) spl_object_id($db);
+    if (array_key_exists($cacheKey, $cache)) {
+        return $cache[$cacheKey];
+    }
+
+    try {
+        $stmt = $db->prepare(
+            'SELECT 1
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = :table_name
+               AND COLUMN_NAME = :column_name
+             LIMIT 1'
+        );
+        $stmt->execute([
+            ':table_name' => 'journal_headers',
+            ':column_name' => 'workflow_status',
+        ]);
+        $cache[$cacheKey] = (bool) $stmt->fetchColumn();
+    } catch (Throwable) {
+        $cache[$cacheKey] = false;
+    }
+
+    return $cache[$cacheKey];
+}
+
+function journal_posted_sql(PDO $db, string $alias = 'h', string $prefix = ' AND '): string
+{
+    if (!journal_has_workflow_status_column($db)) {
+        return '';
+    }
+
+    if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $alias) !== 1) {
+        $alias = 'h';
+    }
+
+    return $prefix . "COALESCE({$alias}.workflow_status, 'POSTED') = 'POSTED'";
+}
+
 function journal_workflow_action_label(string $action): string
 {
     return match ($action) {

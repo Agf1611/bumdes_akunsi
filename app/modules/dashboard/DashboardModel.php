@@ -54,7 +54,7 @@ final class DashboardModel
                     COALESCE(SUM(CASE WHEN a.account_type = :expense_type AND h.journal_date >= :expense_from AND h.journal_date <= :expense_to THEN (l.debit - l.credit) ELSE 0 END), 0) AS total_expense
                 FROM coa_accounts a
                 LEFT JOIN journal_lines l ON l.coa_id = a.id
-                LEFT JOIN journal_headers h ON h.id = l.journal_id
+                LEFT JOIN journal_headers h ON h.id = l.journal_id' . journal_posted_sql($this->db, 'h') . '
                 WHERE a.is_active = 1
                   AND a.is_header = 0';
         if ($supportsUnits && $unitId > 0) {
@@ -76,7 +76,7 @@ final class DashboardModel
         $stmt->execute();
         $summary = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-        $journalSql = 'SELECT COUNT(*) FROM journal_headers WHERE journal_date >= :date_from AND journal_date <= :date_to';
+        $journalSql = 'SELECT COUNT(*) FROM journal_headers WHERE journal_date >= :date_from AND journal_date <= :date_to' . journal_posted_sql($this->db, 'journal_headers');
         if ($supportsUnits && $unitId > 0) {
             $journalSql .= ' AND business_unit_id = :unit_id';
         }
@@ -129,7 +129,7 @@ final class DashboardModel
                     COALESCE(SUM(CASE WHEN h.journal_date >= ? AND h.journal_date <= ? THEN l.credit ELSE 0 END), 0) AS cash_outflow
                 FROM journal_lines l
                 INNER JOIN journal_headers h ON h.id = l.journal_id
-                WHERE l.coa_id IN ($placeholders)";
+                WHERE l.coa_id IN ($placeholders)" . journal_posted_sql($this->db, 'h');
         $params = array_merge([$dateTo, $dateFrom, $dateTo, $dateFrom, $dateTo], $ids);
         if ($supportsUnits && $unitId > 0) {
             $sql .= ' AND h.business_unit_id = ?';
@@ -146,7 +146,7 @@ final class DashboardModel
                            COALESCE(SUM(CASE WHEN h.journal_date <= ? THEN (l.debit - l.credit) ELSE 0 END), 0) AS balance
                        FROM coa_accounts a
                        LEFT JOIN journal_lines l ON l.coa_id = a.id
-                       LEFT JOIN journal_headers h ON h.id = l.journal_id
+                       LEFT JOIN journal_headers h ON h.id = l.journal_id" . journal_posted_sql($this->db, 'h') . "
                        WHERE a.id IN ($placeholders)";
         $balanceParams = array_merge([$dateTo], $ids);
         if ($supportsUnits && $unitId > 0) {
@@ -185,6 +185,7 @@ final class DashboardModel
                 INNER JOIN coa_accounts a ON a.id = l.coa_id
                 WHERE h.journal_date >= :date_from
                   AND h.journal_date <= :date_to
+                  ' . journal_posted_sql($this->db, 'h') . '
                   AND a.is_active = 1
                   AND a.is_header = 0';
         if ($supportsUnits && $unitId > 0) {
@@ -248,7 +249,7 @@ final class DashboardModel
             $sql .= ' LEFT JOIN business_units bu ON bu.id = h.business_unit_id';
         }
         $sql .= ' WHERE h.journal_date >= :date_from
-                  AND h.journal_date <= :date_to';
+                  AND h.journal_date <= :date_to' . journal_posted_sql($this->db, 'h');
         if ($supportsUnits && $unitId > 0) {
             $sql .= ' AND h.business_unit_id = :unit_id';
         }
@@ -294,6 +295,7 @@ final class DashboardModel
                 INNER JOIN journal_headers h ON h.id = l.journal_id
                 WHERE h.journal_date >= :date_from
                   AND h.journal_date <= :date_to
+                  ' . journal_posted_sql($this->db, 'h') . '
                   AND a.is_active = 1
                   AND a.is_header = 0
                   AND a.account_type = :account_type';
@@ -329,7 +331,7 @@ final class DashboardModel
                        COALESCE(SUM(CASE WHEN a.account_type = "REVENUE" THEN (l.credit - l.debit) ELSE 0 END), 0) AS total_revenue,
                        COALESCE(SUM(CASE WHEN a.account_type = "EXPENSE" THEN (l.debit - l.credit) ELSE 0 END), 0) AS total_expense
                 FROM business_units bu
-                LEFT JOIN journal_headers h ON h.business_unit_id = bu.id AND h.journal_date >= :date_from AND h.journal_date <= :date_to
+                LEFT JOIN journal_headers h ON h.business_unit_id = bu.id AND h.journal_date >= :date_from AND h.journal_date <= :date_to' . journal_posted_sql($this->db, 'h') . '
                 LEFT JOIN journal_lines l ON l.journal_id = h.id
                 LEFT JOIN coa_accounts a ON a.id = l.coa_id AND a.is_active = 1 AND a.is_header = 0
                 WHERE bu.is_active = 1
@@ -428,7 +430,7 @@ final class DashboardModel
                     SELECT l.coa_id, COALESCE(SUM(CASE WHEN h.journal_date <= ? THEN (l.debit - l.credit) ELSE 0 END), 0) AS balance
                     FROM journal_lines l
                     INNER JOIN journal_headers h ON h.id = l.journal_id
-                    WHERE l.coa_id IN ($placeholders)";
+                    WHERE l.coa_id IN ($placeholders)" . journal_posted_sql($this->db, 'h');
         $params = array_merge([$dateTo], $ids);
         if ($supportsUnits && $unitId > 0) {
             $sql .= ' AND h.business_unit_id = ?';
@@ -455,6 +457,7 @@ final class DashboardModel
                 LEFT JOIN journal_attachments a ON a.journal_id = j.id
                 WHERE j.journal_date >= :date_from
                   AND j.journal_date <= :date_to
+                  ' . journal_posted_sql($this->db, 'j') . '
                   AND j.print_template = :print_template
                 GROUP BY j.id
                 HAVING COUNT(a.id) = 0';

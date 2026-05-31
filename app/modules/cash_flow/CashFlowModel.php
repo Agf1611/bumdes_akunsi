@@ -60,7 +60,7 @@ final class CashFlowModel
                 WHERE (
                     h.journal_date < ?
                     OR (h.journal_date = ? AND $openingSignalSql)
-                )";
+                )" . journal_posted_sql($this->db, 'h');
         $params = array_map('intval', $cashAccountIds);
         $params[] = $dateFrom;
         $params[] = $dateFrom;
@@ -137,7 +137,7 @@ final class CashFlowModel
                 $cashflowJoin
                 LEFT JOIN business_units bu ON bu.id = h.business_unit_id
                 WHERE h.journal_date >= ?
-                  AND h.journal_date <= ?";
+                  AND h.journal_date <= ?" . journal_posted_sql($this->db, 'h');
 
         $params = [];
         for ($i = 0; $i < 8; $i++) {

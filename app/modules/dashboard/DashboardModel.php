@@ -168,7 +168,9 @@ final class DashboardModel
     public function getMonthlyTrend(string $dateTo, int $months = 6, int $unitId = 0): array
     {
         $end = DateTimeImmutable::createFromFormat('Y-m-d', $dateTo) ?: new DateTimeImmutable('today');
-        $start = $end->modify('first day of this month')->modify('-' . max($months - 1, 0) . ' months');
+        $year = (int) $end->format('Y');
+        $start = new DateTimeImmutable(sprintf('%04d-01-01', $year));
+        $end = new DateTimeImmutable(sprintf('%04d-12-31', $year));
 
         if (!$this->hasAccountingTables()) {
             return $this->emptyTrendSeries($start, $end);

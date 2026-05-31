@@ -47,8 +47,14 @@ $buildPercentChange = static function (float $current, float $previous): array {
     ];
 };
 
-$currentTrend = $trendSeries !== [] ? $trendSeries[array_key_last($trendSeries)] : ['total_revenue' => 0, 'total_expense' => 0, 'net_profit' => 0];
-$previousTrend = count($trendSeries) > 1 ? $trendSeries[count($trendSeries) - 2] : ['total_revenue' => 0, 'total_expense' => 0, 'net_profit' => 0];
+$trendByMonth = [];
+foreach ($trendSeries as $trendPoint) {
+    $trendByMonth[(string) ($trendPoint['month_key'] ?? '')] = $trendPoint;
+}
+$activeTrendKey = substr((string) ($filters['date_to'] ?? date('Y-m-d')), 0, 7);
+$previousTrendKey = (new DateTimeImmutable($activeTrendKey . '-01'))->modify('-1 month')->format('Y-m');
+$currentTrend = $trendByMonth[$activeTrendKey] ?? ['total_revenue' => 0, 'total_expense' => 0, 'net_profit' => 0];
+$previousTrend = $trendByMonth[$previousTrendKey] ?? ['total_revenue' => 0, 'total_expense' => 0, 'net_profit' => 0];
 $cashInflow = (float) ($cashSummary['cash_inflow'] ?? 0);
 $cashOutflow = (float) ($cashSummary['cash_outflow'] ?? 0);
 
@@ -315,7 +321,7 @@ $expenseAreaPath = $buildAreaPath($expenseCoords, $paddingTop + $plotHeight);
             <div class="dashboard-panel__head">
                 <div>
                     <h2 class="dashboard-panel__title">Tren Pendapatan & Beban</h2>
-                    <p class="dashboard-panel__meta">Tren per bulan dari jurnal yang tersimpan.</p>
+                    <p class="dashboard-panel__meta">Januari-Desember tahun pembukuan aktif dari jurnal yang tersimpan.</p>
                 </div>
                 <div class="dashboard-legend">
                     <span class="dashboard-legend__item"><span class="dashboard-legend__dot dashboard-legend__dot--revenue"></span>Pendapatan</span>

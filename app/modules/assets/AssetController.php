@@ -1130,7 +1130,7 @@ final class AssetController extends Controller
             'entry_mode' => old('entry_mode', (string) ($row['entry_mode'] ?? 'ACQUISITION')),
             'category_id' => old('category_id', isset($row['category_id']) ? (string) $row['category_id'] : ''),
             'subcategory_name' => old('subcategory_name', (string) ($row['subcategory_name'] ?? '')),
-            'business_unit_id' => old('business_unit_id', isset($row['business_unit_id']) && $row['business_unit_id'] !== null ? (string) $row['business_unit_id'] : ''),
+            'business_unit_id' => old('business_unit_id', isset($row['business_unit_id']) && $row['business_unit_id'] !== null ? (string) $row['business_unit_id'] : (current_business_unit_id() > 0 ? (string) current_business_unit_id() : '')),
             'quantity' => old('quantity', isset($row['quantity']) ? (string) ((int) round((float) $row['quantity'])) : '1'),
             'unit_name' => old('unit_name', (string) (($row['unit_name'] ?? '') !== '' ? $row['unit_name'] : 'unit')),
             'acquisition_date' => old('acquisition_date', (string) ($row['acquisition_date'] ?? date('Y-m-d'))),
@@ -1676,7 +1676,7 @@ final class AssetController extends Controller
     {
         return [
             'search' => trim((string) get_query('search', '')),
-            'unit_id' => (int) get_query('unit_id', 0),
+            'unit_id' => resolve_business_unit_filter((int) get_query('unit_id', 0)),
             'category_id' => (int) get_query('category_id', 0),
             'group' => trim((string) get_query('group', '')),
             'funding_source' => trim((string) get_query('funding_source', '')),
@@ -1693,14 +1693,14 @@ final class AssetController extends Controller
     private function reportFilters(): array
     {
         return [
-            'unit_id' => (int) get_query('unit_id', 0),
+            'unit_id' => resolve_business_unit_filter((int) get_query('unit_id', 0)),
             'category_id' => (int) get_query('category_id', 0),
             'group' => trim((string) get_query('group', '')),
             'funding_source' => trim((string) get_query('funding_source', '')),
             'status' => trim((string) get_query('status', '')),
             'date_from' => trim((string) get_query('date_from', '')),
             'date_to' => trim((string) get_query('date_to', '')),
-            'unit_id' => (int) get_query('unit_id', 0),
+            'unit_id' => resolve_business_unit_filter((int) get_query('unit_id', 0)),
         ];
     }
 

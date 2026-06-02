@@ -82,17 +82,7 @@ $lastTransactionLabel = trim((string) ($movementSummary['last_transaction_date']
                     <?= report_period_select_options($periods, (int) ($filters['period_to_id'] ?? 0), 'Sama dengan periode awal') ?>
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label">Unit Usaha</label>
-                <select name="unit_id" class="form-select">
-                    <option value="0">Semua Unit</option>
-                    <?php foreach ($units as $unit): ?>
-                        <option value="<?= e((string) $unit['id']) ?>" <?= (int) $filters['unit_id'] === (int) $unit['id'] ? 'selected' : '' ?>>
-                            <?= e((string) $unit['unit_code'] . ' - ' . $unit['unit_name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <input type="hidden" name="unit_id" value="<?= e((string) ($filters['unit_id'] ?? 0)) ?>">
             <div class="col-md-2">
                 <label class="form-label">Tanggal Mulai</label>
                 <input type="date" name="date_from" class="form-control" value="<?= e((string) $filters['date_from']) ?>">

@@ -18,7 +18,7 @@
         <input type="hidden" name="filter_scope" value="<?= e(report_filter_scope($filters)) ?>">
         <div class="col-lg-2"><label for="period_id" class="form-label">Periode Awal</label><select name="period_id" id="period_id" class="form-select"><?= report_period_select_options($periods, (int) ($filters['period_id'] ?? 0), 'Manual tanggal') ?></select></div>
         <div class="col-lg-2"><label for="period_to_id" class="form-label">Sampai Periode</label><select name="period_to_id" id="period_to_id" class="form-select"><?= report_period_select_options($periods, (int) ($filters['period_to_id'] ?? 0), 'Sama dengan periode awal') ?></select></div>
-        <div class="col-lg-3"><label for="unit_id" class="form-label">Unit Usaha</label><select name="unit_id" id="unit_id" class="form-select"><option value="">Semua Unit</option><?php foreach ($units as $unit): ?><option value="<?= e((string) $unit['id']) ?>" <?= (string) $filters['unit_id'] === (string) $unit['id'] ? 'selected' : '' ?>><?= e($unit['unit_code'] . ' - ' . $unit['unit_name']) ?></option><?php endforeach; ?></select></div>
+<input type="hidden" name="unit_id" value="<?= e((string) ($filters['unit_id'] ?? 0)) ?>">
         <div class="col-lg-2"><label for="date_from" class="form-label">Tanggal Mulai</label><input type="date" name="date_from" id="date_from" class="form-control" value="<?= e((string) $filters['date_from']) ?>"></div>
         <div class="col-lg-2"><label for="date_to" class="form-label">Tanggal Akhir</label><input type="date" name="date_to" id="date_to" class="form-control" value="<?= e((string) $filters['date_to']) ?>"></div>
         <div class="col-lg-1 d-grid"><button type="submit" class="btn btn-primary">Tampil</button></div>

@@ -102,6 +102,15 @@ function current_working_year(): int
     if ($sessionYear > 0 && in_array($sessionYear, $validYears, true)) {
         return $sessionYear;
     }
+
+    if (class_exists('Auth') && Auth::check()) {
+        $preferredYear = (int) UserPreferenceStore::instance()->get((int) (Auth::user()['id'] ?? 0), 'working_fiscal_year', 0);
+        if ($preferredYear > 0 && in_array($preferredYear, $validYears, true)) {
+            Session::put('working_fiscal_year', $preferredYear);
+            return $preferredYear;
+        }
+    }
+
     return resolve_default_working_year();
 }
 
@@ -180,6 +189,9 @@ function switch_working_year_session(int $year): bool
     Session::put('working_fiscal_year', $year);
     $period = working_year_default_period($year);
     Session::put('working_period_id', (int) ($period['id'] ?? 0));
+    if (class_exists('Auth') && Auth::check()) {
+        UserPreferenceStore::instance()->put((int) (Auth::user()['id'] ?? 0), 'working_fiscal_year', $year);
+    }
     return true;
 }
 
@@ -353,6 +365,8 @@ function accounting_report_year_options(): array
 
 function apply_fiscal_year_filter(array $filters): array
 {
+    $filters = apply_global_business_unit_filter($filters);
+
     $year = (int) ($filters['fiscal_year'] ?? 0);
     $periodId = (int) ($filters['period_id'] ?? 0);
     $dateFrom = trim((string) ($filters['date_from'] ?? ''));

@@ -41,6 +41,7 @@ $router->get('/updates/report', [UpdateController::class, 'report'], [[RoleMiddl
 $router->get('/search/global', [WorkspaceController::class, 'search'], [AuthMiddleware::class]);
 $router->post('/workspace/toggle-favorite', [WorkspaceController::class, 'toggleFavorite'], [AuthMiddleware::class]);
 $router->post('/workspace/save-filter', [WorkspaceController::class, 'saveFilter'], [AuthMiddleware::class]);
+$router->post('/workspace/switch-unit', [WorkspaceController::class, 'switchUnit'], [AuthMiddleware::class]);
 
 $router->get('/coa', [CoaController::class, 'index'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/coa/create', [CoaController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);

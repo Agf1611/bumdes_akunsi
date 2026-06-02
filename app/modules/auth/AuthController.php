@@ -166,9 +166,6 @@ final class AuthController extends Controller
             'context' => ['working_year' => current_working_year()],
         ]);
         flash('success', $loginMessage);
-        if (count(working_year_options()) > 1) {
-            $this->redirect('/periods/select-working');
-        }
         $this->redirect((string) auth_config('redirect_after_login'));
     }
 

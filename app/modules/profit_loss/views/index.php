@@ -67,15 +67,7 @@ foreach ($trendPoints as $point) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-xl-4 col-lg-6">
-                    <label for="unit_id" class="form-label">Unit Usaha</label>
-                    <select name="unit_id" id="unit_id" class="form-select">
-                        <option value="">Semua Unit</option>
-                        <?php foreach ($units as $unit): ?>
-                            <option value="<?= e((string) $unit['id']) ?>" <?= (string) $filters['unit_id'] === (string) $unit['id'] ? 'selected' : '' ?>><?= e($unit['unit_code'] . ' - ' . $unit['unit_name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                <input type="hidden" name="unit_id" value="<?= e((string) ($filters['unit_id'] ?? 0)) ?>">
                 <div class="col-12">
                     <div class="small text-secondary">Tanggal manual dipakai jika ingin rentang khusus. Isi tanggal awal lebih dulu, lalu tanggal akhir.</div>
                 </div>

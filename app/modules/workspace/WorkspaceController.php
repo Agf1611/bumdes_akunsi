@@ -195,4 +195,22 @@ final class WorkspaceController extends Controller
             'items' => workspace_saved_filters(),
         ]);
     }
+
+    public function switchUnit(): void
+    {
+        if (!verify_csrf((string) post('_token'))) {
+            flash('error', 'Token keamanan tidak valid. Silakan muat ulang halaman lalu coba lagi.');
+            $this->redirectBack();
+        }
+
+        $unitId = (int) post('business_unit_id', 0);
+        $redirectTo = workspace_normalize_path((string) post('redirect_to', '/dashboard'));
+        if (!switch_business_unit_context($unitId)) {
+            flash('error', 'Unit usaha yang dipilih tidak valid atau sudah nonaktif.');
+            $this->redirect($redirectTo);
+        }
+
+        flash('success', $unitId > 0 ? 'Unit kerja aktif diubah ke ' . current_business_unit_label(false) . '.' : 'Unit kerja aktif diubah ke Semua Unit.');
+        $this->redirect($redirectTo);
+    }
 }

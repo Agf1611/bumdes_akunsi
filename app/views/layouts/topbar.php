@@ -60,6 +60,10 @@ foreach ($favoritePages as $favoritePage) {
 }
 $filterTargets = workspace_filter_targets();
 $canSaveFilter = array_key_exists($currentPath, $filterTargets) && ((string) parse_url($currentRequestUri, PHP_URL_QUERY) !== '');
+$workingYearOptions = working_year_options();
+$activeWorkingYear = current_working_year();
+$businessUnitOptions = business_unit_options();
+$activeBusinessUnitId = current_business_unit_id();
 ?>
 <header class="app-topbar">
     <div class="app-topbar__inner">
@@ -92,10 +96,29 @@ $canSaveFilter = array_key_exists($currentPath, $filterTargets) && ((string) par
                         <span class="topbar-badge-chip__label">Periode</span>
                         <strong class="topbar-badge-chip__value"><?= e(current_accounting_period_label()) ?></strong>
                     </a>
-                    <a href="<?= e(base_url('/periods/select-working')) ?>" class="topbar-badge-chip topbar-badge-chip--link" title="Buka menu pilih tahun kerja">
+                    <form method="post" action="<?= e(base_url('/periods/switch-working')) ?>" class="topbar-context-form" title="Ganti tahun kerja">
+                        <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
+                        <input type="hidden" name="redirect_to" value="<?= e($currentRequestUri) ?>">
                         <span class="topbar-badge-chip__label">Tahun Kerja</span>
-                        <strong class="topbar-badge-chip__value"><?= e((string) current_working_year()) ?></strong>
-                    </a>
+                        <select name="working_year" class="topbar-context-select" onchange="this.form.submit()" aria-label="Pilih tahun kerja">
+                            <?php foreach ($workingYearOptions as $year): ?>
+                                <option value="<?= e((string) $year) ?>" <?= (int) $year === $activeWorkingYear ? 'selected' : '' ?>><?= e((string) $year) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
+                    <form method="post" action="<?= e(base_url('/workspace/switch-unit')) ?>" class="topbar-context-form" title="Ganti unit usaha aktif">
+                        <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
+                        <input type="hidden" name="redirect_to" value="<?= e($currentRequestUri) ?>">
+                        <span class="topbar-badge-chip__label">Unit Usaha</span>
+                        <select name="business_unit_id" class="topbar-context-select topbar-context-select--unit" onchange="this.form.submit()" aria-label="Pilih unit usaha aktif">
+                            <option value="0" <?= $activeBusinessUnitId === 0 ? 'selected' : '' ?>>Semua Unit</option>
+                            <?php foreach ($businessUnitOptions as $unit): ?>
+                                <option value="<?= e((string) $unit['id']) ?>" <?= (int) $unit['id'] === $activeBusinessUnitId ? 'selected' : '' ?>>
+                                    <?= e(trim((string) (($unit['unit_code'] ?? '') . ' - ' . ($unit['unit_name'] ?? '')), ' -')) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
                 </div>
 
                 <div class="topbar-actions">
@@ -147,7 +170,33 @@ $canSaveFilter = array_key_exists($currentPath, $filterTargets) && ((string) par
                         <div class="dropdown-menu dropdown-menu-end topbar-dropdown">
                             <div class="topbar-dropdown__title"><?= e($user['full_name'] ?? '-') ?></div>
                             <div class="topbar-dropdown__copy"><?= e($user['username'] ?? '-') ?> &middot; <?= e($user['role_name'] ?? '-') ?></div>
-                            <a class="dropdown-item" href="<?= e(base_url('/periods/select-working')) ?>">Ganti Tahun Kerja</a>
+                            <div class="topbar-dropdown__section">
+                                <div class="topbar-dropdown__copy mb-2">Konteks kerja</div>
+                                <form method="post" action="<?= e(base_url('/periods/switch-working')) ?>" class="topbar-dropdown-form">
+                                    <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
+                                    <input type="hidden" name="redirect_to" value="<?= e($currentRequestUri) ?>">
+                                    <label class="form-label small mb-1">Tahun kerja</label>
+                                    <select name="working_year" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        <?php foreach ($workingYearOptions as $year): ?>
+                                            <option value="<?= e((string) $year) ?>" <?= (int) $year === $activeWorkingYear ? 'selected' : '' ?>><?= e((string) $year) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </form>
+                                <form method="post" action="<?= e(base_url('/workspace/switch-unit')) ?>" class="topbar-dropdown-form mt-2">
+                                    <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
+                                    <input type="hidden" name="redirect_to" value="<?= e($currentRequestUri) ?>">
+                                    <label class="form-label small mb-1">Unit usaha</label>
+                                    <select name="business_unit_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        <option value="0" <?= $activeBusinessUnitId === 0 ? 'selected' : '' ?>>Semua Unit</option>
+                                        <?php foreach ($businessUnitOptions as $unit): ?>
+                                            <option value="<?= e((string) $unit['id']) ?>" <?= (int) $unit['id'] === $activeBusinessUnitId ? 'selected' : '' ?>>
+                                                <?= e(trim((string) (($unit['unit_code'] ?? '') . ' - ' . ($unit['unit_name'] ?? '')), ' -')) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </form>
+                            </div>
+                            <div class="dropdown-divider"></div>
                             <button type="button" class="dropdown-item topbar-theme-action" data-theme-toggle aria-pressed="false">
                                 <span class="theme-toggle-icon" data-theme-icon><?= $icon('sun') ?></span>
                                 <span class="theme-toggle-text" data-theme-text>Light</span>

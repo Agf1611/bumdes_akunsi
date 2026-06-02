@@ -2081,6 +2081,48 @@ body.app-shell .topbar-badge-chip__value {
     letter-spacing: -0.01em;
 }
 
+body.app-shell .topbar-context-form {
+    display: inline-flex;
+    min-height: 42px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.08rem;
+    padding: 0.42rem 0.72rem;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+body.app-shell .topbar-context-select {
+    min-width: 84px;
+    max-width: 158px;
+    border: 0;
+    background: transparent;
+    color: #172033;
+    font-size: 0.88rem;
+    font-weight: 800;
+    line-height: 1.1;
+    outline: 0;
+    padding: 0 1rem 0 0;
+}
+
+body.app-shell .topbar-context-select--unit {
+    min-width: 128px;
+}
+
+:root[data-theme="dark"] body.app-shell .topbar-context-form {
+    background: rgba(24, 36, 56, 0.96);
+    border-color: rgba(148, 163, 184, 0.14);
+}
+
+:root[data-theme="dark"] body.app-shell .topbar-context-select {
+    color: #e2e8f0;
+}
+
+body.app-shell .topbar-dropdown-form .form-select {
+    border-radius: 12px;
+}
+
 body.app-shell .topbar-actions {
     gap: 0.45rem !important;
     padding-left: 0.55rem !important;

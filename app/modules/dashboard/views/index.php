@@ -239,7 +239,7 @@ $expenseAreaPath = $buildAreaPath($expenseCoords, $paddingTop + $plotHeight);
         <div class="dashboard-filter-panel__head">
             <div>
                 <h2 class="dashboard-panel__title">Filter Laporan Dashboard</h2>
-                <p class="dashboard-panel__meta">Pilih periode laporan, unit usaha, dan rentang tanggal agar angka dashboard sesuai kebutuhan pemeriksaan.</p>
+                <p class="dashboard-panel__meta">Pilih periode dan rentang tanggal. Unit usaha mengikuti pilihan global di topbar.</p>
             </div>
             <div class="dashboard-filter-panel__actions">
                 <span class="dashboard-filter-panel__hint"><?= e(current_accounting_period_label()) ?> · <?= e($selectedUnitLabel) ?></span>
@@ -260,17 +260,6 @@ $expenseAreaPath = $buildAreaPath($expenseCoords, $paddingTop + $plotHeight);
                     <?= report_period_select_options($periods ?? [], (int) ($filters['period_to_id'] ?? 0), 'Sama dengan periode awal') ?>
                 </select>
             </div>
-            <?php if ($unitFeatureEnabled): ?>
-                <div class="col-12 col-xl-3">
-                    <label for="unit_id" class="form-label">Unit Usaha</label>
-                    <select class="form-select" id="unit_id" name="unit_id">
-                        <option value="0">Semua Unit</option>
-                        <?php foreach (($units ?? []) as $unit): ?>
-                            <option value="<?= e((string) $unit['id']) ?>" <?= (int) ($filters['unit_id'] ?? 0) === (int) $unit['id'] ? 'selected' : '' ?>><?= e(($unit['unit_code'] ?? '') . ' - ' . ($unit['unit_name'] ?? '')) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            <?php endif; ?>
             <div class="col-12 col-md-6 col-xl-2">
                 <label for="date_from" class="form-label">Tanggal Mulai</label>
                 <input type="date" class="form-control" id="date_from" name="date_from" value="<?= e((string) ($filters['date_from'] ?? '')) ?>">

@@ -149,6 +149,198 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
 .journal-attachment-preview-frame.is-hidden {
     display: none;
 }
+
+.journal-entry-card-list,
+.journal-attachment-card-list {
+    display: grid;
+    gap: .7rem;
+}
+
+.journal-entry-card,
+.journal-attachment-card {
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    background: var(--bg-panel);
+    padding: .8rem;
+}
+
+.journal-entry-card__head,
+.journal-attachment-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: .75rem;
+    margin-bottom: .65rem;
+}
+
+.journal-entry-card__code,
+.journal-attachment-card__title {
+    color: var(--text-main);
+    font-weight: 750;
+    line-height: 1.25;
+}
+
+.journal-entry-card__name,
+.journal-entry-card__desc,
+.journal-attachment-card__meta {
+    color: var(--text-muted);
+    font-size: .82rem;
+    line-height: 1.35;
+}
+
+.journal-entry-card__amounts,
+.journal-attachment-card__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .5rem;
+    margin-top: .7rem;
+}
+
+.journal-entry-card__amount {
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    background: var(--bg-panel-soft);
+    padding: .6rem;
+}
+
+.journal-detail-label {
+    display: block;
+    margin-bottom: .18rem;
+    color: var(--text-muted);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+}
+
+.journal-entry-card__total {
+    background: #eef4ff;
+    border-color: rgba(37, 99, 235, .18);
+}
+
+@media (max-width: 991.98px) {
+    body.route-journals-detail .app-frame {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    body.route-journals-detail .app-main {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-left: 0 !important;
+        scrollbar-gutter: auto !important;
+    }
+    body.route-journals-detail .app-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: .5rem 8px 6.75rem !important;
+    }
+    body.route-journals-detail .content-wrap,
+    body.route-journals-detail .content-wrap.container-fluid {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .journal-detail-page {
+        padding-bottom: 1rem;
+    }
+    .journal-detail-page .module-hero {
+        margin-bottom: .75rem !important;
+        border-radius: 12px;
+        padding: .9rem;
+    }
+    .journal-detail-page .module-hero__content {
+        display: grid;
+        gap: .75rem;
+    }
+    .journal-detail-page .module-hero__eyebrow {
+        display: none;
+    }
+    .journal-detail-page .module-hero__title {
+        font-size: 1.25rem;
+        line-height: 1.18;
+    }
+    .journal-detail-page .module-hero__text {
+        display: none;
+    }
+    .journal-detail-page .module-hero__actions {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: .45rem;
+        width: 100%;
+    }
+    .journal-detail-page .module-hero__actions .btn,
+    .journal-detail-page .module-hero__actions .btn.ui-action-btn {
+        width: 100%;
+        min-width: 0 !important;
+        min-height: 42px;
+        border-radius: 12px;
+        padding: .48rem .55rem !important;
+        font-size: .82rem;
+        white-space: nowrap;
+        justify-content: center;
+    }
+    .journal-detail-page .module-hero__actions .ui-action-btn__label {
+        display: inline !important;
+    }
+    .journal-detail-page .card {
+        border-radius: 12px;
+        margin-bottom: .75rem !important;
+    }
+    .journal-detail-page .card-body,
+    .journal-detail-page .card-header {
+        padding: .85rem !important;
+    }
+    .journal-detail-page .card-body.p-0 {
+        padding: 0 !important;
+    }
+    .journal-entry-card-list {
+        padding: .75rem !important;
+    }
+    .journal-detail-page .row {
+        --bs-gutter-x: .65rem;
+        --bs-gutter-y: .65rem;
+    }
+    .journal-detail-page .row.g-4 {
+        margin-bottom: .75rem !important;
+    }
+    .journal-detail-page .small,
+    .journal-detail-page .form-text {
+        font-size: .78rem;
+        line-height: 1.4;
+    }
+    .journal-detail-page .fw-semibold,
+    .journal-detail-page .fs-5 {
+        font-size: .94rem !important;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+    .journal-detail-page h2.h5 {
+        font-size: 1rem;
+    }
+    .journal-detail-page .form-control,
+    .journal-detail-page .form-select {
+        min-height: 42px;
+        border-radius: 10px;
+        font-size: .9rem !important;
+        padding: .5rem .68rem;
+    }
+    .journal-attachment-upload-preview,
+    .journal-attachment-inline-preview {
+        border-radius: 12px;
+        padding: .75rem;
+    }
+    .journal-attachment-card__actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .journal-attachment-card__actions .btn,
+    .journal-attachment-card__actions button {
+        width: 100%;
+        min-height: 40px;
+        border-radius: 10px;
+        font-size: .82rem;
+    }
+}
 </style>
 <div class="journal-detail-page module-page">
 <section class="module-hero mb-4">
@@ -225,7 +417,7 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
 
 <div class="card shadow-sm mb-4">
     <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive journal-entry-table-wrap d-none d-lg-block">
             <table class="table align-middle mb-0 journal-entry-table">
                 <thead>
                     <tr><th style="width:8%">No</th><th>Akun</th><th>Uraian</th><th class="text-end">Debit</th><th class="text-end">Kredit</th></tr>
@@ -245,6 +437,51 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
                     <tr><th colspan="3" class="text-end">Total</th><th class="text-end"><?= e(number_format((float) $header['total_debit'], 2, ',', '.')) ?></th><th class="text-end"><?= e(number_format((float) $header['total_credit'], 2, ',', '.')) ?></th></tr>
                 </tfoot>
             </table>
+        </div>
+        <div class="journal-entry-card-list d-lg-none p-3">
+            <?php foreach ($details as $detail): ?>
+                <?php $metaItems = journal_reference_meta_items($detail); ?>
+                <div class="journal-entry-card">
+                    <div class="journal-entry-card__head">
+                        <div>
+                            <span class="journal-detail-label">Akun</span>
+                            <div class="journal-entry-card__code"><?= e((string) $detail['account_code']) ?></div>
+                            <div class="journal-entry-card__name"><?= e((string) $detail['account_name']) ?></div>
+                        </div>
+                        <span class="badge text-bg-secondary">#<?= e((string) $detail['line_no']) ?></span>
+                    </div>
+                    <?php if (trim((string) $detail['line_description']) !== '' || $metaItems !== []): ?>
+                        <div class="journal-entry-card__desc">
+                            <?= e((string) $detail['line_description']) ?>
+                            <?php if ($metaItems !== []): ?>
+                                <div class="mt-1"><?= e(implode(' / ', $metaItems)) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                    <div class="journal-entry-card__amounts">
+                        <div class="journal-entry-card__amount">
+                            <span class="journal-detail-label">Debit</span>
+                            <div class="fw-semibold"><?= e(number_format((float) $detail['debit'], 2, ',', '.')) ?></div>
+                        </div>
+                        <div class="journal-entry-card__amount">
+                            <span class="journal-detail-label">Kredit</span>
+                            <div class="fw-semibold"><?= e(number_format((float) $detail['credit'], 2, ',', '.')) ?></div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            <div class="journal-entry-card journal-entry-card__total">
+                <div class="journal-entry-card__amounts mt-0">
+                    <div>
+                        <span class="journal-detail-label">Total Debit</span>
+                        <div class="fw-semibold"><?= e(number_format((float) $header['total_debit'], 2, ',', '.')) ?></div>
+                    </div>
+                    <div>
+                        <span class="journal-detail-label">Total Kredit</span>
+                        <div class="fw-semibold"><?= e(number_format((float) $header['total_credit'], 2, ',', '.')) ?></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -307,7 +544,7 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
                 <p class="empty-state-panel__text mb-0">Upload nota, invoice, atau bukti transfer agar review jurnal lebih mudah dilakukan di satu tempat.</p>
             </div>
         <?php else: ?>
-            <div class="table-responsive">
+            <div class="table-responsive journal-attachment-table-wrap d-none d-lg-block">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
@@ -355,6 +592,40 @@ $editUrl = base_url('/journals/edit?id=' . (int) $header['id']);
                     <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+            <div class="journal-attachment-card-list d-lg-none">
+                <?php foreach ($attachments as $index => $attachment): ?>
+                    <?php $displayName = trim((string) ($attachment['attachment_title'] ?? '')) !== '' ? (string) $attachment['attachment_title'] : (string) ($attachment['original_name'] ?? '-'); ?>
+                    <?php $previewUrl = base_url('/journals/attachments/preview?id=' . (int) $attachment['id']); ?>
+                    <div class="journal-attachment-card">
+                        <div class="journal-attachment-card__head">
+                            <div>
+                                <span class="journal-detail-label">Lampiran <?= e((string) ($index + 1)) ?></span>
+                                <div class="journal-attachment-card__title"><?= e($displayName) ?></div>
+                                <div class="journal-attachment-card__meta"><?= e((string) ($attachment['original_name'] ?? '-')) ?></div>
+                            </div>
+                            <span class="badge text-bg-secondary"><?= e(journal_attachment_type_label($attachment)) ?></span>
+                        </div>
+                        <div class="journal-attachment-card__meta">
+                            <?= e(journal_attachment_file_size((int) ($attachment['file_size'] ?? 0))) ?> / <?= e(format_id_date((string) substr((string) ($attachment['created_at'] ?? ''), 0, 10))) ?>
+                            <?php if (trim((string) ($attachment['attachment_notes'] ?? '')) !== ''): ?>
+                                <div class="text-info mt-1"><?= e((string) $attachment['attachment_notes']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="journal-attachment-card__actions">
+                            <?php if (journal_attachment_is_previewable($attachment)): ?>
+                                <a href="<?= e($previewUrl) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">Preview</a>
+                            <?php endif; ?>
+                            <a href="<?= e(base_url('/journals/attachments/download?id=' . (int) $attachment['id'])) ?>" class="btn btn-sm btn-outline-info">Unduh</a>
+                            <?php if ($periodIsOpen && ($attachmentFeatureStatus['enabled'] ?? false)): ?>
+                                <form method="post" action="<?= e(base_url('/journals/attachments/delete?id=' . (int) $attachment['id'])) ?>" onsubmit="return confirm('Hapus lampiran ini?');" class="m-0">
+                                    <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </div>

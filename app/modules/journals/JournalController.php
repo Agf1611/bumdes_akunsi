@@ -1206,7 +1206,7 @@ final class JournalController extends Controller
                     'journal_date' => old('journal_date', (string) ($header['journal_date'] ?? ($quickTemplate['journal_date'] ?? date('Y-m-d')))),
                     'description' => old('description', (string) ($header['description'] ?? ($quickTemplate['description'] ?? ''))),
                     'period_id' => $selectedPeriodId,
-                    'business_unit_id' => old('business_unit_id', (string) ($header['business_unit_id'] ?? ($quickTemplate['business_unit_id'] ?? ''))),
+                    'business_unit_id' => old('business_unit_id', (string) ($header['business_unit_id'] ?? ($quickTemplate['business_unit_id'] ?? (current_business_unit_id() > 0 ? current_business_unit_id() : '')))),
                     'print_template' => old('print_template', (string) ($header['print_template'] ?? ($quickTemplate['print_template'] ?? 'standard'))),
                 ],
                 'receiptData' => [
@@ -1801,7 +1801,7 @@ final class JournalController extends Controller
     {
         $filters = [
             'period_id' => (int) get_query('period_id', 0),
-            'unit_id' => (int) get_query('unit_id', 0),
+            'unit_id' => resolve_business_unit_filter((int) get_query('unit_id', 0)),
             'date_from' => trim((string) get_query('date_from', '')),
             'date_to' => trim((string) get_query('date_to', '')),
         ];

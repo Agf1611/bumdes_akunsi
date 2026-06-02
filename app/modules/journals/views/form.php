@@ -272,6 +272,26 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
 .jf-account-stack { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: .45rem; align-items: end; }
 .jf-account-search { min-height: 38px; }
 .jf-account-hint { display: none; font-size: .74rem; color: var(--text-muted); }
+.jf-mobile-account-trigger {
+  display: none;
+  width: 100%;
+  min-height: 42px;
+  padding: .55rem .7rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--bg-panel);
+  color: var(--text-main);
+  align-items: center;
+  justify-content: space-between;
+  gap: .65rem;
+  text-align: left;
+}
+.jf-mobile-account-trigger__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .jf-line-details {
   margin-top: .65rem;
   padding-top: .65rem;
@@ -464,6 +484,78 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
   bottom: 1rem;
   z-index: 2;
 }
+.jf-account-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  background: rgba(15, 23, 42, .42);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
+}
+.jf-account-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1061;
+  max-height: min(78vh, 680px);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: .8rem;
+  padding: .95rem .95rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  border-radius: 18px 18px 0 0;
+  background: var(--bg-panel);
+  box-shadow: 0 -24px 60px rgba(15, 23, 42, .22);
+  transform: translateY(105%);
+  transition: transform .22s ease;
+}
+.jf-account-sheet.is-open { transform: translateY(0); }
+.jf-account-sheet-backdrop.is-open { opacity: 1; pointer-events: auto; }
+.jf-account-sheet__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.jf-account-sheet__title { font-weight: 800; color: var(--text-main); }
+.jf-account-sheet__list {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  gap: .45rem;
+  padding-right: .1rem;
+}
+.jf-account-option {
+  width: 100%;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--bg-panel-soft);
+  padding: .75rem .85rem;
+  text-align: left;
+  color: var(--text-main);
+}
+.jf-account-option:hover,
+.jf-account-option:focus {
+  border-color: #38bdf8;
+  background: #ecfeff;
+  color: #075985;
+}
+.jf-account-option__name { display: block; font-weight: 750; }
+.jf-account-option__meta {
+  display: block;
+  margin-top: .12rem;
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+.jf-account-sheet-empty {
+  padding: 1rem;
+  border: 1px dashed var(--border-soft);
+  border-radius: 10px;
+  color: var(--text-muted);
+  text-align: center;
+}
+body.jf-account-sheet-open { overflow: hidden; }
 
 @media (max-width: 1199px) {
   .jf-side-grid { grid-template-columns: 1fr; }
@@ -475,19 +567,90 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
   .jf-meta-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 767px) {
+  .jf-shell { padding-bottom: 8.2rem; }
+  .jf-compact-head {
+    padding: .85rem !important;
+    border-radius: 14px !important;
+  }
+  .jf-compact-title .module-hero__eyebrow { display: none; }
+  .jf-compact-title .module-hero__title { font-size: 1.28rem; }
+  .module-hero__actions.jf-toolbar {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    gap: .5rem;
+  }
+  .module-hero__actions.jf-toolbar .btn {
+    width: auto !important;
+    min-width: 0;
+    min-height: 42px;
+    padding-inline: .55rem;
+  }
+  .module-hero__actions.jf-toolbar .btn span:not(.jf-panel-toggle__badge) {
+    display: none;
+  }
+  .jf-card { border-radius: 14px; }
+  .jf-card-head,
+  .jf-card-body { padding: .9rem; }
   .jf-line-grid,
   .jf-meta-grid,
   .jf-summary-grid { grid-template-columns: 1fr; }
   .jf-actions-row { flex-direction: column; align-items: stretch; }
   .jf-card-head, .jf-page-head { align-items: stretch; }
-  .jf-toolbar,
   .jf-toolbar .btn,
   .jf-actions-row .btn,
   .module-hero__actions.jf-toolbar .btn {
     width: 100%;
   }
-  .jf-line-item { padding: .85rem; }
-  .jf-action-card { position: static; }
+  .module-hero__actions.jf-toolbar .btn { width: auto !important; }
+  .jf-toolbar { width: 100%; }
+  .jf-line-item { padding: .85rem; border-radius: 14px; }
+  .jf-line-top { align-items: center; }
+  .jf-line-top .jf-toolbar {
+    width: auto;
+    display: inline-flex;
+    flex-wrap: nowrap;
+  }
+  .jf-line-top .jf-toolbar .btn { width: auto; }
+  .jf-account-stack { grid-template-columns: 1fr; }
+  .jf-account-search { display: none; }
+  .jf-mobile-account-trigger { display: flex; }
+  .jf-account-stack .account-select {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: .01;
+    pointer-events: none;
+  }
+  .jf-line-grid .form-control,
+  .jf-line-grid .form-select,
+  .jf-line-details .form-control,
+  .jf-line-details .form-select {
+    min-height: 44px;
+    border-radius: 10px;
+    font-size: 1rem;
+  }
+  .jf-action-card {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    z-index: 1034;
+    border-radius: 14px;
+  }
+  .jf-action-card .jf-card-body { padding: .85rem; }
+  .jf-compact-status { width: 100%; justify-content: space-between; gap: .4rem; }
+  .jf-status-pill,
+  .jf-status-mini { font-size: .82rem; }
+  .jf-action-card .jf-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+    gap: .5rem;
+  }
+  .jf-action-card .jf-toolbar .btn {
+    min-height: 46px;
+    border-radius: 10px;
+  }
 }
 </style>
 
@@ -720,6 +883,10 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
                   <label class="form-label">Akun</label>
                   <div class="jf-account-stack">
                     <input type="search" class="form-control jf-account-search account-search-input" placeholder="Cari kode / nama akun" autocomplete="off">
+                    <button type="button" class="jf-mobile-account-trigger" data-jf-account-picker>
+                      <span class="jf-mobile-account-trigger__text">Pilih akun</span>
+                      <i class="bi bi-search" aria-hidden="true"></i>
+                    </button>
                     <select name="coa_id[]" class="form-select account-select" required>
                       <option value="">Pilih Akun</option>
                       <?php foreach ($accountOptions as $account): ?>
@@ -923,6 +1090,10 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
         <label class="form-label">Akun</label>
         <div class="jf-account-stack">
           <input type="search" class="form-control jf-account-search account-search-input" placeholder="Cari kode / nama akun" autocomplete="off">
+          <button type="button" class="jf-mobile-account-trigger" data-jf-account-picker>
+            <span class="jf-mobile-account-trigger__text">Pilih akun</span>
+            <i class="bi bi-search" aria-hidden="true"></i>
+          </button>
           <select name="coa_id[]" class="form-select account-select" required></select>
           <div class="jf-account-hint">Ketik untuk memfilter daftar akun.</div>
         </div>
@@ -1039,6 +1210,21 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
   </div>
 </template>
 
+<div class="jf-account-sheet-backdrop" id="jf-account-sheet-backdrop" hidden></div>
+<div class="jf-account-sheet" id="jf-account-sheet" role="dialog" aria-modal="true" aria-labelledby="jf-account-sheet-title" hidden>
+  <div class="jf-account-sheet__head">
+    <div>
+      <div class="jf-account-sheet__title" id="jf-account-sheet-title">Pilih Akun</div>
+      <div class="small jf-muted">Cari kode atau nama akun untuk baris jurnal.</div>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary jf-btn-square" id="jf-account-sheet-close" aria-label="Tutup pilihan akun">
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
+    </button>
+  </div>
+  <input type="search" class="form-control" id="jf-account-sheet-search" placeholder="Cari kode / nama akun" autocomplete="off">
+  <div class="jf-account-sheet__list" id="jf-account-sheet-results"></div>
+</div>
+
 <script>
 (() => {
   const form = document.getElementById('journal-form');
@@ -1082,6 +1268,12 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
   const compactStatus = document.getElementById('compact-balance-status');
   const compactDebit = document.getElementById('compact-total-debit');
   const compactCredit = document.getElementById('compact-total-credit');
+  const accountSheet = document.getElementById('jf-account-sheet');
+  const accountSheetBackdrop = document.getElementById('jf-account-sheet-backdrop');
+  const accountSheetSearch = document.getElementById('jf-account-sheet-search');
+  const accountSheetResults = document.getElementById('jf-account-sheet-results');
+  const accountSheetClose = document.getElementById('jf-account-sheet-close');
+  let activeAccountLineItem = null;
 
   function panelForButton(button) {
     const targetId = button ? button.getAttribute('data-jf-panel-toggle') : '';
@@ -1109,6 +1301,15 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
 
   function formatRupiah(num) {
     return 'Rp ' + Number(num || 0).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+  }
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   function setOptions(select, items, includeBlank = true) {
@@ -1169,9 +1370,75 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
     if (current) select.value = current;
   }
 
+  function accountForSelect(select) {
+    return accountOptions.find((account) => String(account.id || '') === String(select ? select.value : '')) || null;
+  }
+
+  function updateMobileAccountTrigger(item) {
+    if (!item) return;
+    const trigger = item.querySelector('[data-jf-account-picker]');
+    const select = item.querySelector('.account-select');
+    const label = trigger?.querySelector('.jf-mobile-account-trigger__text');
+    if (!trigger || !select || !label) return;
+    const account = accountForSelect(select);
+    label.textContent = account ? String(account.label || '') : 'Pilih akun';
+    trigger.classList.toggle('is-selected', !!account);
+  }
+
+  function updateAllMobileAccountTriggers() {
+    Array.from(lineList.querySelectorAll('[data-line-item]')).forEach(updateMobileAccountTrigger);
+  }
+
+  function renderAccountSheetResults() {
+    if (!accountSheetResults) return;
+    const term = String(accountSheetSearch?.value || '').trim().toLowerCase();
+    const filtered = term === ''
+      ? accountOptions.slice().sort((a, b) => Number(b.is_suggested || 0) - Number(a.is_suggested || 0))
+      : accountOptions.filter((account) => String(account.search || '').includes(term));
+    const visible = filtered.slice(0, 60);
+    if (visible.length === 0) {
+      accountSheetResults.innerHTML = '<div class="jf-account-sheet-empty">Akun tidak ditemukan.</div>';
+      return;
+    }
+    accountSheetResults.innerHTML = visible.map((account) => `
+      <button type="button" class="jf-account-option" data-account-id="${escapeHtml(account.id)}">
+        <span class="jf-account-option__name">${escapeHtml(account.code)} - ${escapeHtml(account.name)}</span>
+        <span class="jf-account-option__meta">${escapeHtml(account.type || 'Akun')}</span>
+      </button>
+    `).join('');
+  }
+
+  function openAccountSheet(item) {
+    if (!item || !accountSheet || !accountSheetBackdrop) return;
+    activeAccountLineItem = item;
+    accountSheet.hidden = false;
+    accountSheetBackdrop.hidden = false;
+    document.body.classList.add('jf-account-sheet-open');
+    requestAnimationFrame(() => {
+      accountSheet.classList.add('is-open');
+      accountSheetBackdrop.classList.add('is-open');
+      renderAccountSheetResults();
+      accountSheetSearch?.focus();
+    });
+  }
+
+  function closeAccountSheet() {
+    if (!accountSheet || !accountSheetBackdrop) return;
+    accountSheet.classList.remove('is-open');
+    accountSheetBackdrop.classList.remove('is-open');
+    document.body.classList.remove('jf-account-sheet-open');
+    setTimeout(() => {
+      accountSheet.hidden = true;
+      accountSheetBackdrop.hidden = true;
+      if (accountSheetSearch) accountSheetSearch.value = '';
+      activeAccountLineItem = null;
+    }, 180);
+  }
+
   function hydrateLineItem(item) {
     setAccountOptions(item.querySelector('.account-select'));
     syncAccountSearchInput(item);
+    updateMobileAccountTrigger(item);
     setOptions(item.querySelector('.partner-select'), referenceOptions.partners || []);
     setOptions(item.querySelector('.inventory-select'), referenceOptions.inventory || []);
     setOptions(item.querySelector('.raw-material-select'), referenceOptions.raw_materials || []);
@@ -1580,6 +1847,7 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
   function updateAll() {
     refreshLineNumbers();
     Array.from(lineList.querySelectorAll('[data-line-item]')).forEach(syncManagedAssetPanel);
+    updateAllMobileAccountTriggers();
     computeSummary();
     computeValidation();
     computeImpact();
@@ -1727,6 +1995,10 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
   lineList.addEventListener('click', (event) => {
     const item = event.target.closest('[data-line-item]');
     if (!item) return;
+    if (event.target.closest('[data-jf-account-picker]')) {
+      openAccountSheet(item);
+      return;
+    }
     if (event.target.closest('.toggle-meta-btn')) {
       const details = item.querySelector('[data-line-details]');
       setLineDetailsOpen(item, details ? details.classList.contains('is-hidden') : true);
@@ -1790,6 +2062,7 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
     const item = event.target.closest('[data-line-item]');
     if (item && event.target.classList.contains('account-select')) {
       syncAccountSearchInput(item);
+      updateMobileAccountTrigger(item);
     }
     if (item && event.target.classList.contains('asset-form-toggle')) {
       const enabledInput = item.querySelector('.asset-form-enabled-input');
@@ -1799,6 +2072,27 @@ $lineHasDetails = static function (array $row, bool $assetFormEnabled): bool {
       event.target.dataset.userChoice = event.target.checked ? 'on' : 'off';
     }
     updateAll();
+  });
+  accountSheetSearch?.addEventListener('input', renderAccountSheetResults);
+  accountSheetClose?.addEventListener('click', closeAccountSheet);
+  accountSheetBackdrop?.addEventListener('click', closeAccountSheet);
+  accountSheetResults?.addEventListener('click', (event) => {
+    const option = event.target.closest('[data-account-id]');
+    if (!option || !activeAccountLineItem) return;
+    const select = activeAccountLineItem.querySelector('.account-select');
+    if (!select) return;
+    setAccountOptions(select, '');
+    select.value = option.getAttribute('data-account-id') || '';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    syncAccountSearchInput(activeAccountLineItem);
+    updateMobileAccountTrigger(activeAccountLineItem);
+    closeAccountSheet();
+    updateAll();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && accountSheet && !accountSheet.hidden) {
+      closeAccountSheet();
+    }
   });
   periodSelect?.addEventListener('change', updateAll);
   templateSelect?.addEventListener('change', updateAll);

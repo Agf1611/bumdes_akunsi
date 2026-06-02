@@ -18,6 +18,7 @@ final class ReportDrilldownController extends Controller
             'date_to' => trim((string) get_query('date_to', (string) ($period['end_date'] ?? ''))),
             'source_report' => trim((string) get_query('source_report', 'laporan')),
         ];
+        $filters = apply_global_business_unit_filter($filters);
         [$filters] = report_resolve_period_filter($filters, fn (int $id): ?array => $this->findPeriodById($db, $id));
 
         [$sql, $params] = $this->buildQuery($db, $filters, $this->columnExists($db, 'journal_headers', 'workflow_status'));

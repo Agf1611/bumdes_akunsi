@@ -88,15 +88,7 @@ $lastTransactionLabel = trim((string) ($movementSummary['last_transaction_date']
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Unit Usaha</label>
-                <select name="unit_id" class="form-select">
-                    <option value="">Semua unit</option>
-                    <?php foreach ($units as $unit): ?>
-                        <option value="<?= e((string) $unit['id']) ?>" <?= (int) ($filters['unit_id'] ?? 0) === (int) $unit['id'] ? 'selected' : '' ?>><?= e($unit['unit_code'] . ' - ' . $unit['unit_name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <input type="hidden" name="unit_id" value="<?= e((string) ($filters['unit_id'] ?? 0)) ?>">
             <div class="col-md-3">
                 <label class="form-label">Tanggal Mulai</label>
                 <input type="date" name="date_from" class="form-control" value="<?= e((string) ($filters['date_from'] ?? '')) ?>">

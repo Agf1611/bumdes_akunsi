@@ -65,3 +65,73 @@ function selected_unit_from_filters(array $filters): ?array
     $unitId = (int) ($filters['unit_id'] ?? 0);
     return $unitId > 0 ? find_business_unit($unitId) : null;
 }
+
+function current_business_unit_id(): int
+{
+    if (!class_exists('Auth') || !Auth::check()) {
+        return 0;
+    }
+
+    $sessionUnitId = (int) Session::get('active_business_unit_id', -1);
+    $unitId = $sessionUnitId >= 0
+        ? $sessionUnitId
+        : (int) UserPreferenceStore::instance()->get((int) (Auth::user()['id'] ?? 0), 'active_business_unit_id', 0);
+
+    if ($unitId <= 0) {
+        Session::put('active_business_unit_id', 0);
+        return 0;
+    }
+
+    $unit = find_business_unit($unitId);
+    if (!$unit || (int) ($unit['is_active'] ?? 0) !== 1) {
+        switch_business_unit_context(0);
+        return 0;
+    }
+
+    Session::put('active_business_unit_id', $unitId);
+    return $unitId;
+}
+
+function current_business_unit(): ?array
+{
+    $unitId = current_business_unit_id();
+    return $unitId > 0 ? find_business_unit($unitId) : null;
+}
+
+function current_business_unit_label(bool $fallbackAll = true): string
+{
+    return business_unit_label(current_business_unit(), $fallbackAll);
+}
+
+function switch_business_unit_context(int $unitId): bool
+{
+    if ($unitId > 0) {
+        $unit = find_business_unit($unitId);
+        if (!$unit || (int) ($unit['is_active'] ?? 0) !== 1) {
+            return false;
+        }
+    } else {
+        $unitId = 0;
+    }
+
+    Session::put('active_business_unit_id', $unitId);
+    if (class_exists('Auth') && Auth::check()) {
+        UserPreferenceStore::instance()->put((int) (Auth::user()['id'] ?? 0), 'active_business_unit_id', $unitId);
+    }
+
+    return true;
+}
+
+function resolve_business_unit_filter(?int $queryUnitId = null): int
+{
+    return current_business_unit_id();
+}
+
+function apply_global_business_unit_filter(array $filters): array
+{
+    if (array_key_exists('unit_id', $filters)) {
+        $filters['unit_id'] = resolve_business_unit_filter(isset($filters['unit_id']) ? (int) $filters['unit_id'] : null);
+    }
+
+    return $filters;
+}

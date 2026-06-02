@@ -95,6 +95,7 @@ final class FinancialNotesController extends Controller
             'date_to' => trim((string) get_query('date_to', '')),
             'unit_id' => (int) get_query('unit_id', 0),
         ];
+        $filters = apply_global_business_unit_filter($filters);
 
         $selectedPeriod = null;
         $selectedUnit = null;

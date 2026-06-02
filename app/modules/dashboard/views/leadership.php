@@ -130,17 +130,7 @@ $workspaceFavoritePages = is_array($workspaceFavoritePages ?? null) ? $workspace
                     <label class="form-label">Tanggal Akhir Manual</label>
                     <input type="date" name="date_to" value="<?= e((string) ($filters['date_to'] ?? '')) ?>" class="form-control">
                 </div>
-                <?php if ($unitFeatureEnabled): ?>
-                    <div class="col-12 col-xl-3">
-                        <label class="form-label">Unit Usaha</label>
-                        <select name="unit_id" class="form-select">
-                            <option value="0">Semua Unit</option>
-                            <?php foreach (($units ?? []) as $unit): ?>
-                                <option value="<?= e((string) ($unit['id'] ?? 0)) ?>" <?= (int) ($filters['unit_id'] ?? 0) === (int) ($unit['id'] ?? 0) ? 'selected' : '' ?>><?= e((string) ($unit['label'] ?? $unit['unit_name'] ?? 'Unit')) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                <?php endif; ?>
+                <input type="hidden" name="unit_id" value="<?= e((string) ($filters['unit_id'] ?? 0)) ?>">
                 <div class="col-12 col-xl-2">
                     <button type="submit" class="btn btn-primary w-100">Terapkan</button>
                 </div>

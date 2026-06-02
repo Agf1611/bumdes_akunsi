@@ -112,7 +112,7 @@ final class DashboardController extends Controller
         $periodId = (int) get_query('period_id', 0);
         $periodToId = (int) get_query('period_to_id', 0);
         $filterScope = report_normalize_filter_scope((string) get_query('filter_scope', 'period'));
-        $unitId = (int) get_query('unit_id', 0);
+        $unitId = resolve_business_unit_filter((int) get_query('unit_id', 0));
         $dateFromInput = trim((string) get_query('date_from', ''));
         $dateToInput = trim((string) get_query('date_to', ''));
 

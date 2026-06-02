@@ -72,17 +72,7 @@ $sectionConfigs = [
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-xl-3 col-lg-4">
-                    <label for="unit_id" class="form-label">Unit Usaha</label>
-                    <select name="unit_id" id="unit_id" class="form-select">
-                        <option value="">Semua Unit</option>
-                        <?php foreach ($units as $unit): ?>
-                            <option value="<?= e((string) $unit['id']) ?>" <?= (string) ($filters['unit_id'] ?? '') === (string) $unit['id'] ? 'selected' : '' ?>>
-                                <?= e($unit['unit_code'] . ' - ' . $unit['unit_name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                <input type="hidden" name="unit_id" value="<?= e((string) ($filters['unit_id'] ?? 0)) ?>">
                 <div class="col-xl-2 col-lg-3">
                     <label for="date_from" class="form-label">Tanggal Mulai</label>
                     <input type="date" name="date_from" id="date_from" class="form-control" value="<?= e((string) ($filters['date_from'] ?? '')) ?>">

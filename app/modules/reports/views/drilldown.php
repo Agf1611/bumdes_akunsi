@@ -37,17 +37,7 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-lg-2">
-                <label class="form-label">Unit Usaha</label>
-                <select name="unit_id" class="form-select">
-                    <option value="">Semua Unit</option>
-                    <?php foreach (($unitOptions ?? []) as $unit): ?>
-                        <option value="<?= e((string) $unit['id']) ?>" <?= (string) ($filters['unit_id'] ?? '') === (string) $unit['id'] ? 'selected' : '' ?>>
-                            <?= e((string) $unit['unit_code'] . ' - ' . (string) $unit['unit_name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <input type="hidden" name="unit_id" value="<?= e((string) ($filters['unit_id'] ?? 0)) ?>">
             <div class="col-lg-2">
                 <label class="form-label">Tanggal Mulai</label>
                 <input type="date" name="date_from" class="form-control" value="<?= e((string) ($filters['date_from'] ?? '')) ?>">

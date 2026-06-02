@@ -53,13 +53,24 @@ final class PeriodController extends Controller
         }
 
         $year = (int) post('working_year');
+        $redirectTo = $this->safeRedirectPath((string) post('redirect_to', '/dashboard'));
         if ($year <= 0 || !switch_working_year_session($year)) {
             flash('error', 'Tahun kerja yang dipilih tidak valid atau belum tersedia.');
-            $this->redirect('/periods/select-working');
+            $this->redirect($redirectTo);
         }
 
         flash('success', 'Tahun kerja berhasil diubah ke ' . $year . '.');
-        $this->redirect('/dashboard');
+        $this->redirect($redirectTo);
+    }
+
+    private function safeRedirectPath(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '' || str_starts_with($path, '//') || preg_match('/^[a-z][a-z0-9+\-.]*:/i', $path) === 1) {
+            return '/dashboard';
+        }
+
+        return '/' . ltrim($path, '/');
     }
 
     public function index(): void

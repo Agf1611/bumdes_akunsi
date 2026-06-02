@@ -309,12 +309,95 @@ $importPanelOpen = $importSuccess !== '' || $importErrors !== [] || (($importRes
     border-bottom-color: var(--border-soft);
 }
 @media (max-width: 991.98px) {
+    body.route-journals .app-frame {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    body.route-journals .app-main {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-left: 0 !important;
+        scrollbar-gutter: auto !important;
+    }
+    body.route-journals .app-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: .5rem 8px 6.75rem !important;
+    }
+    body.route-journals .content-wrap,
+    body.route-journals .content-wrap.container-fluid {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .journal-page {
+        padding-bottom: 1rem;
+    }
+    .journal-page > .d-flex:first-of-type {
+        margin-bottom: .75rem !important;
+    }
+    .journal-page h1.h3 {
+        font-size: 1.25rem;
+        line-height: 1.18;
+    }
+    .journal-page h1.h3 + p {
+        font-size: .82rem;
+        line-height: 1.4;
+    }
     .journal-page .journal-page-toolbar,
     .journal-page .journal-page-toolbar .btn {
         width: 100%;
     }
+    .journal-page .journal-page-toolbar {
+        display: grid !important;
+        grid-template-columns: 44px repeat(3, minmax(0, 1fr));
+        gap: .45rem !important;
+        align-self: stretch;
+        flex: 1 1 100%;
+        max-width: none;
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+    .journal-page .journal-page-toolbar .btn {
+        min-height: 42px;
+        border-radius: 12px;
+        padding: .48rem .5rem !important;
+        font-size: .82rem;
+        white-space: nowrap;
+    }
+    .journal-page .journal-panel-toggle {
+        width: 44px;
+        height: 42px;
+        border-radius: 12px;
+    }
+    .journal-page .card {
+        border-radius: 12px;
+    }
+    .journal-page .card-body {
+        padding: .85rem !important;
+    }
+    .journal-page .journal-filter-card {
+        margin-bottom: .75rem !important;
+    }
+    .journal-page .journal-filter-card form {
+        --bs-gutter-x: .55rem;
+        --bs-gutter-y: .55rem;
+    }
+    .journal-page .journal-filter-card .form-label {
+        margin-bottom: .24rem;
+        font-size: .78rem;
+    }
+    .journal-page .journal-filter-card .form-control,
+    .journal-page .journal-filter-card .form-select {
+        min-height: 42px;
+        border-radius: 10px;
+        font-size: .88rem !important;
+        padding: .48rem .65rem;
+    }
     .journal-page .journal-card__meta {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .6rem;
     }
     .journal-page .journal-card__actions {
         justify-content: flex-start;
@@ -324,9 +407,79 @@ $importPanelOpen = $importSuccess !== '' || $importErrors !== [] || (($importRes
         left: 1rem;
         right: 1rem;
         top: auto;
-        bottom: 1rem;
+        bottom: calc(86px + env(safe-area-inset-bottom, 0px));
         width: auto;
         max-width: none;
+        border-radius: 16px;
+    }
+    .journal-page .journal-action-panel a,
+    .journal-page .journal-action-panel button {
+        min-height: 44px;
+        padding: .72rem .85rem;
+    }
+    .journal-page .journal-card {
+        border-radius: 12px;
+        padding: .78rem;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
+    }
+    .journal-page .journal-card + .journal-card {
+        margin-top: .65rem;
+    }
+    .journal-page .journal-card__label {
+        font-size: .68rem;
+        letter-spacing: .035em;
+    }
+    .journal-page .journal-card__value,
+    .journal-page .journal-card__desc .text-dark {
+        font-size: .9rem;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+    .journal-page .journal-card__value,
+    .journal-page .journal-card__desc .text-dark {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+    }
+    .journal-page .journal-card__meta > div:nth-child(4) {
+        display: none;
+    }
+    .journal-page .journal-card__meta > div:nth-child(5) .journal-card__value,
+    .journal-page .journal-card__meta > div:nth-child(6) .journal-card__value {
+        display: block;
+        white-space: nowrap;
+    }
+    .journal-page .journal-card__desc {
+        margin-top: .7rem;
+        padding-top: .7rem;
+    }
+    .journal-page .journal-card__actions {
+        display: grid;
+        grid-template-columns: 44px 44px minmax(0, 1fr);
+        gap: .45rem;
+        margin-top: .72rem;
+    }
+    .journal-page .journal-card-action,
+    .journal-page .journal-action-trigger {
+        width: 44px;
+        height: 42px;
+        border-radius: 12px;
+    }
+    .journal-page .journal-card__actions .journal-action-menu,
+    .journal-page .journal-card__actions .journal-action-trigger {
+        width: 100%;
+    }
+    .journal-page .journal-card__actions .journal-action-trigger {
+        min-width: 100%;
+    }
+    .journal-page .journal-tool-panel h2.h5 {
+        font-size: 1rem;
+    }
+    .journal-page .journal-tool-panel p,
+    .journal-page .journal-tool-panel .form-text {
+        font-size: .78rem;
+        line-height: 1.4;
     }
 }
 @media (max-width: 575.98px) {
@@ -334,6 +487,25 @@ $importPanelOpen = $importSuccess !== '' || $importErrors !== [] || (($importRes
     .journal-page .journal-bulk-toolbar .btn,
     .journal-page .journal-bulk-toolbar .form-select {
         width: 100%;
+    }
+    .journal-page .journal-page-toolbar {
+        grid-template-columns: 42px repeat(3, minmax(0, 1fr));
+    }
+    .journal-page .journal-page-toolbar .btn {
+        gap: .25rem;
+        font-size: .78rem;
+        padding-left: .35rem !important;
+        padding-right: .35rem !important;
+    }
+    .journal-page .journal-page-toolbar .btn i {
+        font-size: .92rem;
+    }
+    .journal-page .journal-card__meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .journal-page .journal-card__meta > div:nth-child(3),
+    .journal-page .journal-card__desc {
+        grid-column: 1 / -1;
     }
 }
 </style>
@@ -357,7 +529,7 @@ $importPanelOpen = $importSuccess !== '' || $importErrors !== [] || (($importRes
                 <i class="bi bi-printer" aria-hidden="true"></i>
                 <span>Cetak</span>
             </a>
-            <a href="<?= e(base_url('/journals/create?template=cash_in')) ?>" class="btn btn-outline-success journal-toolbar-btn">
+            <a href="<?= e(base_url('/journals/quick')) ?>" class="btn btn-outline-success journal-toolbar-btn">
                 <i class="bi bi-lightning-charge" aria-hidden="true"></i>
                 <span>Cepat</span>
             </a>
@@ -445,22 +617,13 @@ $importPanelOpen = $importSuccess !== '' || $importErrors !== [] || (($importRes
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm mb-4 journal-filter-card">
         <div class="card-body p-4">
             <form method="get" action="<?= e(base_url('/journals')) ?>" class="row g-3 align-items-end">
                 <div class="col-lg-3">
                     <label class="form-label">Periode</label>
                     <select name="period_id" class="form-select">
                         <?= report_period_select_options($periods ?? [], (int) ($filters['period_id'] ?? 0), 'Semua periode') ?>
-                    </select>
-                </div>
-                <div class="col-lg-3">
-                    <label class="form-label">Unit Usaha</label>
-                    <select name="unit_id" class="form-select">
-                        <option value="">Semua Unit</option>
-                        <?php foreach (($unitOptions ?? []) as $unit): ?>
-                            <option value="<?= e((string) $unit['id']) ?>" <?= (string) ($filters['unit_id'] ?? '') === (string) $unit['id'] ? 'selected' : '' ?>><?= e($unit['unit_code'] . ' - ' . $unit['unit_name']) ?></option>
-                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="col-lg-2">

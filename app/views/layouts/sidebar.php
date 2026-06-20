@@ -30,6 +30,11 @@ $icon = static function (string $name): string {
     $icons = [
         'dashboard' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="8" rx="2"></rect><rect x="14" y="3" width="7" height="5" rx="2"></rect><rect x="14" y="12" width="7" height="9" rx="2"></rect><rect x="3" y="15" width="7" height="6" rx="2"></rect></svg>',
         'units' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M9 14h.01"></path><path d="M15 14h.01"></path></svg>',
+        'employee' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"></circle><path d="M3 21v-2a6 6 0 0 1 12 0v2"></path><path d="M17 11l2 2 4-4"></path></svg>',
+        'business' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M4 21V9l8-5 8 5v12"></path><path d="M9 21v-6h6v6"></path><path d="M8 10h.01"></path><path d="M16 10h.01"></path></svg>',
+        'budget' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M7 9h10"></path><path d="M7 13h5"></path><path d="M15 13h2"></path><path d="M7 17h3"></path><path d="M14 17h3"></path></svg>',
+        'plan' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><path d="M14 3v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg>',
+        'report' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"></path><path d="M4 20h16"></path><path d="M8 16v-5"></path><path d="M12 16V8"></path><path d="M16 16v-3"></path><path d="M20 7l-4 4-3-3-5 5"></path></svg>',
         'coa' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11"></path><path d="M9 12h11"></path><path d="M9 18h11"></path><path d="M4 6h.01"></path><path d="M4 12h.01"></path><path d="M4 18h.01"></path></svg>',
         'assets' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><path d="M3.3 7l8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>',
         'periods' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>',
@@ -68,6 +73,11 @@ if (Auth::hasRole('admin')) {
         'label' => 'Kelola Usaha',
         'items' => [
             ['title' => 'Profil Unit Usaha', 'note' => 'Nama usaha, NIB, kontak, status', 'path' => '/business-units', 'icon' => 'units', 'needles' => ['/business-units']],
+            ['title' => 'Manajemen Karyawan', 'note' => 'Tim, tugas, dan status pegawai', 'path' => '/business-employees', 'icon' => 'employee', 'needles' => ['/business-employees']],
+            ['title' => 'Manajemen Bisnis', 'note' => 'Aktivitas dan target usaha', 'path' => '/business-management', 'icon' => 'business', 'needles' => ['/business-management']],
+            ['title' => 'Anggaran', 'note' => 'Pagu dan alokasi per unit', 'path' => '/budgets', 'icon' => 'budget', 'needles' => ['/budgets']],
+            ['title' => 'Rencana Anggaran', 'note' => 'RAB kegiatan/unit usaha', 'path' => '/budget-plans', 'icon' => 'plan', 'needles' => ['/budget-plans']],
+            ['title' => 'Laporan Rencana Anggaran', 'note' => 'Realisasi vs rencana', 'path' => '/budget-plan-reports', 'icon' => 'report', 'needles' => ['/budget-plan-reports']],
         ],
     ];
 }

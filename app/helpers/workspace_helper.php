@@ -162,6 +162,12 @@ function workspace_menu_index(): array
     $items = [
         ['title' => 'Dashboard', 'path' => '/dashboard', 'category' => 'Menu'],
         ['title' => 'Dashboard Pimpinan', 'path' => '/dashboard/pimpinan', 'category' => 'Menu'],
+        ['title' => 'Profil Unit Usaha', 'path' => '/business-units', 'category' => 'Kelola Usaha'],
+        ['title' => 'Manajemen Karyawan', 'path' => '/business-employees', 'category' => 'Kelola Usaha'],
+        ['title' => 'Manajemen Bisnis', 'path' => '/business-management', 'category' => 'Kelola Usaha'],
+        ['title' => 'Anggaran', 'path' => '/budgets', 'category' => 'Kelola Usaha'],
+        ['title' => 'Rencana Anggaran', 'path' => '/budget-plans', 'category' => 'Kelola Usaha'],
+        ['title' => 'Laporan Rencana Anggaran', 'path' => '/budget-plan-reports', 'category' => 'Kelola Usaha'],
         ['title' => 'Jurnal Umum', 'path' => '/journals', 'category' => 'Transaksi'],
         ['title' => 'Transaksi Cepat', 'path' => '/journals/quick', 'category' => 'Transaksi'],
         ['title' => 'Periode Akuntansi', 'path' => '/periods', 'category' => 'Master Data'],

@@ -43,6 +43,12 @@ $router->post('/workspace/toggle-favorite', [WorkspaceController::class, 'toggle
 $router->post('/workspace/save-filter', [WorkspaceController::class, 'saveFilter'], [AuthMiddleware::class]);
 $router->post('/workspace/switch-unit', [WorkspaceController::class, 'switchUnit'], [AuthMiddleware::class]);
 
+$router->get('/business-employees', [BusinessOperationsController::class, 'employees'], [[RoleMiddleware::class, ['admin']]]);
+$router->get('/business-management', [BusinessOperationsController::class, 'business'], [[RoleMiddleware::class, ['admin']]]);
+$router->get('/budgets', [BusinessOperationsController::class, 'budgets'], [[RoleMiddleware::class, ['admin']]]);
+$router->get('/budget-plans', [BusinessOperationsController::class, 'budgetPlans'], [[RoleMiddleware::class, ['admin']]]);
+$router->get('/budget-plan-reports', [BusinessOperationsController::class, 'budgetReports'], [[RoleMiddleware::class, ['admin']]]);
+
 $router->get('/coa', [CoaController::class, 'index'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/coa/create', [CoaController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);
 $router->post('/coa/store', [CoaController::class, 'store'], [[RoleMiddleware::class, ['admin']]]);

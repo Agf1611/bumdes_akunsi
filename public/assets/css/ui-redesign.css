@@ -4333,6 +4333,26 @@ body.app-shell .unit-hero {
     box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16);
 }
 
+body.app-shell .business-unit-page .unit-hero {
+    background:
+        radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.16), transparent 36%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.9)) !important;
+    color: var(--unit-text) !important;
+    box-shadow: var(--shadow-sm, 0 10px 30px rgba(15, 23, 42, 0.08)) !important;
+}
+
+body.app-shell .business-unit-page .unit-hero .module-hero__eyebrow {
+    color: var(--primary, #2563eb) !important;
+}
+
+body.app-shell .business-unit-page .unit-hero .module-hero__title {
+    color: var(--unit-text) !important;
+}
+
+body.app-shell .business-unit-page .unit-hero .module-hero__text {
+    color: var(--unit-muted) !important;
+}
+
 body.app-shell .unit-hero__copy {
     min-width: 0;
 }
@@ -4367,6 +4387,20 @@ body.app-shell .unit-stat {
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(12px);
+}
+
+body.app-shell .business-unit-page .unit-stat {
+    border-color: var(--unit-border) !important;
+    background: var(--unit-panel) !important;
+    box-shadow: var(--shadow-xs, 0 1px 2px rgba(15, 23, 42, 0.05));
+}
+
+body.app-shell .business-unit-page .unit-stat span {
+    color: var(--unit-muted) !important;
+}
+
+body.app-shell .business-unit-page .unit-stat strong {
+    color: var(--unit-text) !important;
 }
 
 body.app-shell .unit-stat span {
@@ -4632,6 +4666,222 @@ body.app-shell .unit-form-actions {
 :root[data-theme="dark"] body.app-shell .unit-form-section .form-select {
     background: #111b2f;
     color: var(--text-main);
+}
+
+:root[data-theme="dark"] body.app-shell .business-unit-page .unit-hero {
+    background:
+        radial-gradient(circle at 0% 0%, rgba(96, 165, 250, 0.18), transparent 38%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(17, 27, 47, 0.92)) !important;
+}
+
+/* Business operation starter pages */
+body.app-shell .business-operation-page {
+    --operation-panel: var(--card-bg, #ffffff);
+    --operation-soft: var(--surface-soft, #f8fafc);
+    --operation-border: var(--border-color, rgba(148, 163, 184, 0.24));
+    --operation-text: var(--text-main, #0f172a);
+    --operation-muted: var(--text-muted, #64748b);
+}
+
+body.app-shell .operation-hero {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) minmax(180px, auto);
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--operation-border);
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 0 0, rgba(59, 130, 246, 0.14), transparent 34%),
+        var(--operation-panel);
+    box-shadow: var(--shadow-sm, 0 10px 30px rgba(15, 23, 42, 0.08));
+}
+
+body.app-shell .operation-hero__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: var(--primary-soft, rgba(37, 99, 235, 0.12));
+    color: var(--primary, #2563eb);
+    font-size: 1.4rem;
+}
+
+body.app-shell .operation-hero__copy {
+    min-width: 0;
+}
+
+body.app-shell .operation-hero .module-hero__eyebrow {
+    color: var(--primary, #2563eb) !important;
+}
+
+body.app-shell .operation-hero .module-hero__title {
+    margin: 0;
+    color: var(--operation-text) !important;
+    font-size: clamp(1.45rem, 2.2vw, 2rem);
+}
+
+body.app-shell .operation-hero .module-hero__text {
+    margin-top: 0.25rem;
+    color: var(--operation-muted) !important;
+}
+
+body.app-shell .operation-hero__meta {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.72rem 0.9rem;
+    border: 1px solid var(--operation-border);
+    border-radius: 18px;
+    background: var(--operation-soft);
+}
+
+body.app-shell .operation-hero__meta span,
+body.app-shell .operation-card__eyebrow {
+    color: var(--operation-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.app-shell .operation-hero__meta strong {
+    color: var(--operation-text);
+    font-size: 0.96rem;
+    font-weight: 900;
+}
+
+body.app-shell .operation-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.55fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+body.app-shell .operation-card {
+    padding: 1rem;
+    border: 1px solid var(--operation-border);
+    border-radius: 22px;
+    background: var(--operation-panel);
+    box-shadow: var(--shadow-xs, 0 1px 2px rgba(15, 23, 42, 0.05));
+}
+
+body.app-shell .operation-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-bottom: 0.9rem;
+}
+
+body.app-shell .operation-card__head h2 {
+    margin: 0.12rem 0 0;
+    color: var(--operation-text);
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+body.app-shell .operation-feature-list,
+body.app-shell .operation-unit-list {
+    display: grid;
+    gap: 0.62rem;
+}
+
+body.app-shell .operation-feature {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    padding: 0.74rem;
+    border-radius: 16px;
+    background: var(--operation-soft);
+}
+
+body.app-shell .operation-feature span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: var(--primary-soft, rgba(37, 99, 235, 0.12));
+    color: var(--primary, #2563eb);
+}
+
+body.app-shell .operation-feature p {
+    margin: 0;
+    color: var(--operation-text);
+    font-weight: 700;
+}
+
+body.app-shell .operation-note {
+    margin-top: 0.9rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px dashed var(--operation-border);
+    border-radius: 16px;
+    color: var(--operation-muted);
+    font-size: 0.9rem;
+}
+
+body.app-shell .operation-unit {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.72rem;
+    border-radius: 16px;
+    background: var(--operation-soft);
+}
+
+body.app-shell .operation-unit strong,
+body.app-shell .operation-unit span,
+body.app-shell .operation-unit em {
+    display: block;
+}
+
+body.app-shell .operation-unit strong {
+    color: var(--primary, #2563eb);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+}
+
+body.app-shell .operation-unit span {
+    color: var(--operation-text);
+    font-weight: 800;
+}
+
+body.app-shell .operation-unit em {
+    color: var(--success, #10b981);
+    font-size: 0.78rem;
+    font-style: normal;
+    font-weight: 800;
+}
+
+body.app-shell .operation-empty {
+    color: var(--operation-muted);
+}
+
+@media (max-width: 991.98px) {
+    body.app-shell .operation-hero,
+    body.app-shell .operation-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.app-shell .operation-hero__icon {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.app-shell .operation-card__head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    body.app-shell .operation-card__head .btn {
+        width: 100%;
+    }
 }
 
 @media (max-width: 1199.98px) {

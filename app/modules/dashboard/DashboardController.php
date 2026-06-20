@@ -19,6 +19,13 @@ final class DashboardController extends Controller
 
             $summary = $model->getSummaryMetrics($filters['date_from'], $filters['date_to'], (int) $filters['unit_id']);
             $cashSummary = $model->getCashBankSummary($filters['date_from'], $filters['date_to'], (int) $filters['unit_id']);
+            $assetCashUsage = asset_cash_usage_summary(
+                Database::getInstance(db_config()),
+                (string) $filters['date_from'],
+                (string) $filters['date_to'],
+                (int) $filters['unit_id'],
+                (float) ($summary['net_profit'] ?? 0)
+            );
             $trend = $model->getMonthlyTrend($filters['date_to'], 12, (int) $filters['unit_id']);
             $recentJournals = $model->getRecentJournals($filters['date_from'], $filters['date_to'], 5, (int) $filters['unit_id']);
             $unitSummaries = $supportsUnits ? $model->getUnitSummaries($filters['date_from'], $filters['date_to']) : [];
@@ -33,6 +40,7 @@ final class DashboardController extends Controller
                 'selectedUnit' => $selectedUnit,
                 'summary' => $summary,
                 'cashSummary' => $cashSummary,
+                'assetCashUsage' => $assetCashUsage,
                 'trend' => $trend,
                 'recentJournals' => $recentJournals,
                 'unitSummaries' => $unitSummaries,
@@ -61,6 +69,13 @@ final class DashboardController extends Controller
 
             $summary = $model->getSummaryMetrics($filters['date_from'], $filters['date_to'], (int) $filters['unit_id']);
             $cashSummary = $model->getCashBankSummary($filters['date_from'], $filters['date_to'], (int) $filters['unit_id']);
+            $assetCashUsage = asset_cash_usage_summary(
+                Database::getInstance(db_config()),
+                (string) $filters['date_from'],
+                (string) $filters['date_to'],
+                (int) $filters['unit_id'],
+                (float) ($summary['net_profit'] ?? 0)
+            );
             $trend = $model->getMonthlyTrend($filters['date_to'], 12, (int) $filters['unit_id']);
             $recentJournals = $model->getRecentJournals($filters['date_from'], $filters['date_to'], 8, (int) $filters['unit_id']);
             $topRevenueAccounts = $model->getTopAccounts($filters['date_from'], $filters['date_to'], 'REVENUE', 5, (int) $filters['unit_id']);
@@ -87,6 +102,7 @@ final class DashboardController extends Controller
                 'selectedUnit' => $selectedUnit,
                 'summary' => $summary,
                 'cashSummary' => $cashSummary,
+                'assetCashUsage' => $assetCashUsage,
                 'trend' => $trend,
                 'recentJournals' => $recentJournals,
                 'topRevenueAccounts' => $topRevenueAccounts,

@@ -3,6 +3,7 @@
 $reportMode = (string) ($filters['mode'] ?? 'period');
 $periodNet = (float) ($report['net_income'] ?? 0);
 $accumulatedNet = (float) ($report['comparison_net_income'] ?? 0);
+$assetCashUsage = is_array($assetCashUsage ?? null) ? $assetCashUsage : asset_cash_usage_empty($periodNet);
 $trendPoints = is_array($trend ?? null) ? $trend : [];
 $trendMax = 1.0;
 foreach ($trendPoints as $point) {
@@ -115,6 +116,51 @@ foreach ($trendPoints as $point) {
             </article>
         </section>
 
+        <section class="card shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                    <div>
+                        <div class="module-hero__eyebrow mb-2">Rekonsiliasi Kas</div>
+                        <h2 class="h4 mb-1">Penjelasan Belanja Aset</h2>
+                        <p class="report-help-note mb-0">Laba/rugi resmi tidak dikurangi pembelian aset; bagian ini menjelaskan penggunaan kas agar laba besar tetapi kas berkurang karena aset tetap terbaca.</p>
+                    </div>
+                    <?php if ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0) > 0): ?>
+                        <span class="badge text-bg-warning">Ada aset belum tertaut jurnal</span>
+                    <?php endif; ?>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 h-100">
+                            <div class="small text-secondary mb-1">Laba/Rugi sebelum pembelian aset</div>
+                            <div class="h5 mb-0"><?= e(profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase'])) ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 h-100">
+                            <div class="small text-secondary mb-1">Pembelian aset dari kas/bank</div>
+                            <div class="h5 mb-0"><?= e(profit_loss_currency((float) $assetCashUsage['asset_cash_outflow'])) ?></div>
+                            <div class="small text-secondary mt-1">Dari jurnal posted yang tertaut aset.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 h-100">
+                            <div class="small text-secondary mb-1">Indikator sisa setelah pembelian aset</div>
+                            <div class="h5 mb-0 <?= ((float) $assetCashUsage['after_asset_purchase_indicator']) >= 0 ? 'text-success' : 'text-danger' ?>"><?= e(profit_loss_currency((float) $assetCashUsage['after_asset_purchase_indicator'])) ?></div>
+                            <div class="small text-secondary mt-1">Indikator manajemen, bukan saldo kas akhir resmi.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <div class="small text-secondary">Total perolehan aset tercatat: <strong class="text-dark"><?= e(profit_loss_currency((float) ($assetCashUsage['asset_acquisition_total'] ?? 0))) ?></strong></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-secondary">Belum tertaut jurnal: <strong class="text-dark"><?= e((string) ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0))) ?> aset / <?= e(profit_loss_currency((float) ($assetCashUsage['unlinked_asset_total'] ?? 0))) ?></strong></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <div class="report-chip-bar">
             <div class="report-chip"><strong>Periode</strong> <?= e(report_period_label($filters, $selectedPeriod)) ?></div>
             <div class="report-chip"><strong>Mode</strong> <?= e((string) ($report['mode_label'] ?? 'Periode')) ?></div>
@@ -191,6 +237,21 @@ foreach ($trendPoints as $point) {
                         <?php endif; ?>
                         </tbody>
                     </table>
+                </div>
+                <div class="border-top p-4">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-lg-5">
+                            <div class="fw-semibold">Penjelasan setelah total laba/rugi</div>
+                            <div class="small text-secondary">Pembelian aset dicatat sebagai penggunaan kas/investasi, bukan beban laba rugi langsung.</div>
+                        </div>
+                        <div class="col-lg-7">
+                            <div class="row g-2">
+                                <div class="col-md-4"><div class="small text-secondary">Laba/Rugi</div><div class="fw-bold"><?= e(profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase'])) ?></div></div>
+                                <div class="col-md-4"><div class="small text-secondary">Belanja Aset</div><div class="fw-bold"><?= e(profit_loss_currency((float) $assetCashUsage['asset_cash_outflow'])) ?></div></div>
+                                <div class="col-md-4"><div class="small text-secondary">Sisa Indikator</div><div class="fw-bold <?= ((float) $assetCashUsage['after_asset_purchase_indicator']) >= 0 ? 'text-success' : 'text-danger' ?>"><?= e(profit_loss_currency((float) $assetCashUsage['after_asset_purchase_indicator'])) ?></div></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>

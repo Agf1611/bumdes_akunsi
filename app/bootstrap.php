@@ -77,6 +77,7 @@ require APP_PATH . '/helpers/journal_helper.php';
 require APP_PATH . '/helpers/listing_helper.php';
 require APP_PATH . '/helpers/workspace_helper.php';
 require APP_PATH . '/helpers/asset_helper.php';
+require APP_PATH . '/helpers/asset_cash_usage_helper.php';
 require APP_PATH . '/helpers/bank_reconciliation_helper.php';
 
 spl_autoload_register(static function (string $class): void {

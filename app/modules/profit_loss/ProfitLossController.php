@@ -77,6 +77,13 @@ final class ProfitLossController extends Controller
                 profit_loss_currency((float) $viewData['report']['comparison_net_income']),
             ], $widths, ['C', 'L', 'R', 'R'], 8.0, true, $headerPrinter);
 
+            $assetCashUsage = is_array($viewData['assetCashUsage'] ?? null) ? $viewData['assetCashUsage'] : asset_cash_usage_empty((float) $viewData['report']['net_income']);
+            $pdf->tableRow(['', 'PENJELASAN BELANJA ASET', '', ''], $widths, ['C', 'L', 'R', 'R'], 8.0, true, $headerPrinter);
+            $pdf->tableRow(['', 'Laba/Rugi sebelum pembelian aset', profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase']), ''], $widths, ['C', 'L', 'R', 'R'], 8.0, false, $headerPrinter);
+            $pdf->tableRow(['', 'Pembelian aset dari kas/bank', profit_loss_currency((float) $assetCashUsage['asset_cash_outflow']), ''], $widths, ['C', 'L', 'R', 'R'], 8.0, false, $headerPrinter);
+            $pdf->tableRow(['', 'Indikator sisa setelah pembelian aset', profit_loss_currency((float) $assetCashUsage['after_asset_purchase_indicator']), ''], $widths, ['C', 'L', 'R', 'R'], 8.0, true, $headerPrinter);
+            report_pdf_note($pdf, 'Laba/rugi resmi tidak dikurangi pembelian aset. Bagian ini hanya menjelaskan penggunaan kas untuk aset agar selisih antara laba dan kas tetap terbaca.');
+
             report_pdf_footer_note($pdf, $profile);
             $pdf->output('laporan-laba-rugi.pdf');
         } catch (Throwable $e) {
@@ -108,6 +115,15 @@ final class ProfitLossController extends Controller
                 profit_loss_currency((float) $viewData['report']['net_income']),
                 profit_loss_currency((float) $viewData['report']['comparison_net_income']),
             ];
+
+            $assetCashUsage = is_array($viewData['assetCashUsage'] ?? null) ? $viewData['assetCashUsage'] : asset_cash_usage_empty((float) $viewData['report']['net_income']);
+            $rows[] = [];
+            $rows[] = ['', 'asset_reconciliation', 'PENJELASAN BELANJA ASET', '', ''];
+            $rows[] = ['', 'asset_reconciliation', 'Laba/Rugi sebelum pembelian aset', profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase']), ''];
+            $rows[] = ['', 'asset_reconciliation', 'Pembelian aset dari kas/bank', profit_loss_currency((float) $assetCashUsage['asset_cash_outflow']), ''];
+            $rows[] = ['', 'asset_reconciliation', 'Indikator sisa setelah pembelian aset', profit_loss_currency((float) $assetCashUsage['after_asset_purchase_indicator']), ''];
+            $rows[] = ['', 'asset_reconciliation', 'Total perolehan aset tercatat', profit_loss_currency((float) $assetCashUsage['asset_acquisition_total']), ''];
+            $rows[] = ['', 'asset_reconciliation', 'Aset perolehan belum tertaut jurnal', (string) ((int) $assetCashUsage['unlinked_asset_count']) . ' aset / ' . profit_loss_currency((float) $assetCashUsage['unlinked_asset_total']), ''];
 
             report_download_xlsx(
                 'profit_loss_' . date('Ymd_His') . '.xlsx',
@@ -158,6 +174,7 @@ final class ProfitLossController extends Controller
         $report = $this->emptyReport();
         $statementRows = [];
         $trend = [];
+        $assetCashUsage = asset_cash_usage_empty();
 
         if ($filters['period_id'] > 0 || $filters['date_from'] !== '' || $filters['date_to'] !== '') {
             [$filters, $selectedPeriod, $selectedUnit] = $this->resolveFilters($filters);
@@ -209,6 +226,13 @@ final class ProfitLossController extends Controller
             $report['combined_rows'] = $this->combineReportRows($current, $comparison);
             $statementRows = $this->buildStatementRows($report['combined_rows']);
             $trend = $this->buildTrendSeries((string) $filters['date_to'], (int) $filters['unit_id']);
+            $assetCashUsage = asset_cash_usage_summary(
+                Database::getInstance(db_config()),
+                (string) $filters['date_from'],
+                (string) $filters['date_to'],
+                (int) $filters['unit_id'],
+                (float) $report['net_income']
+            );
         }
 
         return [[
@@ -231,6 +255,7 @@ final class ProfitLossController extends Controller
             'report' => $report,
             'statement_rows' => $statementRows,
             'trend' => $trend,
+            'assetCashUsage' => $assetCashUsage,
         ], $selectedPeriod, $selectedUnit];
     }
 

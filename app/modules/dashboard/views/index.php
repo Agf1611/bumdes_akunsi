@@ -5,6 +5,7 @@ $profile = app_profile();
 $trendSeries = is_array($trend ?? null) ? $trend : [];
 $summary = is_array($summary ?? null) ? $summary : [];
 $cashSummary = is_array($cashSummary ?? null) ? $cashSummary : [];
+$assetCashUsage = is_array($assetCashUsage ?? null) ? $assetCashUsage : asset_cash_usage_empty((float) ($summary['net_profit'] ?? 0));
 $recentJournals = is_array($recentJournals ?? null) ? $recentJournals : [];
 $unitSummaries = is_array($unitSummaries ?? null) ? $unitSummaries : [];
 $filterErrors = is_array($filterErrors ?? null) ? $filterErrors : [];
@@ -91,6 +92,22 @@ $kpis = [
         'icon' => 'profit',
         'tone' => 'indigo',
     ],
+    [
+        'title' => 'Belanja Aset',
+        'value' => dashboard_currency_whole((float) ($assetCashUsage['asset_cash_outflow'] ?? 0)),
+        'meta' => ['value' => number_format((int) ($assetCashUsage['linked_asset_count'] ?? 0), 0, ',', '.') . ' aset', 'direction' => 'neutral'],
+        'note' => 'Kas keluar untuk aset pada rentang aktif',
+        'icon' => 'cash',
+        'tone' => 'orange',
+    ],
+    [
+        'title' => 'Sisa Setelah Aset',
+        'value' => dashboard_currency_whole((float) ($assetCashUsage['after_asset_purchase_indicator'] ?? 0)),
+        'meta' => ['value' => 'Indikator', 'direction' => ((float) ($assetCashUsage['after_asset_purchase_indicator'] ?? 0)) >= 0 ? 'up' : 'down'],
+        'note' => 'Laba bersih dikurangi belanja aset kas/bank',
+        'icon' => 'balance',
+        'tone' => 'blue',
+    ],
 ];
 
 $summaryRows = [
@@ -99,6 +116,8 @@ $summaryRows = [
     ['label' => 'Pendapatan', 'value' => dashboard_currency_whole((float) ($summary['total_revenue'] ?? 0))],
     ['label' => 'Beban', 'value' => dashboard_currency_whole((float) ($summary['total_expense'] ?? 0))],
     ['label' => 'Laba Bersih', 'value' => dashboard_currency_whole((float) ($summary['net_profit'] ?? 0)), 'strong' => true],
+    ['label' => 'Belanja Aset', 'value' => dashboard_currency_whole((float) ($assetCashUsage['asset_cash_outflow'] ?? 0))],
+    ['label' => 'Sisa Setelah Belanja Aset', 'value' => dashboard_currency_whole((float) ($assetCashUsage['after_asset_purchase_indicator'] ?? 0)), 'strong' => true],
     ['label' => 'Jumlah Jurnal', 'value' => number_format((int) ($summary['journal_count'] ?? 0), 0, ',', '.')],
 ];
 
@@ -468,10 +487,44 @@ $expenseAreaPath = $buildAreaPath($expenseCoords, $paddingTop + $plotHeight);
                     <span class="dashboard-summary-note__icon"><?= $icon('spark') ?></span>
                     <div>
                         <strong>Unit aktif</strong>
-                        <span><?= e($selectedUnitLabel) ?></span>
+                        <span><?= e($selectedUnitLabel) ?><?php if ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0) > 0): ?> - <?= e((string) ((int) $assetCashUsage['unlinked_asset_count'])) ?> aset belum tertaut jurnal<?php endif; ?></span>
                     </div>
                 </div>
             </aside>
+
+            <article class="dashboard-panel dashboard-panel--summary">
+                <div class="dashboard-panel__head">
+                    <div>
+                        <h2 class="dashboard-panel__title">Laba dan Belanja Aset</h2>
+                        <p class="dashboard-panel__meta">Catatan agar laba dan kas tidak terbaca seolah harus selalu sama.</p>
+                    </div>
+                </div>
+                <div class="dashboard-summary-list">
+                    <div class="dashboard-summary-list__row">
+                        <span>Laba/Rugi sebelum aset</span>
+                        <strong><?= e(dashboard_currency_whole((float) ($assetCashUsage['profit_before_asset_purchase'] ?? 0))) ?></strong>
+                    </div>
+                    <div class="dashboard-summary-list__row">
+                        <span>Pembelian aset kas/bank</span>
+                        <strong><?= e(dashboard_currency_whole((float) ($assetCashUsage['asset_cash_outflow'] ?? 0))) ?></strong>
+                    </div>
+                    <div class="dashboard-summary-list__row is-strong">
+                        <span>Sisa indikator</span>
+                        <strong><?= e(dashboard_currency_whole((float) ($assetCashUsage['after_asset_purchase_indicator'] ?? 0))) ?></strong>
+                    </div>
+                    <div class="dashboard-summary-list__row">
+                        <span>Aset belum tertaut jurnal</span>
+                        <strong><?= e((string) ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0))) ?></strong>
+                    </div>
+                </div>
+                <div class="dashboard-summary-note">
+                    <span class="dashboard-summary-note__icon"><?= $icon('cash') ?></span>
+                    <div>
+                        <strong>Catatan</strong>
+                        <span>Laba/rugi resmi tetap standar; panel ini hanya menjelaskan kas yang dipakai membeli aset.</span>
+                    </div>
+                </div>
+            </article>
 
             <article class="dashboard-panel dashboard-panel--reports">
                 <div class="dashboard-panel__head">

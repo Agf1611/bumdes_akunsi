@@ -5,6 +5,7 @@ $currentColumnLabel = (string) ($report['current_column_label'] ?? 'Periode');
 $accumulatedColumnLabel = (string) ($report['comparison_column_label'] ?? 'Akumulasi Tahun Berjalan');
 $periodNet = (float) ($report['net_income'] ?? 0);
 $accumulatedNet = (float) ($report['comparison_net_income'] ?? 0);
+$assetCashUsage = is_array($assetCashUsage ?? null) ? $assetCashUsage : asset_cash_usage_empty($periodNet);
 ?>
 <div class="print-sheet classic-report profit-loss-report-formal kemendesa-statement-print">
     <?php render_print_header($profile, $title ?? 'Laporan Laba Rugi', report_period_label($filters, $selectedPeriod), $selectedUnitLabel ?? 'Semua Unit'); ?>
@@ -65,7 +66,33 @@ $accumulatedNet = (float) ($report['comparison_net_income'] ?? 0);
         </tbody>
     </table>
 
-    <div class="print-footnote">Catatan: nilai disajikan sederhana agar fokus pada hasil usaha periode berjalan.</div>
+    <div class="formal-table-title mt-3">Penjelasan Belanja Aset</div>
+    <table class="table table-bordered print-table report-table-compact formal-pl-table kemendesa-statement-table mb-0">
+        <tbody>
+            <tr>
+                <td>Laba/Rugi sebelum pembelian aset</td>
+                <td class="text-end nowrap fw-bold"><?= e(profit_loss_currency_print((float) $assetCashUsage['profit_before_asset_purchase'])) ?></td>
+            </tr>
+            <tr>
+                <td>Pembelian aset dari kas/bank</td>
+                <td class="text-end nowrap fw-bold"><?= e(profit_loss_currency_print((float) $assetCashUsage['asset_cash_outflow'])) ?></td>
+            </tr>
+            <tr class="pl-grand-total">
+                <td>Indikator sisa setelah pembelian aset</td>
+                <td class="text-end nowrap fw-bold <?= ((float) $assetCashUsage['after_asset_purchase_indicator']) >= 0 ? 'positive' : 'negative' ?>"><?= e(profit_loss_currency_print((float) $assetCashUsage['after_asset_purchase_indicator'])) ?></td>
+            </tr>
+            <tr>
+                <td>Total perolehan aset tercatat</td>
+                <td class="text-end nowrap"><?= e(profit_loss_currency_print((float) ($assetCashUsage['asset_acquisition_total'] ?? 0))) ?></td>
+            </tr>
+            <tr>
+                <td>Aset perolehan belum tertaut jurnal</td>
+                <td class="text-end nowrap"><?= e((string) ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0))) ?> aset / <?= e(profit_loss_currency_print((float) ($assetCashUsage['unlinked_asset_total'] ?? 0))) ?></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="print-footnote">Catatan: laba/rugi resmi tidak dikurangi pembelian aset; bagian belanja aset hanya menjelaskan penggunaan kas agar laporan tetap mudah dibaca.</div>
 
     <?php render_print_signature($profile); ?>
 </div>

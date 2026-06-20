@@ -3,6 +3,7 @@ $user = Auth::user();
 $profile = app_profile();
 $summary = $summary ?? [];
 $cashSummary = $cashSummary ?? [];
+$assetCashUsage = is_array($assetCashUsage ?? null) ? $assetCashUsage : asset_cash_usage_empty((float) ($summary['net_profit'] ?? 0));
 $recentJournals = $recentJournals ?? [];
 $topRevenueAccounts = $topRevenueAccounts ?? [];
 $topExpenseAccounts = $topExpenseAccounts ?? [];
@@ -159,6 +160,57 @@ $workspaceFavoritePages = is_array($workspaceFavoritePages ?? null) ? $workspace
             <div class="metric-card__value"><?= e(number_format((int) ($summary['journal_count'] ?? 0), 0, ',', '.')) ?></div>
             <div class="metric-card__meta">Akun aktif <?= e(number_format((int) ($summary['active_detail_accounts'] ?? 0), 0, ',', '.')) ?> akun detail</div>
         </article>
+        <article class="metric-card metric-card--orange">
+            <div class="metric-card__label">Belanja Aset</div>
+            <div class="metric-card__value"><?= e(dashboard_compact_currency((float) ($assetCashUsage['asset_cash_outflow'] ?? 0))) ?></div>
+            <div class="metric-card__meta">Dari jurnal posted yang tertaut aset</div>
+        </article>
+        <article class="metric-card metric-card--blue">
+            <div class="metric-card__label">Sisa Setelah Belanja Aset</div>
+            <div class="metric-card__value"><?= e(dashboard_compact_currency((float) ($assetCashUsage['after_asset_purchase_indicator'] ?? 0))) ?></div>
+            <div class="metric-card__meta">Indikator laba dikurangi pembelian aset kas/bank</div>
+        </article>
+    </section>
+
+    <section class="card dashboard-card mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Penjelasan Laba dan Belanja Aset</h2>
+                    <div class="text-secondary small">Laba/rugi resmi tetap standar. Bagian ini membantu menjawab kenapa laba bisa terlihat besar tetapi kas berkurang karena ada pembelian aset.</div>
+                </div>
+                <?php if ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0) > 0): ?>
+                    <span class="badge text-bg-warning"><?= e((string) ((int) $assetCashUsage['unlinked_asset_count'])) ?> aset belum tertaut jurnal</span>
+                <?php endif; ?>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="border rounded-4 p-3 h-100">
+                        <div class="small text-secondary">Laba/Rugi sebelum aset</div>
+                        <div class="fw-bold"><?= e(dashboard_currency((float) ($assetCashUsage['profit_before_asset_purchase'] ?? 0))) ?></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded-4 p-3 h-100">
+                        <div class="small text-secondary">Pembelian aset kas/bank</div>
+                        <div class="fw-bold"><?= e(dashboard_currency((float) ($assetCashUsage['asset_cash_outflow'] ?? 0))) ?></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded-4 p-3 h-100">
+                        <div class="small text-secondary">Sisa indikator</div>
+                        <div class="fw-bold"><?= e(dashboard_currency((float) ($assetCashUsage['after_asset_purchase_indicator'] ?? 0))) ?></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded-4 p-3 h-100">
+                        <div class="small text-secondary">Aset belum tertaut jurnal</div>
+                        <div class="fw-bold"><?= e((string) ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0))) ?> aset</div>
+                        <div class="small text-secondary"><?= e(dashboard_currency((float) ($assetCashUsage['unlinked_asset_total'] ?? 0))) ?></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
 
     <div class="row g-4 mb-4">

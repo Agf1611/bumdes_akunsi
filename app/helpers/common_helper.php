@@ -48,7 +48,9 @@ function auth_config(?string $key = null): mixed
 function app_url_base(): string
 {
     $configured = trim((string) app_config('url'));
-    if ($configured !== '') {
+    $currentHost = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    $configuredHost = $configured !== '' ? (string) (parse_url($configured, PHP_URL_HOST) ?: '') : '';
+    if ($configured !== '' && ($currentHost === '' || strcasecmp($configuredHost, $currentHost) === 0)) {
         return rtrim($configured, '/');
     }
 

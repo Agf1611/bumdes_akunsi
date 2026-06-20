@@ -79,10 +79,13 @@ final class ProfitLossController extends Controller
 
             $assetCashUsage = is_array($viewData['assetCashUsage'] ?? null) ? $viewData['assetCashUsage'] : asset_cash_usage_empty((float) $viewData['report']['net_income']);
             $pdf->tableRow(['', 'PENJELASAN BELANJA ASET', '', ''], $widths, ['C', 'L', 'R', 'R'], 8.0, true, $headerPrinter);
-            $pdf->tableRow(['', 'Laba/Rugi sebelum pembelian aset', profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase']), ''], $widths, ['C', 'L', 'R', 'R'], 8.0, false, $headerPrinter);
+            $pdf->tableRow(['', 'Laba/Rugi periode', profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase']), ''], $widths, ['C', 'L', 'R', 'R'], 8.0, false, $headerPrinter);
             $pdf->tableRow(['', 'Pembelian aset dari kas/bank', profit_loss_currency((float) $assetCashUsage['asset_cash_outflow']), ''], $widths, ['C', 'L', 'R', 'R'], 8.0, false, $headerPrinter);
             $pdf->tableRow(['', 'Indikator sisa setelah pembelian aset', profit_loss_currency((float) $assetCashUsage['after_asset_purchase_indicator']), ''], $widths, ['C', 'L', 'R', 'R'], 8.0, true, $headerPrinter);
-            report_pdf_note($pdf, 'Laba/rugi resmi tidak dikurangi pembelian aset. Bagian ini hanya menjelaskan penggunaan kas untuk aset agar selisih antara laba dan kas tetap terbaca.');
+            if ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0) > 0) {
+                $pdf->tableRow(['', 'Aset belum tertaut jurnal', (string) ((int) $assetCashUsage['unlinked_asset_count']) . ' aset / ' . profit_loss_currency((float) $assetCashUsage['unlinked_asset_total']), ''], $widths, ['C', 'L', 'R', 'R'], 8.0, false, $headerPrinter);
+            }
+            report_pdf_note($pdf, 'Laba/rugi resmi tetap standar. Bagian belanja aset hanya menjelaskan kas yang dipakai membeli aset.');
 
             report_pdf_footer_note($pdf, $profile);
             $pdf->output('laporan-laba-rugi.pdf');
@@ -119,11 +122,12 @@ final class ProfitLossController extends Controller
             $assetCashUsage = is_array($viewData['assetCashUsage'] ?? null) ? $viewData['assetCashUsage'] : asset_cash_usage_empty((float) $viewData['report']['net_income']);
             $rows[] = [];
             $rows[] = ['', 'asset_reconciliation', 'PENJELASAN BELANJA ASET', '', ''];
-            $rows[] = ['', 'asset_reconciliation', 'Laba/Rugi sebelum pembelian aset', profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase']), ''];
+            $rows[] = ['', 'asset_reconciliation', 'Laba/Rugi periode', profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase']), ''];
             $rows[] = ['', 'asset_reconciliation', 'Pembelian aset dari kas/bank', profit_loss_currency((float) $assetCashUsage['asset_cash_outflow']), ''];
             $rows[] = ['', 'asset_reconciliation', 'Indikator sisa setelah pembelian aset', profit_loss_currency((float) $assetCashUsage['after_asset_purchase_indicator']), ''];
-            $rows[] = ['', 'asset_reconciliation', 'Total perolehan aset tercatat', profit_loss_currency((float) $assetCashUsage['asset_acquisition_total']), ''];
-            $rows[] = ['', 'asset_reconciliation', 'Aset perolehan belum tertaut jurnal', (string) ((int) $assetCashUsage['unlinked_asset_count']) . ' aset / ' . profit_loss_currency((float) $assetCashUsage['unlinked_asset_total']), ''];
+            if ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0) > 0) {
+                $rows[] = ['', 'asset_reconciliation', 'Aset belum tertaut jurnal', (string) ((int) $assetCashUsage['unlinked_asset_count']) . ' aset / ' . profit_loss_currency((float) $assetCashUsage['unlinked_asset_total']), ''];
+            }
 
             report_download_xlsx(
                 'profit_loss_' . date('Ymd_His') . '.xlsx',

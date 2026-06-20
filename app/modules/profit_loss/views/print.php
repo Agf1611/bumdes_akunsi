@@ -70,7 +70,7 @@ $assetCashUsage = is_array($assetCashUsage ?? null) ? $assetCashUsage : asset_ca
     <table class="table table-bordered print-table report-table-compact formal-pl-table kemendesa-statement-table mb-0">
         <tbody>
             <tr>
-                <td>Laba/Rugi sebelum pembelian aset</td>
+                <td>Laba/Rugi periode</td>
                 <td class="text-end nowrap fw-bold"><?= e(profit_loss_currency_print((float) $assetCashUsage['profit_before_asset_purchase'])) ?></td>
             </tr>
             <tr>
@@ -81,18 +81,16 @@ $assetCashUsage = is_array($assetCashUsage ?? null) ? $assetCashUsage : asset_ca
                 <td>Indikator sisa setelah pembelian aset</td>
                 <td class="text-end nowrap fw-bold <?= ((float) $assetCashUsage['after_asset_purchase_indicator']) >= 0 ? 'positive' : 'negative' ?>"><?= e(profit_loss_currency_print((float) $assetCashUsage['after_asset_purchase_indicator'])) ?></td>
             </tr>
-            <tr>
-                <td>Total perolehan aset tercatat</td>
-                <td class="text-end nowrap"><?= e(profit_loss_currency_print((float) ($assetCashUsage['asset_acquisition_total'] ?? 0))) ?></td>
-            </tr>
-            <tr>
-                <td>Aset perolehan belum tertaut jurnal</td>
-                <td class="text-end nowrap"><?= e((string) ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0))) ?> aset / <?= e(profit_loss_currency_print((float) ($assetCashUsage['unlinked_asset_total'] ?? 0))) ?></td>
-            </tr>
+            <?php if ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0) > 0): ?>
+                <tr>
+                    <td>Aset belum tertaut jurnal</td>
+                    <td class="text-end nowrap"><?= e((string) ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0))) ?> aset / <?= e(profit_loss_currency_print((float) ($assetCashUsage['unlinked_asset_total'] ?? 0))) ?></td>
+                </tr>
+            <?php endif; ?>
         </tbody>
     </table>
 
-    <div class="print-footnote">Catatan: laba/rugi resmi tidak dikurangi pembelian aset; bagian belanja aset hanya menjelaskan penggunaan kas agar laporan tetap mudah dibaca.</div>
+    <div class="print-footnote">Catatan: laba/rugi resmi tetap standar. Bagian belanja aset hanya menjelaskan kas yang dipakai membeli aset.</div>
 
     <?php render_print_signature($profile); ?>
 </div>

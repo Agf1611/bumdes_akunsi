@@ -163,8 +163,8 @@ final class BusinessUnitController extends Controller
             $errors[] = 'Nama usaha resmi maksimal 160 karakter.';
         }
 
-        if ($input['nib'] !== '' && !preg_match('/^[0-9A-Za-z .\\/-]{5,50}$/', $input['nib'])) {
-            $errors[] = 'NIB hanya boleh huruf, angka, spasi, titik, garis miring, atau tanda hubung.';
+        if ($input['nib'] !== '' && mb_strlen($input['nib']) > 50) {
+            $errors[] = 'NIB unit usaha maksimal 50 karakter.';
         }
 
         if ($input['phone'] !== '' && mb_strlen($input['phone']) > 40) {

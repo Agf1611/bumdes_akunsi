@@ -122,41 +122,35 @@ foreach ($trendPoints as $point) {
                     <div>
                         <div class="module-hero__eyebrow mb-2">Rekonsiliasi Kas</div>
                         <h2 class="h4 mb-1">Penjelasan Belanja Aset</h2>
-                        <p class="report-help-note mb-0">Laba/rugi resmi tidak dikurangi pembelian aset; bagian ini menjelaskan penggunaan kas agar laba besar tetapi kas berkurang karena aset tetap terbaca.</p>
+                        <p class="report-help-note mb-0">Laba rugi resmi tetap standar. Ringkasan ini hanya menjelaskan kas yang dipakai membeli aset.</p>
                     </div>
                     <?php if ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0) > 0): ?>
                         <span class="badge text-bg-warning">Ada aset belum tertaut jurnal</span>
                     <?php endif; ?>
                 </div>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="border rounded-3 p-3 h-100">
-                            <div class="small text-secondary mb-1">Laba/Rugi sebelum pembelian aset</div>
-                            <div class="h5 mb-0"><?= e(profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase'])) ?></div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="border rounded-3 p-3 h-100">
-                            <div class="small text-secondary mb-1">Pembelian aset dari kas/bank</div>
-                            <div class="h5 mb-0"><?= e(profit_loss_currency((float) $assetCashUsage['asset_cash_outflow'])) ?></div>
-                            <div class="small text-secondary mt-1">Dari jurnal posted yang tertaut aset.</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="border rounded-3 p-3 h-100">
-                            <div class="small text-secondary mb-1">Indikator sisa setelah pembelian aset</div>
-                            <div class="h5 mb-0 <?= ((float) $assetCashUsage['after_asset_purchase_indicator']) >= 0 ? 'text-success' : 'text-danger' ?>"><?= e(profit_loss_currency((float) $assetCashUsage['after_asset_purchase_indicator'])) ?></div>
-                            <div class="small text-secondary mt-1">Indikator manajemen, bukan saldo kas akhir resmi.</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row g-3 mt-1">
-                    <div class="col-md-6">
-                        <div class="small text-secondary">Total perolehan aset tercatat: <strong class="text-dark"><?= e(profit_loss_currency((float) ($assetCashUsage['asset_acquisition_total'] ?? 0))) ?></strong></div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="small text-secondary">Belum tertaut jurnal: <strong class="text-dark"><?= e((string) ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0))) ?> aset / <?= e(profit_loss_currency((float) ($assetCashUsage['unlinked_asset_total'] ?? 0))) ?></strong></div>
-                    </div>
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle">
+                        <tbody>
+                            <tr>
+                                <td class="text-secondary">Laba/Rugi periode</td>
+                                <td class="text-end fw-bold"><?= e(profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase'])) ?></td>
+                            </tr>
+                            <tr>
+                                <td class="text-secondary">Pembelian aset dari kas/bank</td>
+                                <td class="text-end fw-bold"><?= e(profit_loss_currency((float) $assetCashUsage['asset_cash_outflow'])) ?></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold">Sisa indikator setelah pembelian aset</td>
+                                <td class="text-end fw-bold <?= ((float) $assetCashUsage['after_asset_purchase_indicator']) >= 0 ? 'text-success' : 'text-danger' ?>"><?= e(profit_loss_currency((float) $assetCashUsage['after_asset_purchase_indicator'])) ?></td>
+                            </tr>
+                            <?php if ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0) > 0): ?>
+                                <tr>
+                                    <td class="text-secondary">Aset belum tertaut jurnal</td>
+                                    <td class="text-end"><?= e((string) ((int) ($assetCashUsage['unlinked_asset_count'] ?? 0))) ?> aset / <?= e(profit_loss_currency((float) ($assetCashUsage['unlinked_asset_total'] ?? 0))) ?></td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
@@ -237,21 +231,6 @@ foreach ($trendPoints as $point) {
                         <?php endif; ?>
                         </tbody>
                     </table>
-                </div>
-                <div class="border-top p-4">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-lg-5">
-                            <div class="fw-semibold">Penjelasan setelah total laba/rugi</div>
-                            <div class="small text-secondary">Pembelian aset dicatat sebagai penggunaan kas/investasi, bukan beban laba rugi langsung.</div>
-                        </div>
-                        <div class="col-lg-7">
-                            <div class="row g-2">
-                                <div class="col-md-4"><div class="small text-secondary">Laba/Rugi</div><div class="fw-bold"><?= e(profit_loss_currency((float) $assetCashUsage['profit_before_asset_purchase'])) ?></div></div>
-                                <div class="col-md-4"><div class="small text-secondary">Belanja Aset</div><div class="fw-bold"><?= e(profit_loss_currency((float) $assetCashUsage['asset_cash_outflow'])) ?></div></div>
-                                <div class="col-md-4"><div class="small text-secondary">Sisa Indikator</div><div class="fw-bold <?= ((float) $assetCashUsage['after_asset_purchase_indicator']) >= 0 ? 'text-success' : 'text-danger' ?>"><?= e(profit_loss_currency((float) $assetCashUsage['after_asset_purchase_indicator'])) ?></div></div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </section>

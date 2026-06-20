@@ -48,6 +48,11 @@ $router->get('/business-management', [BusinessOperationsController::class, 'busi
 $router->get('/budgets', [BusinessOperationsController::class, 'budgets'], [[RoleMiddleware::class, ['admin']]]);
 $router->get('/budget-plans', [BusinessOperationsController::class, 'budgetPlans'], [[RoleMiddleware::class, ['admin']]]);
 $router->get('/budget-plan-reports', [BusinessOperationsController::class, 'budgetReports'], [[RoleMiddleware::class, ['admin']]]);
+$router->get('/business-operations/create', [BusinessOperationsController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);
+$router->get('/business-operations/edit', [BusinessOperationsController::class, 'edit'], [[RoleMiddleware::class, ['admin']]]);
+$router->post('/business-operations/store', [BusinessOperationsController::class, 'store'], [[RoleMiddleware::class, ['admin']]]);
+$router->post('/business-operations/update', [BusinessOperationsController::class, 'update'], [[RoleMiddleware::class, ['admin']]]);
+$router->post('/business-operations/delete', [BusinessOperationsController::class, 'delete'], [[RoleMiddleware::class, ['admin']]]);
 
 $router->get('/coa', [CoaController::class, 'index'], [[RoleMiddleware::class, ['admin', 'bendahara']]]);
 $router->get('/coa/create', [CoaController::class, 'create'], [[RoleMiddleware::class, ['admin']]]);

@@ -15,7 +15,7 @@ function business_unit_options(bool $includeInactive = false): array
             return [];
         }
         $pdo = Database::getInstance(db_config());
-        $sql = 'SELECT id, unit_code, unit_name, description, is_active FROM business_units';
+        $sql = 'SELECT id, unit_code, unit_name, legal_name, nib, phone, email, address, description, is_active FROM business_units';
         if (!$includeInactive) {
             $sql .= ' WHERE is_active = 1';
         }
@@ -36,7 +36,7 @@ function find_business_unit(int $id): ?array
 
     try {
         $pdo = Database::getInstance(db_config());
-        $stmt = $pdo->prepare('SELECT id, unit_code, unit_name, description, is_active FROM business_units WHERE id = :id LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id, unit_code, unit_name, legal_name, nib, phone, email, address, description, is_active FROM business_units WHERE id = :id LIMIT 1');
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);

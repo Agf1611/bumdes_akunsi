@@ -15,7 +15,7 @@ final class BusinessUnitModel
                 WHERE 1=1';
         $params = [];
         if ($search !== '') {
-            $sql .= ' AND (bu.unit_code LIKE :search OR bu.unit_name LIKE :search OR bu.description LIKE :search)';
+            $sql .= ' AND (bu.unit_code LIKE :search OR bu.unit_name LIKE :search OR bu.description LIKE :search OR bu.legal_name LIKE :search OR bu.nib LIKE :search)';
             $params[':search'] = '%' . $search . '%';
         }
         $sql .= ' ORDER BY bu.unit_code ASC, bu.id ASC';
@@ -55,27 +55,45 @@ final class BusinessUnitModel
 
     public function create(array $data): int
     {
-        $sql = 'INSERT INTO business_units (unit_code, unit_name, description, is_active, created_at, updated_at)
-                VALUES (:unit_code, :unit_name, :description, :is_active, NOW(), NOW())';
+        $sql = 'INSERT INTO business_units (unit_code, unit_name, legal_name, nib, phone, email, address, description, is_active, created_at, updated_at)
+                VALUES (:unit_code, :unit_name, :legal_name, :nib, :phone, :email, :address, :description, :is_active, NOW(), NOW())';
         $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':unit_code', $data['unit_code'], PDO::PARAM_STR);
-        $stmt->bindValue(':unit_name', $data['unit_name'], PDO::PARAM_STR);
-        $stmt->bindValue(':description', $data['description'], PDO::PARAM_STR);
-        $stmt->bindValue(':is_active', $data['is_active'] ? 1 : 0, PDO::PARAM_INT);
+        $this->bindUnitData($stmt, $data);
         $stmt->execute();
         return (int) $this->db->lastInsertId();
     }
 
     public function update(int $id, array $data): void
     {
-        $sql = 'UPDATE business_units SET unit_code = :unit_code, unit_name = :unit_name, description = :description, is_active = :is_active, updated_at = NOW() WHERE id = :id';
+        $sql = 'UPDATE business_units SET
+                    unit_code = :unit_code,
+                    unit_name = :unit_name,
+                    legal_name = :legal_name,
+                    nib = :nib,
+                    phone = :phone,
+                    email = :email,
+                    address = :address,
+                    description = :description,
+                    is_active = :is_active,
+                    updated_at = NOW()
+                WHERE id = :id';
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $this->bindUnitData($stmt, $data);
+        $stmt->execute();
+    }
+
+    private function bindUnitData(PDOStatement $stmt, array $data): void
+    {
         $stmt->bindValue(':unit_code', $data['unit_code'], PDO::PARAM_STR);
         $stmt->bindValue(':unit_name', $data['unit_name'], PDO::PARAM_STR);
+        $stmt->bindValue(':legal_name', $data['legal_name'], PDO::PARAM_STR);
+        $stmt->bindValue(':nib', $data['nib'], PDO::PARAM_STR);
+        $stmt->bindValue(':phone', $data['phone'], PDO::PARAM_STR);
+        $stmt->bindValue(':email', $data['email'], PDO::PARAM_STR);
+        $stmt->bindValue(':address', $data['address'], PDO::PARAM_STR);
         $stmt->bindValue(':description', $data['description'], PDO::PARAM_STR);
         $stmt->bindValue(':is_active', $data['is_active'] ? 1 : 0, PDO::PARAM_INT);
-        $stmt->execute();
     }
 
     public function setActive(int $id, bool $active): void

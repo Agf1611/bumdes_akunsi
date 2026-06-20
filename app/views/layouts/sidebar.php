@@ -63,6 +63,15 @@ $sections = [
     ],
 ];
 
+if (Auth::hasRole('admin')) {
+    $sections[] = [
+        'label' => 'Kelola Usaha',
+        'items' => [
+            ['title' => 'Profil Unit Usaha', 'note' => 'Nama usaha, NIB, kontak, status', 'path' => '/business-units', 'icon' => 'units', 'needles' => ['/business-units']],
+        ],
+    ];
+}
+
 if (Auth::hasRole(['admin', 'bendahara'])) {
     $sections[] = [
         'label' => 'Manajemen Keuangan',
@@ -70,7 +79,6 @@ if (Auth::hasRole(['admin', 'bendahara'])) {
             ['title' => 'Transaksi Cepat', 'note' => 'Kas masuk, keluar, dan setoran', 'path' => '/journals/quick', 'icon' => 'cash', 'needles' => ['/journals/quick']],
             ['title' => 'Jurnal Umum', 'note' => 'Double entry dan bukti transaksi', 'path' => '/journals', 'icon' => 'journals', 'needles' => ['/journals']],
             ['title' => 'Chart of Accounts', 'note' => 'Struktur akun keuangan', 'path' => '/coa', 'icon' => 'coa', 'needles' => ['/coa']],
-            Auth::hasRole('admin') ? ['title' => 'Unit Usaha', 'note' => 'Cabang dan layanan usaha', 'path' => '/business-units', 'icon' => 'units', 'needles' => ['/business-units']] : null,
             ['title' => 'Periode Akuntansi', 'note' => 'Buka, tutup, dan periode aktif', 'path' => '/periods', 'icon' => 'periods', 'needles' => ['/periods']],
             ['title' => 'Aset', 'note' => 'Master aset dan penyusutan', 'path' => '/assets', 'icon' => 'assets', 'needles' => ['/assets']],
             ['title' => 'Rekonsiliasi Bank', 'note' => 'Mutasi bank vs jurnal', 'path' => '/bank-reconciliations', 'icon' => 'cash', 'needles' => ['/bank-reconciliations']],
@@ -123,6 +131,7 @@ if (Auth::hasRole('admin')) {
 
 $categoryIcons = [
     'Dashboard' => 'dashboard',
+    'Kelola Usaha' => 'units',
     'Manajemen Keuangan' => 'cash',
     'Laporan' => 'ledger',
     'Pengguna' => 'users',

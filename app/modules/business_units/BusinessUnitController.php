@@ -123,6 +123,11 @@ final class BusinessUnitController extends Controller
         $input = [
             'unit_code' => strtoupper(trim((string) post('unit_code'))),
             'unit_name' => trim((string) post('unit_name')),
+            'legal_name' => trim((string) post('legal_name')),
+            'nib' => trim((string) post('nib')),
+            'phone' => trim((string) post('phone')),
+            'email' => trim((string) post('email')),
+            'address' => trim((string) post('address')),
             'description' => trim((string) post('description')),
             'is_active' => (string) post('is_active', '1') === '1',
         ];
@@ -130,6 +135,11 @@ final class BusinessUnitController extends Controller
         with_old_input([
             'unit_code' => $input['unit_code'],
             'unit_name' => $input['unit_name'],
+            'legal_name' => $input['legal_name'],
+            'nib' => $input['nib'],
+            'phone' => $input['phone'],
+            'email' => $input['email'],
+            'address' => $input['address'],
             'description' => $input['description'],
             'is_active' => $input['is_active'] ? '1' : '0',
         ]);
@@ -147,6 +157,26 @@ final class BusinessUnitController extends Controller
             $errors[] = 'Nama unit usaha wajib diisi.';
         } elseif (mb_strlen($input['unit_name']) < 3 || mb_strlen($input['unit_name']) > 120) {
             $errors[] = 'Nama unit usaha harus 3 sampai 120 karakter.';
+        }
+
+        if ($input['legal_name'] !== '' && mb_strlen($input['legal_name']) > 160) {
+            $errors[] = 'Nama usaha resmi maksimal 160 karakter.';
+        }
+
+        if ($input['nib'] !== '' && !preg_match('/^[0-9A-Za-z .\\/-]{5,50}$/', $input['nib'])) {
+            $errors[] = 'NIB hanya boleh huruf, angka, spasi, titik, garis miring, atau tanda hubung.';
+        }
+
+        if ($input['phone'] !== '' && mb_strlen($input['phone']) > 40) {
+            $errors[] = 'Nomor telepon unit maksimal 40 karakter.';
+        }
+
+        if ($input['email'] !== '' && (!filter_var($input['email'], FILTER_VALIDATE_EMAIL) || mb_strlen($input['email']) > 120)) {
+            $errors[] = 'Email unit usaha tidak valid.';
+        }
+
+        if (mb_strlen($input['address']) > 500) {
+            $errors[] = 'Alamat unit usaha maksimal 500 karakter.';
         }
 
         if (mb_strlen($input['description']) > 500) {
@@ -180,8 +210,13 @@ final class BusinessUnitController extends Controller
         $formData = [
             'unit_code' => old('unit_code', (string) ($row['unit_code'] ?? '')),
             'unit_name' => old('unit_name', (string) ($row['unit_name'] ?? '')),
+            'legal_name' => old('legal_name', (string) ($row['legal_name'] ?? '')),
+            'nib' => old('nib', (string) ($row['nib'] ?? '')),
+            'phone' => old('phone', (string) ($row['phone'] ?? '')),
+            'email' => old('email', (string) ($row['email'] ?? '')),
+            'address' => old('address', (string) ($row['address'] ?? '')),
             'description' => old('description', (string) ($row['description'] ?? '')),
-            'is_active' => old('is_active', isset($row['is_active']) && (int) $row['is_active'] === 1 ? '1' : '1'),
+            'is_active' => old('is_active', $row === null || (int) ($row['is_active'] ?? 0) === 1 ? '1' : '0'),
         ];
 
         $this->view('business_units/views/form', [
